@@ -1,0 +1,30 @@
+.PHONY: all build run clean help
+
+all: help
+
+build:
+	@mkdir -p ./bin
+	@go build -o ./bin/summit ./api/cmd/main.go
+
+run: build
+	@./bin/summit 
+
+clean:
+	@rm -rf ./bin/*
+
+test:
+	@go test ./...
+
+dev: 
+	@air
+
+help:
+	@echo "Usage: make [OPTION]..."
+	@echo ""
+	@echo "  build		Build the Go backend"
+	@echo "  run     	Build and run the Go backend"
+	@echo "  clean   	Remove all build artifacts from bin/"
+	@echo "  test    	Run all tests"
+	@echo "  dev		Runs backend with live reloading mode"
+	@echo "  help    	Show this help message"
+
