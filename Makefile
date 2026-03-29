@@ -16,7 +16,7 @@ test:
 	@go test ./...
 
 dev: 
-	@air
+	@bash -c "air & cd app && WEBKIT_DISABLE_COMPOSITING_MODE=1 GDK_BACKEND=x11 bun run tauri dev"
 
 help:
 	@echo "Usage: make [OPTION]..."

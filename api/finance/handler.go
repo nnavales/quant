@@ -27,21 +27,6 @@ func (h *Handler) GetRates(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, 200, rates)
 }
 
-func (h *Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
-	req, err := httpx.DecodeJSON[TransactionReq](r.Body)
-	if err != nil {
-		httpx.WriteError(w, r, 400, "invalid request", err)
-		return
-	}
-
-	tx, err := h.service.CreateTransaction(r.Context(), req)
-	if err != nil {
-		httpx.WriteError(w, r, 500, "failed to create transaction", err)
-		return
-	}
-	httpx.WriteJSON(w, 201, tx)
-}
-
 func (h *Handler) GetTransaction(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
@@ -89,6 +74,10 @@ func (h *Handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 			httpx.WriteError(w, r, 404, "transaction not found", err)
 			return
 		}
+		if errors.Is(err, ErrInvalidField) {
+			httpx.WriteError(w, r, 400, "invalid field", err)
+			return
+		}
 		httpx.WriteError(w, r, 500, "failed to update transaction", err)
 		return
 	}
@@ -112,21 +101,6 @@ func (h *Handler) DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *Handler) CreateEntry(w http.ResponseWriter, r *http.Request) {
-	req, err := httpx.DecodeJSON[EntryReq](r.Body)
-	if err != nil {
-		httpx.WriteError(w, r, 400, "invalid request", err)
-		return
-	}
-
-	entry, err := h.service.CreateEntry(r.Context(), req)
-	if err != nil {
-		httpx.WriteError(w, r, 500, "failed to create entry", err)
-		return
-	}
-	httpx.WriteJSON(w, 201, entry)
 }
 
 func (h *Handler) GetEntry(w http.ResponseWriter, r *http.Request) {
@@ -176,6 +150,10 @@ func (h *Handler) UpdateEntry(w http.ResponseWriter, r *http.Request) {
 			httpx.WriteError(w, r, 404, "entry not found", err)
 			return
 		}
+		if errors.Is(err, ErrInvalidField) {
+			httpx.WriteError(w, r, 400, "invalid field", err)
+			return
+		}
 		httpx.WriteError(w, r, 500, "failed to update entry", err)
 		return
 	}
@@ -210,6 +188,10 @@ func (h *Handler) CreateChannel(w http.ResponseWriter, r *http.Request) {
 
 	c, err := h.service.CreateChannel(r.Context(), req)
 	if err != nil {
+		if errors.Is(err, ErrInvalidField) {
+			httpx.WriteError(w, r, 400, "invalid field", err)
+			return
+		}
 		httpx.WriteError(w, r, 500, "failed to create channel", err)
 		return
 	}
@@ -236,7 +218,18 @@ func (h *Handler) GetChannel(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListChannels(w http.ResponseWriter, r *http.Request) {
-	channels, err := h.service.ListChannels(r.Context())
+	include := r.URL.Query().Get("include")
+	if include != "accounts" {
+		channels, err := h.service.ListChannels(r.Context())
+		if err != nil {
+			httpx.WriteError(w, r, 500, "failed to list channels", err)
+			return
+		}
+		httpx.WriteJSON(w, 200, channels)
+		return
+	}
+
+	channels, err := h.service.ListChannelsWithAccounts(r.Context())
 	if err != nil {
 		httpx.WriteError(w, r, 500, "failed to list channels", err)
 		return
@@ -261,6 +254,10 @@ func (h *Handler) UpdateChannel(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			httpx.WriteError(w, r, 404, "channel not found", err)
+			return
+		}
+		if errors.Is(err, ErrInvalidField) {
+			httpx.WriteError(w, r, 400, "invalid field", err)
 			return
 		}
 		httpx.WriteError(w, r, 500, "failed to update channel", err)
@@ -297,6 +294,10 @@ func (h *Handler) CreateAccount(w http.ResponseWriter, r *http.Request) {
 
 	a, err := h.service.CreateAccount(r.Context(), req)
 	if err != nil {
+		if errors.Is(err, ErrInvalidField) {
+			httpx.WriteError(w, r, 400, "invalid field", err)
+			return
+		}
 		httpx.WriteError(w, r, 500, "failed to create account", err)
 		return
 	}
@@ -350,6 +351,10 @@ func (h *Handler) UpdateAccount(w http.ResponseWriter, r *http.Request) {
 			httpx.WriteError(w, r, 404, "account not found", err)
 			return
 		}
+		if errors.Is(err, ErrInvalidField) {
+			httpx.WriteError(w, r, 400, "invalid field", err)
+			return
+		}
 		httpx.WriteError(w, r, 500, "failed to update account", err)
 		return
 	}
@@ -384,6 +389,10 @@ func (h *Handler) CreateCategory(w http.ResponseWriter, r *http.Request) {
 
 	c, err := h.service.CreateCategory(r.Context(), req)
 	if err != nil {
+		if errors.Is(err, ErrInvalidField) {
+			httpx.WriteError(w, r, 400, "invalid field", err)
+			return
+		}
 		httpx.WriteError(w, r, 500, "failed to create category", err)
 		return
 	}
@@ -418,6 +427,21 @@ func (h *Handler) ListCategories(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, 200, categories)
 }
 
+func (h *Handler) ListCategoriesWithSubcategories(w http.ResponseWriter, r *http.Request) {
+	include := r.URL.Query().Get("include")
+	if include != "subcategories" {
+		h.ListCategories(w, r)
+		return
+	}
+
+	categories, err := h.service.ListCategoriesWithSubcategories(r.Context())
+	if err != nil {
+		httpx.WriteError(w, r, 500, "failed to list categories", err)
+		return
+	}
+	httpx.WriteJSON(w, 200, categories)
+}
+
 func (h *Handler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
@@ -435,6 +459,10 @@ func (h *Handler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			httpx.WriteError(w, r, 404, "category not found", err)
+			return
+		}
+		if errors.Is(err, ErrInvalidField) {
+			httpx.WriteError(w, r, 400, "invalid field", err)
 			return
 		}
 		httpx.WriteError(w, r, 500, "failed to update category", err)
@@ -471,6 +499,10 @@ func (h *Handler) CreateSubcategory(w http.ResponseWriter, r *http.Request) {
 
 	sd, err := h.service.CreateSubcategory(r.Context(), req)
 	if err != nil {
+		if errors.Is(err, ErrInvalidField) {
+			httpx.WriteError(w, r, 400, "invalid field", err)
+			return
+		}
 		httpx.WriteError(w, r, 500, "failed to create subcategory", err)
 		return
 	}
@@ -524,6 +556,10 @@ func (h *Handler) UpdateSubcategory(w http.ResponseWriter, r *http.Request) {
 			httpx.WriteError(w, r, 404, "subcategory not found", err)
 			return
 		}
+		if errors.Is(err, ErrInvalidField) {
+			httpx.WriteError(w, r, 400, "invalid field", err)
+			return
+		}
 		httpx.WriteError(w, r, 500, "failed to update subcategory", err)
 		return
 	}
@@ -547,21 +583,6 @@ func (h *Handler) DeleteSubcategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *Handler) CreateInstallmentGroup(w http.ResponseWriter, r *http.Request) {
-	req, err := httpx.DecodeJSON[InstallmentGroupReq](r.Body)
-	if err != nil {
-		httpx.WriteError(w, r, 400, "invalid request", err)
-		return
-	}
-
-	ig, err := h.service.CreateInstallmentGroup(r.Context(), req)
-	if err != nil {
-		httpx.WriteError(w, r, 500, "failed to create installment group", err)
-		return
-	}
-	httpx.WriteJSON(w, 201, ig)
 }
 
 func (h *Handler) GetInstallmentGroup(w http.ResponseWriter, r *http.Request) {
@@ -611,6 +632,10 @@ func (h *Handler) UpdateInstallmentGroup(w http.ResponseWriter, r *http.Request)
 			httpx.WriteError(w, r, 404, "installment group not found", err)
 			return
 		}
+		if errors.Is(err, ErrInvalidField) {
+			httpx.WriteError(w, r, 400, "invalid field", err)
+			return
+		}
 		httpx.WriteError(w, r, 500, "failed to update installment group", err)
 		return
 	}
@@ -634,4 +659,129 @@ func (h *Handler) DeleteInstallmentGroup(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) CreateTransactionAggregate(w http.ResponseWriter, r *http.Request) {
+	req, err := httpx.DecodeJSON[TransactionAggregateReq](r.Body)
+	if err != nil {
+		httpx.WriteError(w, r, 400, "invalid request", err)
+		return
+	}
+
+	err = h.service.CreateTransactionAggregate(r.Context(), req)
+	if err != nil {
+		if errors.Is(err, ErrInvalidField) {
+			httpx.WriteError(w, r, 400, "invalid field", err)
+			return
+		}
+		httpx.WriteError(w, r, 500, "failed to create transaction aggregate", err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) ListTransactionsAggregate(w http.ResponseWriter, r *http.Request) {
+	params := make(FilterParams)
+	for k, v := range r.URL.Query() {
+		params[k] = v[0]
+	}
+
+	filter, err := NewFilter(params)
+	if err != nil {
+		httpx.WriteError(w, r, 400, err.Error(), nil)
+		return
+	}
+
+	rows, err := h.service.ListTransactionsAggregate(r.Context(), filter)
+	if err != nil {
+		httpx.WriteError(w, r, 500, "failed to list transaction aggregates", err)
+		return
+	}
+	httpx.WriteJSON(w, 200, rows)
+}
+
+func (h *Handler) GetTransactionAggregate(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		httpx.WriteError(w, r, 400, "id required", nil)
+		return
+	}
+
+	row, err := h.service.GetTransactionAggregate(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			httpx.WriteError(w, r, 404, "transaction aggregate not found", err)
+			return
+		}
+		httpx.WriteError(w, r, 500, "failed to get transaction aggregate", err)
+		return
+	}
+	httpx.WriteJSON(w, 200, row)
+}
+
+func (h *Handler) UpdateTransactionAggregate(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		httpx.WriteError(w, r, 400, "id required", nil)
+		return
+	}
+
+	req, err := httpx.DecodeJSON[TransactionAggregateReq](r.Body)
+	if err != nil {
+		httpx.WriteError(w, r, 400, "invalid request", err)
+		return
+	}
+
+	err = h.service.UpdateTransactionAggregate(r.Context(), id, req)
+	if err != nil {
+		if errors.Is(err, ErrInvalidField) {
+			httpx.WriteError(w, r, 400, "invalid field", err)
+			return
+		}
+		httpx.WriteError(w, r, 500, "failed to update transaction aggregate", err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) DeleteTransactionAggregate(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		httpx.WriteError(w, r, 400, "id required", nil)
+		return
+	}
+
+	err := h.service.DeleteTransactionAggregate(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			httpx.WriteError(w, r, 404, "transaction aggregate not found", err)
+			return
+		}
+		httpx.WriteError(w, r, 500, "failed to delete transaction aggregate", err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) CancelInstallments(w http.ResponseWriter, r *http.Request) {
+	req, err := httpx.DecodeJSON[CancelInstallmentsReq](r.Body)
+	if err != nil {
+		httpx.WriteError(w, r, 400, "invalid request", err)
+		return
+	}
+
+	err = h.service.CancelInstallments(r.Context(), req)
+	if err != nil {
+		if errors.Is(err, ErrInvalidField) {
+			httpx.WriteError(w, r, 400, "invalid field", err)
+			return
+		}
+		if errors.Is(err, ErrNotFound) {
+			httpx.WriteError(w, r, 404, "not found", err)
+			return
+		}
+		httpx.WriteError(w, r, 500, "failed to cancel installments", err)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
 }

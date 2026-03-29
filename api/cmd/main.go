@@ -46,6 +46,10 @@ func run() error {
 	financeRepo := finance.NewSQLiteRepo(dbConn.DB)
 	financeService := finance.NewService(clock, financeRepo)
 
+	if err := financeService.SeedDefaults(context.Background()); err != nil {
+		slog.Warn("seed.error", "err", err)
+	}
+
 	services := &transport.Services{
 		Service: financeService,
 	}

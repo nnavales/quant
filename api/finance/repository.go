@@ -3,6 +3,8 @@ package finance
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"time"
 )
 
 type SQLiteRepo struct {
@@ -11,23 +13,6 @@ type SQLiteRepo struct {
 
 func NewSQLiteRepo(db *sql.DB) *SQLiteRepo {
 	return &SQLiteRepo{db: db}
-}
-
-func (r *SQLiteRepo) CreateTransaction(ctx context.Context, t Transaction) (*Transaction, error) {
-	_, err := r.db.ExecContext(ctx, QueryCreateTransaction,
-		t.ID,
-		t.Date,
-		t.Description,
-		t.Type,
-		t.Frequency,
-		t.InstallmentGroupID,
-		t.InstallmentNumber,
-		t.CreatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &t, nil
 }
 
 func (r *SQLiteRepo) GetTransactionByID(ctx context.Context, id string) (*Transaction, error) {
@@ -118,33 +103,16 @@ func (r *SQLiteRepo) DeleteTransaction(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *SQLiteRepo) CreateEntry(ctx context.Context, e Entry) (*Entry, error) {
-	_, err := r.db.ExecContext(ctx, QueryCreateEntry,
-		e.ID,
-		e.TransactionID,
-		e.AccountID,
-		e.AmountARS,
-		e.AmountUSD,
-		e.ExchangeRate,
-		e.CategoryID,
-		e.SubcategoryID,
-		e.CreatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &e, nil
-}
-
 func (r *SQLiteRepo) GetEntryByID(ctx context.Context, id string) (*Entry, error) {
 	var e Entry
 
 	err := r.db.QueryRowContext(ctx, QueryGetEntryByID, id).Scan(
 		&e.ID,
 		&e.TransactionID,
+		&e.ChannelID,
 		&e.AccountID,
-		&e.AmountARS,
-		&e.AmountUSD,
+		&e.Amount,
+		&e.Currency,
 		&e.ExchangeRate,
 		&e.CategoryID,
 		&e.SubcategoryID,
@@ -176,9 +144,10 @@ func (r *SQLiteRepo) ListEntries(ctx context.Context) ([]Entry, error) {
 		err := rows.Scan(
 			&e.ID,
 			&e.TransactionID,
+			&e.ChannelID,
 			&e.AccountID,
-			&e.AmountARS,
-			&e.AmountUSD,
+			&e.Amount,
+			&e.Currency,
 			&e.ExchangeRate,
 			&e.CategoryID,
 			&e.SubcategoryID,
@@ -198,9 +167,10 @@ func (r *SQLiteRepo) ListEntries(ctx context.Context) ([]Entry, error) {
 func (r *SQLiteRepo) UpdateEntry(ctx context.Context, e Entry) (*Entry, error) {
 	_, err := r.db.ExecContext(ctx, QueryUpdateEntry,
 		e.TransactionID,
+		e.ChannelID,
 		e.AccountID,
-		e.AmountARS,
-		e.AmountUSD,
+		e.Amount,
+		e.Currency,
 		e.ExchangeRate,
 		e.CategoryID,
 		e.SubcategoryID,
@@ -286,6 +256,63 @@ func (r *SQLiteRepo) ListChannels(ctx context.Context) ([]Channel, error) {
 		channels = append(channels, c)
 	}
 	return channels, rows.Err()
+}
+
+func (r *SQLiteRepo) ListChannelsWithAccounts(ctx context.Context) ([]ChannelWithAccounts, error) {
+	rows, err := r.db.QueryContext(ctx, QueryListChannelsWithAccounts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []ChannelWithAccounts
+	var lastID string
+
+	for rows.Next() {
+		var ch Channel
+		var aID, aName, aInstrument, aLastFour *string
+		var aCreatedAt, aUpdatedAt, aDeletedAt *time.Time
+
+		err := rows.Scan(
+			&ch.ID,
+			&ch.Name,
+			&ch.CreatedAt,
+			&ch.UpdatedAt,
+			&ch.DeletedAt,
+			&aID,
+			&aName,
+			&aInstrument,
+			&aLastFour,
+			&aCreatedAt,
+			&aUpdatedAt,
+			&aDeletedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if ch.ID != lastID {
+			result = append(result, ChannelWithAccounts{
+				Channel: ch,
+			})
+			lastID = ch.ID
+		}
+
+		if aID != nil {
+			acc := Account{
+				ID:         *aID,
+				ChannelID:  ch.ID,
+				Name:       *aName,
+				Instrument: *aInstrument,
+				LastFour:   aLastFour,
+				CreatedAt:  *aCreatedAt,
+				UpdatedAt:  aUpdatedAt,
+				DeletedAt:  aDeletedAt,
+			}
+			result[len(result)-1].Accounts = append(result[len(result)-1].Accounts, acc)
+		}
+	}
+	return result, rows.Err()
 }
 
 func (r *SQLiteRepo) UpdateChannel(ctx context.Context, c Channel) (*Channel, error) {
@@ -457,7 +484,6 @@ func (r *SQLiteRepo) ListCategories(ctx context.Context) ([]Category, error) {
 	var categories []Category
 	for rows.Next() {
 		var c Category
-
 		err := rows.Scan(
 			&c.ID,
 			&c.Name,
@@ -472,6 +498,60 @@ func (r *SQLiteRepo) ListCategories(ctx context.Context) ([]Category, error) {
 		categories = append(categories, c)
 	}
 	return categories, rows.Err()
+}
+
+func (r *SQLiteRepo) ListCategoriesWithSubcategories(ctx context.Context) ([]CategoryWithSubcategories, error) {
+	rows, err := r.db.QueryContext(ctx, QueryListCategoriesWithSubcategories)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []CategoryWithSubcategories
+	var lastID string
+
+	for rows.Next() {
+		var c Category
+		var sID, sName *string
+		var sCreatedAt, sUpdatedAt, sDeletedAt *time.Time
+
+		err := rows.Scan(
+			&c.ID,
+			&c.Name,
+			&c.CreatedAt,
+			&c.UpdatedAt,
+			&c.DeletedAt,
+			&sID,
+			&sName,
+			&sCreatedAt,
+			&sUpdatedAt,
+			&sDeletedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if c.ID != lastID {
+			result = append(result, CategoryWithSubcategories{
+				Category:      c,
+				Subcategories: []Subcategory{},
+			})
+			lastID = c.ID
+		}
+
+		if sID != nil {
+			sub := Subcategory{
+				ID:         *sID,
+				CategoryID: c.ID,
+				Name:       *sName,
+				CreatedAt:  *sCreatedAt,
+				UpdatedAt:  sUpdatedAt,
+				DeletedAt:  sDeletedAt,
+			}
+			result[len(result)-1].Subcategories = append(result[len(result)-1].Subcategories, sub)
+		}
+	}
+	return result, rows.Err()
 }
 
 func (r *SQLiteRepo) UpdateCategory(ctx context.Context, c Category) (*Category, error) {
@@ -593,19 +673,6 @@ func (r *SQLiteRepo) DeleteSubcategory(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *SQLiteRepo) CreateInstallmentGroup(ctx context.Context, ig InstallmentGroup) (*InstallmentGroup, error) {
-	_, err := r.db.ExecContext(ctx, QueryCreateInstallmentGroup,
-		ig.ID,
-		ig.TotalInstallments,
-		ig.StartDate,
-		ig.CreatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &ig, nil
-}
-
 func (r *SQLiteRepo) GetInstallmentGroupByID(ctx context.Context, id string) (*InstallmentGroup, error) {
 	var ig InstallmentGroup
 
@@ -682,4 +749,570 @@ func (r *SQLiteRepo) DeleteInstallmentGroup(ctx context.Context, id string) erro
 		return ErrNotFound
 	}
 	return nil
+}
+
+func (r *SQLiteRepo) CreateTransactionAggregate(ctx context.Context, agg TransactionAggregate) error {
+	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	if len(agg.Items) == 0 {
+		return fmt.Errorf("at least one item is required: %w", ErrInvalidField)
+	}
+
+	entry := agg.Items[0].Entry
+
+	if entry.AccountID != nil && *entry.AccountID != "" {
+		var account Account
+		err := tx.QueryRowContext(ctx, QueryGetAccountByID, *entry.AccountID).Scan(
+			&account.ID, &account.ChannelID, &account.Name, &account.Instrument, &account.LastFour, &account.CreatedAt, &account.UpdatedAt, &account.DeletedAt,
+		)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return fmt.Errorf("account not found: %w", ErrNotFound)
+			}
+			return err
+		}
+		if account.ChannelID != entry.ChannelID && entry.ChannelID != "" {
+			return fmt.Errorf("account does not belong to channel: %w", ErrInvalidField)
+		}
+	}
+
+	if entry.SubcategoryID != nil && *entry.SubcategoryID != "" {
+		var subcategory Subcategory
+		err := tx.QueryRowContext(ctx, QueryGetSubcategoryByID, *entry.SubcategoryID).Scan(
+			&subcategory.ID, &subcategory.CategoryID, &subcategory.Name, &subcategory.CreatedAt, &subcategory.UpdatedAt, &subcategory.DeletedAt,
+		)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return fmt.Errorf("subcategory not found: %w", ErrNotFound)
+			}
+			return err
+		}
+		if entry.CategoryID != nil && *entry.CategoryID != "" {
+			if subcategory.CategoryID != *entry.CategoryID {
+				return fmt.Errorf("subcategory does not belong to category: %w", ErrInvalidField)
+			}
+		}
+	}
+
+	if agg.Group != nil {
+		_, err := tx.ExecContext(ctx, QueryCreateInstallmentGroup,
+			agg.Group.ID,
+			agg.Group.TotalInstallments,
+			agg.Group.StartDate,
+			agg.Group.CreatedAt,
+		)
+		if err != nil {
+			return err
+		}
+
+		for _, i := range agg.Items {
+			_, err = tx.ExecContext(ctx, QueryCreateTransaction,
+				i.Transaction.ID,
+				i.Transaction.Date,
+				i.Transaction.Description,
+				i.Transaction.Type,
+				i.Transaction.Frequency,
+				i.Transaction.InstallmentGroupID,
+				i.Transaction.InstallmentNumber,
+				i.Transaction.CreatedAt,
+			)
+			if err != nil {
+				return err
+			}
+
+			_, err := tx.ExecContext(ctx, QueryCreateEntry,
+				i.Entry.ID,
+				i.Entry.TransactionID,
+				i.Entry.ChannelID,
+				i.Entry.AccountID,
+				i.Entry.Amount,
+				i.Entry.Currency,
+				i.Entry.ExchangeRate,
+				i.Entry.CategoryID,
+				i.Entry.SubcategoryID,
+				i.Entry.CreatedAt,
+			)
+			if err != nil {
+				return err
+			}
+		}
+
+	} else {
+		_, err = tx.ExecContext(ctx, QueryCreateTransaction,
+			agg.Items[0].Transaction.ID,
+			agg.Items[0].Transaction.Date,
+			agg.Items[0].Transaction.Description,
+			agg.Items[0].Transaction.Type,
+			agg.Items[0].Transaction.Frequency,
+			nil,
+			nil,
+			agg.Items[0].Transaction.CreatedAt,
+		)
+		if err != nil {
+			return err
+		}
+
+		_, err := tx.ExecContext(ctx, QueryCreateEntry,
+			agg.Items[0].Entry.ID,
+			agg.Items[0].Entry.TransactionID,
+			agg.Items[0].Entry.ChannelID,
+			agg.Items[0].Entry.AccountID,
+			agg.Items[0].Entry.Amount,
+			agg.Items[0].Entry.Currency,
+			agg.Items[0].Entry.ExchangeRate,
+			agg.Items[0].Entry.CategoryID,
+			agg.Items[0].Entry.SubcategoryID,
+			agg.Items[0].Entry.CreatedAt,
+		)
+		if err != nil {
+			return err
+		}
+
+	}
+
+	return tx.Commit()
+}
+
+func (r *SQLiteRepo) ListTransactionsAggregate(ctx context.Context, filter *Filter) ([]TransactionRowDTO, error) {
+	query := BuildListTransactionsQuery(filter)
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var transactions []TransactionRowDTO
+	for rows.Next() {
+		var t TransactionRowDTO
+		var amountCents int64
+		err := rows.Scan(
+			&t.ID,
+			&t.Date,
+			&t.Description,
+			&t.Type,
+			&t.Frequency,
+			&t.EntryID,
+			&amountCents,
+			&t.Currency,
+			&t.ExchangeRate,
+			&t.CategoryID,
+			&t.SubcategoryID,
+			&t.ChannelID,
+			&t.AccountID,
+			&t.CategoryName,
+			&t.SubcategoryName,
+			&t.AccountName,
+			&t.ChannelName,
+			&t.InstallmentNumber,
+			&t.TotalInstallments,
+			&t.InstallmentGroupID,
+		)
+		if err != nil {
+			return nil, err
+		}
+		t.Amount = FormatAmount(amountCents)
+		transactions = append(transactions, t)
+	}
+	return transactions, rows.Err()
+}
+
+func (r *SQLiteRepo) GetTransactionAggregate(ctx context.Context, id string) (*TransactionRowDTO, error) {
+	var t TransactionRowDTO
+	var amountCents int64
+	err := r.db.QueryRowContext(ctx, QueryGetTransactionDTOByID, id).Scan(
+		&t.ID,
+		&t.Date,
+		&t.Description,
+		&t.Type,
+		&t.Frequency,
+		&t.EntryID,
+		&amountCents,
+		&t.Currency,
+		&t.ExchangeRate,
+		&t.CategoryID,
+		&t.SubcategoryID,
+		&t.ChannelID,
+		&t.AccountID,
+		&t.CategoryName,
+		&t.SubcategoryName,
+		&t.AccountName,
+		&t.ChannelName,
+		&t.InstallmentNumber,
+		&t.TotalInstallments,
+		&t.InstallmentGroupID,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	t.Amount = FormatAmount(amountCents)
+
+	return &t, nil
+
+}
+
+func (r *SQLiteRepo) GetTransactionsByInstallmentGroup(ctx context.Context, groupID string, fromInstallment int) ([]TransactionRowDTO, error) {
+	rows, err := r.db.QueryContext(ctx, QueryGetTransactionsByInstallmentGroup, groupID, fromInstallment)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var transactions []TransactionRowDTO
+	for rows.Next() {
+		var t TransactionRowDTO
+		var amountCents int64
+		err := rows.Scan(
+			&t.ID,
+			&t.Date,
+			&t.Description,
+			&t.Type,
+			&t.Frequency,
+			&t.EntryID,
+			&amountCents,
+			&t.Currency,
+			&t.ExchangeRate,
+			&t.CategoryID,
+			&t.SubcategoryID,
+			&t.ChannelID,
+			&t.AccountID,
+			&t.CategoryName,
+			&t.SubcategoryName,
+			&t.AccountName,
+			&t.ChannelName,
+			&t.InstallmentNumber,
+			&t.TotalInstallments,
+			&t.InstallmentGroupID,
+		)
+		if err != nil {
+			return nil, err
+		}
+		t.Amount = FormatAmount(amountCents)
+		transactions = append(transactions, t)
+	}
+	return transactions, rows.Err()
+}
+
+func (r *SQLiteRepo) DeleteTransactionAggregate(ctx context.Context, id string) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+	var t Transaction
+	err = tx.QueryRowContext(ctx, QueryGetTransactionByID, id).Scan(
+		&t.ID,
+		&t.Date,
+		&t.Description,
+		&t.Type,
+		&t.Frequency,
+		&t.InstallmentGroupID,
+		&t.InstallmentNumber,
+		&t.CreatedAt,
+		&t.UpdatedAt,
+		&t.DeletedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return ErrNotFound
+		}
+		return err
+	}
+
+	if t.InstallmentGroupID != nil {
+		result, err := tx.ExecContext(ctx, QueryDeleteInstallmentGroup, t.InstallmentGroupID)
+		if err != nil {
+			return err
+		}
+		rows, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if rows == 0 {
+			return ErrNotFound
+		}
+	} else {
+		result, err := tx.ExecContext(ctx, QueryDeleteTransaction, t.ID)
+		if err != nil {
+			return err
+		}
+		rows, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if rows == 0 {
+			return ErrNotFound
+		}
+	}
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (r *SQLiteRepo) DeleteTransactionsByInstallmentGroup(ctx context.Context, groupID string, fromInstallment int) error {
+	_, err := r.db.ExecContext(ctx, QueryDeleteTransactionsByInstallmentGroup, groupID, fromInstallment)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *SQLiteRepo) CancelInstallments(ctx context.Context, agg TransactionAggregate, groupID string, fromInstallment int) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.QueryContext(ctx, QueryGetTransactionsByInstallmentGroup, groupID, fromInstallment)
+	if err != nil {
+		return err
+	}
+
+	var txIDs []string
+	var totalAmount int64
+	for rows.Next() {
+		var t TransactionRowDTO
+		var amountCents int64
+		err := rows.Scan(
+			&t.ID,
+			&t.Date,
+			&t.Description,
+			&t.Type,
+			&t.Frequency,
+			&t.EntryID,
+			&amountCents,
+			&t.Currency,
+			&t.ExchangeRate,
+			&t.CategoryID,
+			&t.SubcategoryID,
+			&t.ChannelID,
+			&t.AccountID,
+			&t.CategoryName,
+			&t.SubcategoryName,
+			&t.AccountName,
+			&t.ChannelName,
+			&t.InstallmentNumber,
+			&t.TotalInstallments,
+			&t.InstallmentGroupID,
+		)
+		if err != nil {
+			rows.Close()
+			return err
+		}
+		txIDs = append(txIDs, t.ID)
+		txIDs = append(txIDs, t.EntryID)
+		totalAmount += amountCents
+	}
+	rows.Close()
+
+	if len(txIDs) == 0 {
+		return ErrNotFound
+	}
+
+	for _, item := range agg.Items {
+		_, err = tx.ExecContext(ctx, QueryCreateTransaction,
+			item.Transaction.ID,
+			item.Transaction.Date,
+			item.Transaction.Description,
+			item.Transaction.Type,
+			item.Transaction.Frequency,
+			item.Transaction.InstallmentGroupID,
+			item.Transaction.InstallmentNumber,
+			item.Transaction.CreatedAt,
+		)
+		if err != nil {
+			return err
+		}
+
+		_, err = tx.ExecContext(ctx, QueryCreateEntry,
+			item.Entry.ID,
+			item.Entry.TransactionID,
+			item.Entry.ChannelID,
+			item.Entry.AccountID,
+			totalAmount,
+			item.Entry.Currency,
+			item.Entry.ExchangeRate,
+			item.Entry.CategoryID,
+			item.Entry.SubcategoryID,
+			item.Entry.CreatedAt,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	for i := 0; i < len(txIDs); i += 2 {
+		_, err = tx.ExecContext(ctx, QueryDeleteTransaction, txIDs[i])
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+func (r *SQLiteRepo) UpdateTransactionAggregate(ctx context.Context, id string, agg TransactionAggregate) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var t Transaction
+	err = tx.QueryRowContext(ctx, QueryGetTransactionByID, id).Scan(
+		&t.ID,
+		&t.Date,
+		&t.Description,
+		&t.Type,
+		&t.Frequency,
+		&t.InstallmentGroupID,
+		&t.InstallmentNumber,
+		&t.CreatedAt,
+		&t.UpdatedAt,
+		&t.DeletedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return ErrNotFound
+		}
+		return err
+	}
+
+	if len(agg.Items) == 0 {
+		return fmt.Errorf("at least one item is required: %w", ErrInvalidField)
+	}
+
+	entry := agg.Items[0].Entry
+
+	if entry.AccountID != nil && *entry.AccountID != "" {
+		var account Account
+		err := tx.QueryRowContext(ctx, QueryGetAccountByID, *entry.AccountID).Scan(
+			&account.ID, &account.ChannelID, &account.Name, &account.Instrument, &account.LastFour, &account.CreatedAt, &account.UpdatedAt, &account.DeletedAt,
+		)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return fmt.Errorf("account not found: %w", ErrNotFound)
+			}
+			return err
+		}
+		if account.ChannelID != entry.ChannelID && entry.ChannelID != "" {
+			return fmt.Errorf("account does not belong to channel: %w", ErrInvalidField)
+		}
+	}
+
+	if entry.SubcategoryID != nil && *entry.SubcategoryID != "" {
+		var subcategory Subcategory
+		err := tx.QueryRowContext(ctx, QueryGetSubcategoryByID, *entry.SubcategoryID).Scan(
+			&subcategory.ID, &subcategory.CategoryID, &subcategory.Name, &subcategory.CreatedAt, &subcategory.UpdatedAt, &subcategory.DeletedAt,
+		)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return fmt.Errorf("subcategory not found: %w", ErrNotFound)
+			}
+			return err
+		}
+		if entry.CategoryID != nil && *entry.CategoryID != "" {
+			if subcategory.CategoryID != *entry.CategoryID {
+				return fmt.Errorf("subcategory does not belong to category: %w", ErrInvalidField)
+			}
+		}
+	}
+
+	if t.InstallmentGroupID != nil {
+		_, err = tx.ExecContext(ctx, QueryDeleteInstallmentGroup, *t.InstallmentGroupID)
+	} else {
+		_, err = tx.ExecContext(ctx, QueryDeleteTransaction, t.ID)
+	}
+	if err != nil {
+		return err
+	}
+
+	if agg.Group != nil {
+		_, err := tx.ExecContext(ctx, QueryCreateInstallmentGroup,
+			agg.Group.ID,
+			agg.Group.TotalInstallments,
+			agg.Group.StartDate,
+			agg.Group.CreatedAt,
+		)
+		if err != nil {
+			return err
+		}
+
+		for _, i := range agg.Items {
+			_, err = tx.ExecContext(ctx, QueryCreateTransaction,
+				i.Transaction.ID,
+				i.Transaction.Date,
+				i.Transaction.Description,
+				i.Transaction.Type,
+				i.Transaction.Frequency,
+				i.Transaction.InstallmentGroupID,
+				i.Transaction.InstallmentNumber,
+				i.Transaction.CreatedAt,
+			)
+			if err != nil {
+				return err
+			}
+
+			_, err = tx.ExecContext(ctx, QueryCreateEntry,
+				i.Entry.ID,
+				i.Transaction.ID,
+				i.Entry.ChannelID,
+				i.Entry.AccountID,
+				i.Entry.Amount,
+				i.Entry.Currency,
+				i.Entry.ExchangeRate,
+				i.Entry.CategoryID,
+				i.Entry.SubcategoryID,
+				i.Entry.CreatedAt,
+			)
+			if err != nil {
+				return err
+			}
+		}
+
+	} else {
+		i := agg.Items[0]
+		_, err = tx.ExecContext(ctx, QueryCreateTransaction,
+			i.Transaction.ID,
+			i.Transaction.Date,
+			i.Transaction.Description,
+			i.Transaction.Type,
+			i.Transaction.Frequency,
+			nil,
+			nil,
+			i.Transaction.CreatedAt,
+		)
+		if err != nil {
+			return err
+		}
+
+		_, err = tx.ExecContext(ctx, QueryCreateEntry,
+			i.Entry.ID,
+			i.Transaction.ID,
+			i.Entry.ChannelID,
+			i.Entry.AccountID,
+			i.Entry.Amount,
+			i.Entry.Currency,
+			i.Entry.ExchangeRate,
+			i.Entry.CategoryID,
+			i.Entry.SubcategoryID,
+			i.Entry.CreatedAt,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }

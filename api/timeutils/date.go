@@ -18,6 +18,17 @@ func NewDate(t time.Time) Date {
 	}
 }
 
+func (d Date) AddMonths(n int) (Date, error) {
+	t, err := time.Parse("2006-01-02", d.String())
+	if err != nil {
+		return Date{}, err
+	}
+
+	t = t.AddDate(0, n, 0)
+
+	return NewDate(t), nil
+}
+
 func ParseDate(s string) (Date, error) {
 	t, err := time.Parse("2006-01-02", s)
 	if err != nil {

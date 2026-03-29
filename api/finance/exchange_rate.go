@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+var url = "https://api.comparadolar.ar/usd"
+
 type Dolar struct {
 	Type      string    `json:"casa"`
 	Buy       float64   `json:"compra"`

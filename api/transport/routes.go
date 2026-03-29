@@ -11,13 +11,11 @@ func addRoutes(mux *http.ServeMux, h *finance.Handler) {
 	mux.HandleFunc("GET /healthz", handlerHealthz)
 	mux.HandleFunc("GET /rates", h.GetRates)
 
-	mux.HandleFunc("POST /transactions", h.CreateTransaction)
 	mux.HandleFunc("GET /transactions/{id}", h.GetTransaction)
 	mux.HandleFunc("GET /transactions", h.ListTransactions)
 	mux.HandleFunc("PATCH /transactions/{id}", h.UpdateTransaction)
 	mux.HandleFunc("DELETE /transactions/{id}", h.DeleteTransaction)
 
-	mux.HandleFunc("POST /entries", h.CreateEntry)
 	mux.HandleFunc("GET /entries/{id}", h.GetEntry)
 	mux.HandleFunc("GET /entries", h.ListEntries)
 	mux.HandleFunc("PATCH /entries/{id}", h.UpdateEntry)
@@ -37,7 +35,7 @@ func addRoutes(mux *http.ServeMux, h *finance.Handler) {
 
 	mux.HandleFunc("POST /categories", h.CreateCategory)
 	mux.HandleFunc("GET /categories/{id}", h.GetCategory)
-	mux.HandleFunc("GET /categories", h.ListCategories)
+	mux.HandleFunc("GET /categories", h.ListCategoriesWithSubcategories)
 	mux.HandleFunc("PATCH /categories/{id}", h.UpdateCategory)
 	mux.HandleFunc("DELETE /categories/{id}", h.DeleteCategory)
 
@@ -47,11 +45,17 @@ func addRoutes(mux *http.ServeMux, h *finance.Handler) {
 	mux.HandleFunc("PATCH /subcategories/{id}", h.UpdateSubcategory)
 	mux.HandleFunc("DELETE /subcategories/{id}", h.DeleteSubcategory)
 
-	mux.HandleFunc("POST /installment-groups", h.CreateInstallmentGroup)
 	mux.HandleFunc("GET /installment-groups/{id}", h.GetInstallmentGroup)
 	mux.HandleFunc("GET /installment-groups", h.ListInstallmentGroups)
 	mux.HandleFunc("PATCH /installment-groups/{id}", h.UpdateInstallmentGroup)
 	mux.HandleFunc("DELETE /installment-groups/{id}", h.DeleteInstallmentGroup)
+
+	mux.HandleFunc("POST /transaction-aggregates", h.CreateTransactionAggregate)
+	mux.HandleFunc("GET /transaction-aggregates", h.ListTransactionsAggregate)
+	mux.HandleFunc("GET /transaction-aggregates/{id}", h.GetTransactionAggregate)
+	mux.HandleFunc("PATCH /transaction-aggregates/{id}", h.UpdateTransactionAggregate)
+	mux.HandleFunc("DELETE /transaction-aggregates/{id}", h.DeleteTransactionAggregate)
+	mux.HandleFunc("POST /transaction-aggregates/cancel-installments", h.CancelInstallments)
 }
 
 func handlerHealthz(w http.ResponseWriter, r *http.Request) {

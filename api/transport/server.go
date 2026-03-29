@@ -28,6 +28,7 @@ func NewServer(cfg config.Config, services *Services) *Server {
 	addRoutes(api, financeHandler)
 
 	var handler http.Handler = api
+	handler = middleware.CORS(handler)
 	handler = middleware.Logging(handler)
 	handler = middleware.Recover(handler)
 

@@ -19,30 +19,6 @@ func NewService(clock timeutils.Clock, repo Repository) *Service {
 	}
 }
 
-func (s *Service) CreateTransaction(ctx context.Context, req TransactionReq) (*Transaction, error) {
-	now := s.clock.Now()
-	t := NewTransaction(now, *req.Date, *req.Type)
-
-	if req.Description != nil {
-		t.SetDescription(*req.Description)
-	}
-	if req.Frequency != nil {
-		t.SetFrequency(*req.Frequency)
-	}
-	if req.InstallmentGroupID != nil {
-		t.SetInstallmentGroupID(*req.InstallmentGroupID)
-	}
-	if req.InstallmentNumber != nil {
-		t.SetInstallmentNumber(*req.InstallmentNumber)
-	}
-
-	created, err := s.repo.CreateTransaction(ctx, *t)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create transaction: %w", err)
-	}
-	return created, nil
-}
-
 func (s *Service) GetTransaction(ctx context.Context, id string) (*Transaction, error) {
 	tx, err := s.repo.GetTransactionByID(ctx, id)
 	if err != nil {
@@ -90,6 +66,10 @@ func (s *Service) UpdateTransaction(ctx context.Context, id string, req Transact
 
 	t.Touch(now)
 
+	if err := t.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid transaction: %w", err)
+	}
+
 	updated, err := s.repo.UpdateTransaction(ctx, *t)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update transaction: %w", err)
@@ -103,58 +83,6 @@ func (s *Service) DeleteTransaction(ctx context.Context, id string) error {
 		return fmt.Errorf("failed to delete transaction: %w", err)
 	}
 	return nil
-}
-
-func (s *Service) CreateEntry(ctx context.Context, req EntryReq) (*Entry, error) {
-	if req.AccountID == nil || req.TransactionID == nil {
-		return nil, fmt.Errorf("account_id and transaction_id are required")
-	}
-
-	now := s.clock.Now()
-	var amountARS, amountUSD int64
-	var exchangeRate float64
-
-	if req.ExchangeRate == nil {
-		dolars, err := GetExchangeRate()
-		if err != nil {
-			return nil, err
-		}
-		rates := ToRateMap(dolars)
-		officialRate, ok := rates.Get(RateOficial)
-		if !ok {
-			return nil, fmt.Errorf("exchange rate %v: not found", RateOficial)
-		}
-		exchangeRate = officialRate.Sell
-	} else {
-		exchangeRate = *req.ExchangeRate
-	}
-
-	if req.Currency != nil && req.Amount != nil {
-		switch *req.Currency {
-		case CurrencyARS:
-			amountARS = *req.Amount
-			amountUSD = *req.Amount / int64(exchangeRate)
-
-		case CurrencyUSD:
-			amountUSD = *req.Amount
-			amountARS = *req.Amount * int64(exchangeRate)
-		}
-	}
-
-	e := NewEntry(now, *req.TransactionID, *req.AccountID, amountARS, amountUSD, exchangeRate)
-
-	if req.CategoryID != nil {
-		e.SetCategoryID(*req.CategoryID)
-	}
-	if req.SubcategoryID != nil {
-		e.SetSubcategoryID(*req.SubcategoryID)
-	}
-
-	created, err := s.repo.CreateEntry(ctx, *e)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create entry: %w", err)
-	}
-	return created, nil
 }
 
 func (s *Service) GetEntry(ctx context.Context, id string) (*Entry, error) {
@@ -182,15 +110,27 @@ func (s *Service) UpdateEntry(ctx context.Context, id string, req EntryReq) (*En
 	now := s.clock.Now()
 	e.Touch(now)
 
+	if req.ChannelID != nil {
+		e.ChannelID = *req.ChannelID
+	}
 	if req.AccountID != nil {
-		e.AccountID = *req.AccountID
+		e.AccountID = req.AccountID
 	}
 	if req.TransactionID != nil {
 		e.TransactionID = *req.TransactionID
 	}
 	if req.Amount != nil {
-		e.AmountARS = *req.Amount
+		amount, err := ParseAmountToCents(*req.Amount)
+		if err != nil {
+			return nil, fmt.Errorf("parsing failed: %w:  %w", err, ErrInvalidField)
+		}
+		e.Amount = amount
 	}
+
+	if req.Currency != nil {
+		e.Currency = *req.Currency
+	}
+
 	if req.ExchangeRate != nil {
 		e.ExchangeRate = *req.ExchangeRate
 	}
@@ -202,6 +142,10 @@ func (s *Service) UpdateEntry(ctx context.Context, id string, req EntryReq) (*En
 	}
 	if req.IsDeleted != nil {
 		e.SetDeleted(now, *req.IsDeleted)
+	}
+
+	if err := e.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid entry: %w", err)
 	}
 
 	updated, err := s.repo.UpdateEntry(ctx, *e)
@@ -227,6 +171,10 @@ func (s *Service) CreateChannel(ctx context.Context, req ChannelReq) (*Channel, 
 	now := s.clock.Now()
 	c := NewChannel(now, *req.Name)
 
+	if err := c.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid channel: %w", err)
+	}
+
 	created, err := s.repo.CreateChannel(ctx, *c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create channel: %w", err)
@@ -250,6 +198,14 @@ func (s *Service) ListChannels(ctx context.Context) ([]Channel, error) {
 	return channels, nil
 }
 
+func (s *Service) ListChannelsWithAccounts(ctx context.Context) ([]ChannelWithAccounts, error) {
+	channels, err := s.repo.ListChannelsWithAccounts(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list channels with accounts: %w", err)
+	}
+	return channels, nil
+}
+
 func (s *Service) UpdateChannel(ctx context.Context, id string, req ChannelReq) (*Channel, error) {
 	c, err := s.repo.GetChannelByID(ctx, id)
 	if err != nil {
@@ -264,6 +220,10 @@ func (s *Service) UpdateChannel(ctx context.Context, id string, req ChannelReq) 
 	}
 	if req.IsDeleted != nil {
 		c.SetDeleted(now, *req.IsDeleted)
+	}
+
+	if err := c.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid channel: %w", err)
 	}
 
 	updated, err := s.repo.UpdateChannel(ctx, *c)
@@ -291,6 +251,10 @@ func (s *Service) CreateAccount(ctx context.Context, req AccountReq) (*Account, 
 
 	if req.LastFour != nil {
 		a.SetLastFour(*req.LastFour)
+	}
+
+	if err := a.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid account: %w", err)
 	}
 
 	created, err := s.repo.CreateAccount(ctx, *a)
@@ -341,6 +305,10 @@ func (s *Service) UpdateAccount(ctx context.Context, id string, req AccountReq) 
 		a.SetDeleted(now, *req.IsDeleted)
 	}
 
+	if err := a.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid account: %w", err)
+	}
+
 	updated, err := s.repo.UpdateAccount(ctx, *a)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update account: %w", err)
@@ -363,6 +331,10 @@ func (s *Service) CreateCategory(ctx context.Context, req CategoryReq) (*Categor
 
 	now := s.clock.Now()
 	c := NewCategory(now, *req.Name)
+
+	if err := c.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid category: %w", err)
+	}
 
 	created, err := s.repo.CreateCategory(ctx, *c)
 	if err != nil {
@@ -387,6 +359,14 @@ func (s *Service) ListCategories(ctx context.Context) ([]Category, error) {
 	return categories, nil
 }
 
+func (s *Service) ListCategoriesWithSubcategories(ctx context.Context) ([]CategoryWithSubcategories, error) {
+	categories, err := s.repo.ListCategoriesWithSubcategories(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list categories with subcategories: %w", err)
+	}
+	return categories, nil
+}
+
 func (s *Service) UpdateCategory(ctx context.Context, id string, req CategoryReq) (*Category, error) {
 	c, err := s.repo.GetCategoryByID(ctx, id)
 	if err != nil {
@@ -401,6 +381,10 @@ func (s *Service) UpdateCategory(ctx context.Context, id string, req CategoryReq
 	}
 	if req.IsDeleted != nil {
 		c.SetDeleted(now, *req.IsDeleted)
+	}
+
+	if err := c.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid category: %w", err)
 	}
 
 	updated, err := s.repo.UpdateCategory(ctx, *c)
@@ -425,6 +409,10 @@ func (s *Service) CreateSubcategory(ctx context.Context, req SubcategoryReq) (*S
 
 	now := s.clock.Now()
 	sd := NewSubcategory(now, *req.CategoryID, *req.Name)
+
+	if err := sd.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid subcategory: %w", err)
+	}
 
 	created, err := s.repo.CreateSubcategory(ctx, *sd)
 	if err != nil {
@@ -468,6 +456,10 @@ func (s *Service) UpdateSubcategory(ctx context.Context, id string, req Subcateg
 		sd.SetDeleted(now, *req.IsDeleted)
 	}
 
+	if err := sd.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid subcategory: %w", err)
+	}
+
 	updated, err := s.repo.UpdateSubcategory(ctx, *sd)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update subcategory: %w", err)
@@ -481,21 +473,6 @@ func (s *Service) DeleteSubcategory(ctx context.Context, id string) error {
 		return fmt.Errorf("failed to delete subcategory: %w", err)
 	}
 	return nil
-}
-
-func (s *Service) CreateInstallmentGroup(ctx context.Context, req InstallmentGroupReq) (*InstallmentGroup, error) {
-	if req.TotalInstallments == nil || req.StartDate == nil {
-		return nil, fmt.Errorf("total_installments and start_date are required")
-	}
-
-	now := s.clock.Now()
-	ig := NewInstallmentGroup(now, *req.TotalInstallments, *req.StartDate)
-
-	created, err := s.repo.CreateInstallmentGroup(ctx, *ig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create installment group: %w", err)
-	}
-	return created, nil
 }
 
 func (s *Service) GetInstallmentGroup(ctx context.Context, id string) (*InstallmentGroup, error) {
@@ -532,6 +509,10 @@ func (s *Service) UpdateInstallmentGroup(ctx context.Context, id string, req Ins
 	}
 	ig.Touch(now)
 
+	if err := ig.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid installment group: %w", err)
+	}
+
 	updated, err := s.repo.UpdateInstallmentGroup(ctx, *ig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update installment group: %w", err)
@@ -544,5 +525,336 @@ func (s *Service) DeleteInstallmentGroup(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("failed to delete installment group: %w", err)
 	}
+	return nil
+}
+
+func (s *Service) CreateTransactionAggregate(ctx context.Context, req TransactionAggregateReq) error {
+	now := s.clock.Now()
+
+	if req.Amount == "" {
+		return fmt.Errorf("amount is required: %w", ErrInvalidField)
+	}
+	if req.ChannelID == "" {
+		return fmt.Errorf("channel_id is required: %w", ErrInvalidField)
+	}
+	if req.Currency == "" {
+		return fmt.Errorf("currency is required: %w", ErrInvalidField)
+	}
+
+	installmentCount := 1
+	if req.InstallmentNumber != nil && *req.InstallmentNumber > 0 {
+		installmentCount = *req.InstallmentNumber
+	}
+
+	var group *InstallmentGroup
+	if installmentCount > 1 {
+		group = NewInstallmentGroup(now, installmentCount, req.Date)
+		if err := group.Validate(); err != nil {
+			return fmt.Errorf("invalid installment group: %w", err)
+		}
+	}
+
+	items := make([]struct {
+		Transaction Transaction
+		Entry       Entry
+	}, 0, installmentCount)
+
+	totalAmount, err := ParseAmountToCents(req.Amount)
+	if err != nil {
+		return fmt.Errorf("parsing failed: %w: %w", err, ErrInvalidField)
+	}
+
+	baseAmount := totalAmount / int64(installmentCount)
+	remainder := totalAmount % int64(installmentCount)
+
+	for i := 1; i <= installmentCount; i++ {
+		installmentNum := i
+
+		txDate := req.Date
+		if i > 1 {
+			txDate, err = req.Date.AddMonths(i - 1)
+			if err != nil {
+				return fmt.Errorf("failed to calculate installment date: %w", err)
+			}
+		}
+
+		tx := NewTransaction(now, txDate, req.Type)
+
+		if req.Description != "" {
+			tx.SetDescription(req.Description)
+		}
+		if req.Frequency != "" {
+			tx.SetFrequency(req.Frequency)
+		}
+		if group != nil {
+			tx.SetInstallmentGroupID(group.ID)
+			tx.SetInstallmentNumber(installmentNum)
+		}
+
+		if err := tx.Validate(); err != nil {
+			return fmt.Errorf("invalid transaction: %w", err)
+		}
+
+		amount := baseAmount
+		if i == installmentCount {
+			amount += remainder
+		}
+
+		var exchangeRate float64
+		if req.ExchangeRate != nil && *req.ExchangeRate > 0 {
+			exchangeRate = *req.ExchangeRate
+		} else {
+			dolars, err := GetExchangeRate()
+			if err != nil {
+				return err
+			}
+			rates := ToRateMap(dolars)
+			rate, ok := rates.Get(RateOficial)
+			if !ok {
+				return fmt.Errorf("unable to get oficial dolar rate")
+			}
+			exchangeRate = rate.Buy
+		}
+
+		entry := NewEntry(now, tx.ID, req.ChannelID, amount, req.Currency, exchangeRate)
+		if req.CategoryID != "" {
+			entry.SetCategoryID(req.CategoryID)
+		}
+		if req.SubcategoryID != "" {
+			entry.SetSubcategoryID(req.SubcategoryID)
+		}
+		if req.AccountID != "" {
+			entry.SetAccountID(req.AccountID)
+		}
+
+		if err := entry.Validate(); err != nil {
+			return fmt.Errorf("invalid entry: %w", err)
+		}
+
+		items = append(items, struct {
+			Transaction Transaction
+			Entry       Entry
+		}{
+			Transaction: *tx,
+			Entry:       *entry,
+		})
+	}
+
+	agg := TransactionAggregate{
+		Group: group,
+		Items: items,
+	}
+
+	if err := s.repo.CreateTransactionAggregate(ctx, agg); err != nil {
+		return fmt.Errorf("failed to create transaction aggregate: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Service) ListTransactionsAggregate(ctx context.Context, filter *Filter) ([]TransactionRowDTO, error) {
+	rows, err := s.repo.ListTransactionsAggregate(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list transaction aggregates: %w", err)
+	}
+	return rows, nil
+}
+
+func (s *Service) GetTransactionAggregate(ctx context.Context, id string) (*TransactionRowDTO, error) {
+	row, err := s.repo.GetTransactionAggregate(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transaction aggregate: %w", err)
+	}
+	return row, nil
+}
+
+func (s *Service) DeleteTransactionAggregate(ctx context.Context, id string) error {
+	if err := s.repo.DeleteTransactionAggregate(ctx, id); err != nil {
+		return fmt.Errorf("failed to delete transaction aggregate: %w", err)
+	}
+	return nil
+}
+
+func (s *Service) UpdateTransactionAggregate(ctx context.Context, id string, req TransactionAggregateReq) error {
+	now := s.clock.Now()
+
+	if req.Amount == "" {
+		return fmt.Errorf("amount is required: %w", ErrInvalidField)
+	}
+	if req.ChannelID == "" {
+		return fmt.Errorf("channel_id is required: %w", ErrInvalidField)
+	}
+	if req.Currency == "" {
+		return fmt.Errorf("currency is required: %w", ErrInvalidField)
+	}
+
+	installmentCount := 1
+	if req.InstallmentNumber != nil && *req.InstallmentNumber > 0 {
+		installmentCount = *req.InstallmentNumber
+	}
+
+	var group *InstallmentGroup
+	if installmentCount > 1 {
+		group = NewInstallmentGroup(now, installmentCount, req.Date)
+		if err := group.Validate(); err != nil {
+			return fmt.Errorf("invalid installment group: %w", err)
+		}
+	}
+
+	items := make([]struct {
+		Transaction Transaction
+		Entry       Entry
+	}, 0, installmentCount)
+
+	totalAmount, err := ParseAmountToCents(req.Amount)
+	if err != nil {
+		return fmt.Errorf("parsing failed: %w: %w", err, ErrInvalidField)
+	}
+
+	baseAmount := totalAmount / int64(installmentCount)
+	remainder := totalAmount % int64(installmentCount)
+
+	for i := 1; i <= installmentCount; i++ {
+		txDate := req.Date
+		if i > 1 {
+			txDate, err = req.Date.AddMonths(i - 1)
+			if err != nil {
+				return fmt.Errorf("failed to calculate installment date: %w", err)
+			}
+		}
+
+		tx := NewTransaction(now, txDate, req.Type)
+
+		if req.Description != "" {
+			tx.SetDescription(req.Description)
+		}
+		if req.Frequency != "" {
+			tx.SetFrequency(req.Frequency)
+		}
+		if group != nil {
+			tx.SetInstallmentGroupID(group.ID)
+			tx.SetInstallmentNumber(i)
+		}
+
+		amount := baseAmount
+		if i == installmentCount {
+			amount += remainder
+		}
+
+		var exchangeRate float64
+		if req.ExchangeRate != nil && *req.ExchangeRate > 0 {
+			exchangeRate = *req.ExchangeRate
+		} else {
+			dolars, err := GetExchangeRate()
+			if err != nil {
+				return err
+			}
+			rates := ToRateMap(dolars)
+			rate, ok := rates.Get(RateOficial)
+			if !ok {
+				return fmt.Errorf("unable to get oficial dolar rate")
+			}
+			exchangeRate = rate.Buy
+		}
+
+		entry := NewEntry(now, tx.ID, req.ChannelID, amount, req.Currency, exchangeRate)
+		if req.CategoryID != "" {
+			entry.SetCategoryID(req.CategoryID)
+		}
+		if req.SubcategoryID != "" {
+			entry.SetSubcategoryID(req.SubcategoryID)
+		}
+		if req.AccountID != "" {
+			entry.SetAccountID(req.AccountID)
+		}
+
+		items = append(items, struct {
+			Transaction Transaction
+			Entry       Entry
+		}{
+			Transaction: *tx,
+			Entry:       *entry,
+		})
+	}
+
+	agg := TransactionAggregate{
+		Group: group,
+		Items: items,
+	}
+
+	if err := s.repo.UpdateTransactionAggregate(ctx, id, agg); err != nil {
+		return fmt.Errorf("failed to update transaction aggregate: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Service) CancelInstallments(ctx context.Context, req CancelInstallmentsReq) error {
+	if req.InstallmentGroupID == "" {
+		return fmt.Errorf("installment_group_id is required: %w", ErrInvalidField)
+	}
+	if req.FromInstallment <= 0 {
+		return fmt.Errorf("from_installment must be greater than 0: %w", ErrInvalidField)
+	}
+
+	transactions, err := s.repo.GetTransactionsByInstallmentGroup(ctx, req.InstallmentGroupID, req.FromInstallment)
+	if err != nil {
+		return fmt.Errorf("failed to get transactions: %w", err)
+	}
+
+	if len(transactions) == 0 {
+		return fmt.Errorf("no transactions found: %w", ErrNotFound)
+	}
+
+	var totalCents int64
+	var firstTx *TransactionRowDTO
+	for i := range transactions {
+		tx := &transactions[i]
+		amountCents, err := ParseAmountToCents(tx.Amount)
+		if err != nil {
+			return fmt.Errorf("failed to parse amount: %w", err)
+		}
+		totalCents += amountCents
+		if i == 0 {
+			firstTx = tx
+		}
+	}
+
+	now := s.clock.Now()
+	tx := NewTransaction(now, firstTx.Date, firstTx.Type)
+	tx.SetDescription("Cancelación de cuotas")
+
+	entry := NewEntry(now, tx.ID, firstTx.ChannelID, totalCents, firstTx.Currency, firstTx.ExchangeRate)
+	entry.SetCategoryID(*firstTx.CategoryID)
+	if firstTx.SubcategoryID != nil {
+		entry.SetSubcategoryID(*firstTx.SubcategoryID)
+	}
+	if firstTx.AccountID != nil {
+		entry.SetAccountID(*firstTx.AccountID)
+	}
+
+	if err := tx.Validate(); err != nil {
+		return fmt.Errorf("invalid transaction: %w", err)
+	}
+	if err := entry.Validate(); err != nil {
+		return fmt.Errorf("invalid entry: %w", err)
+	}
+
+	agg := TransactionAggregate{
+		Items: []struct {
+			Transaction Transaction
+			Entry       Entry
+		}{
+			{
+				Transaction: *tx,
+				Entry:       *entry,
+			},
+		},
+	}
+
+	if err := s.repo.CancelInstallments(ctx, agg, req.InstallmentGroupID, req.FromInstallment); err != nil {
+		return fmt.Errorf("failed to cancel installments: %w", err)
+	}
+
 	return nil
 }

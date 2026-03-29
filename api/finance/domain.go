@@ -3,6 +3,7 @@ package finance
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/nnavales/summit/api/timeutils"
@@ -45,9 +46,10 @@ type Transaction struct {
 type Entry struct {
 	ID            string     `json:"id"`
 	TransactionID string     `json:"transaction_id"`
-	AccountID     string     `json:"account_id"`
-	AmountARS     int64      `json:"amount_ars"`
-	AmountUSD     int64      `json:"amount_usd"`
+	ChannelID     string     `json:"channel_id"`
+	AccountID     *string    `json:"account_id"`
+	Amount        int64      `json:"amount"`
+	Currency      Currency   `json:"currency"`
 	ExchangeRate  float64    `json:"exchange_rate"`
 	CategoryID    *string    `json:"category_id"`
 	SubcategoryID *string    `json:"subcategory_id"`
@@ -103,47 +105,58 @@ type InstallmentGroup struct {
 
 // Repository
 type Repository interface {
-	CreateTransaction(ctx context.Context, t Transaction) (*Transaction, error)
 	GetTransactionByID(ctx context.Context, id string) (*Transaction, error)
 	ListTransactions(ctx context.Context) ([]Transaction, error)
 	UpdateTransaction(ctx context.Context, t Transaction) (*Transaction, error)
 	DeleteTransaction(ctx context.Context, id string) error
 
-	CreateEntry(ctx context.Context, e Entry) (*Entry, error)
 	GetEntryByID(ctx context.Context, id string) (*Entry, error)
 	ListEntries(ctx context.Context) ([]Entry, error)
 	UpdateEntry(ctx context.Context, e Entry) (*Entry, error)
 	DeleteEntry(ctx context.Context, id string) error
 
+	GetInstallmentGroupByID(ctx context.Context, id string) (*InstallmentGroup, error)
+	ListInstallmentGroups(ctx context.Context) ([]InstallmentGroup, error)
+	UpdateInstallmentGroup(ctx context.Context, ig InstallmentGroup) (*InstallmentGroup, error)
+	DeleteInstallmentGroup(ctx context.Context, id string) error
+
+	CreateTransactionAggregate(ctx context.Context, agg TransactionAggregate) error
+	ListTransactionsAggregate(ctx context.Context, filter *Filter) ([]TransactionRowDTO, error)
+	GetTransactionAggregate(ctx context.Context, id string) (*TransactionRowDTO, error)
+	DeleteTransactionAggregate(ctx context.Context, id string) error
+	UpdateTransactionAggregate(ctx context.Context, id string, agg TransactionAggregate) error
+	GetTransactionsByInstallmentGroup(ctx context.Context, groupID string, fromInstallment int) ([]TransactionRowDTO, error)
+	CancelInstallments(ctx context.Context, agg TransactionAggregate, groupID string, fromInstallment int) error
+
+	// must
 	CreateChannel(ctx context.Context, c Channel) (*Channel, error)
 	GetChannelByID(ctx context.Context, id string) (*Channel, error)
 	ListChannels(ctx context.Context) ([]Channel, error)
+	ListChannelsWithAccounts(ctx context.Context) ([]ChannelWithAccounts, error)
 	UpdateChannel(ctx context.Context, c Channel) (*Channel, error)
 	DeleteChannel(ctx context.Context, id string) error
 
+	// must
 	CreateAccount(ctx context.Context, a Account) (*Account, error)
 	GetAccountByID(ctx context.Context, id string) (*Account, error)
 	ListAccounts(ctx context.Context) ([]Account, error)
 	UpdateAccount(ctx context.Context, a Account) (*Account, error)
 	DeleteAccount(ctx context.Context, id string) error
 
+	// must
 	CreateCategory(ctx context.Context, c Category) (*Category, error)
 	GetCategoryByID(ctx context.Context, id string) (*Category, error)
 	ListCategories(ctx context.Context) ([]Category, error)
+	ListCategoriesWithSubcategories(ctx context.Context) ([]CategoryWithSubcategories, error)
 	UpdateCategory(ctx context.Context, c Category) (*Category, error)
 	DeleteCategory(ctx context.Context, id string) error
 
+	// must
 	CreateSubcategory(ctx context.Context, s Subcategory) (*Subcategory, error)
 	GetSubcategoryByID(ctx context.Context, id string) (*Subcategory, error)
 	ListSubcategories(ctx context.Context) ([]Subcategory, error)
 	UpdateSubcategory(ctx context.Context, s Subcategory) (*Subcategory, error)
 	DeleteSubcategory(ctx context.Context, id string) error
-
-	CreateInstallmentGroup(ctx context.Context, ig InstallmentGroup) (*InstallmentGroup, error)
-	GetInstallmentGroupByID(ctx context.Context, id string) (*InstallmentGroup, error)
-	ListInstallmentGroups(ctx context.Context) ([]InstallmentGroup, error)
-	UpdateInstallmentGroup(ctx context.Context, ig InstallmentGroup) (*InstallmentGroup, error)
-	DeleteInstallmentGroup(ctx context.Context, id string) error
 }
 
 // CTOs
@@ -162,8 +175,9 @@ type TransactionReq struct {
 type EntryReq struct {
 	ID            *string   `json:"id"`
 	TransactionID *string   `json:"transaction_id"`
+	ChannelID     *string   `json:"channelID"`
 	AccountID     *string   `json:"account_id"`
-	Amount        *int64    `json:"amount"`
+	Amount        *string   `json:"amount"`
 	Currency      *Currency `json:"currency"`
 	ExchangeRate  *float64  `json:"exchange_rate"`
 	CategoryID    *string   `json:"category_id"`
@@ -206,6 +220,16 @@ type InstallmentGroupReq struct {
 	IsDeleted         *bool           `json:"is_deleted"`
 }
 
+type CategoryWithSubcategories struct {
+	Category      Category      `json:"category"`
+	Subcategories []Subcategory `json:"subcategories"`
+}
+
+type ChannelWithAccounts struct {
+	Channel  Channel   `json:"channel"`
+	Accounts []Account `json:"accounts"`
+}
+
 // Constructors
 func NewTransaction(now time.Time, date timeutils.Date, tType TransactionType) *Transaction {
 	id := ulid.Make().String()
@@ -217,14 +241,14 @@ func NewTransaction(now time.Time, date timeutils.Date, tType TransactionType) *
 	}
 }
 
-func NewEntry(now time.Time, transactionID, accountID string, amountARS, amountUSD int64, exchangeRate float64) *Entry {
+func NewEntry(now time.Time, transactionID, channelID string, amount int64, currency Currency, exchangeRate float64) *Entry {
 	id := ulid.Make().String()
 	return &Entry{
 		ID:            id,
 		TransactionID: transactionID,
-		AccountID:     accountID,
-		AmountARS:     amountARS,
-		AmountUSD:     amountUSD,
+		ChannelID:     channelID,
+		Amount:        amount,
+		Currency:      currency,
 		ExchangeRate:  exchangeRate,
 		CreatedAt:     now,
 	}
@@ -306,6 +330,10 @@ func (t *Transaction) SetDeleted(now time.Time, isDeleted bool) {
 	} else {
 		t.DeletedAt = nil
 	}
+}
+
+func (e *Entry) SetAccountID(id string) {
+	e.AccountID = &id
 }
 
 func (e *Entry) SetCategoryID(id string) {
@@ -393,3 +421,327 @@ func (ig *InstallmentGroup) SetDeleted(now time.Time, isDeleted bool) {
 }
 
 // Validations
+var ErrInvalidField = errors.New("invalid field")
+
+func (t *Transaction) Validate() error {
+	if t.ID == "" {
+		return fmt.Errorf("id is required: %w", ErrInvalidField)
+	}
+	if t.Date.IsZero() {
+		return fmt.Errorf("date is required: %w", ErrInvalidField)
+	}
+	if t.Type != TypeIncome && t.Type != TypeExpense {
+		return fmt.Errorf("type is invalid: %w", ErrInvalidField)
+	}
+	if t.Frequency != nil && *t.Frequency != FrequencyFixed && *t.Frequency != FrequencyVariable {
+		return fmt.Errorf("frequency is invalid: %w", ErrInvalidField)
+	}
+	if t.InstallmentNumber != nil && t.InstallmentGroupID == nil {
+		return fmt.Errorf("installment_number requires installment_group_id: %w", ErrInvalidField)
+	}
+	if t.InstallmentGroupID != nil && t.InstallmentNumber == nil {
+		return fmt.Errorf("installment_group_id requires installment_number: %w", ErrInvalidField)
+	}
+	if t.Description != nil && (*t.Description == "" || len(*t.Description) > 200) {
+		return fmt.Errorf("description is invalid: %w", ErrInvalidField)
+	}
+
+	return nil
+}
+
+func (e *Entry) Validate() error {
+	if e.ID == "" {
+		return fmt.Errorf("id is required: %w", ErrInvalidField)
+	}
+	if e.TransactionID == "" {
+		return fmt.Errorf("transaction_id is required: %w", ErrInvalidField)
+	}
+	if e.ChannelID == "" {
+		return fmt.Errorf("channel_id is required: %w", ErrInvalidField)
+	}
+	if e.AccountID != nil && *e.AccountID == "" {
+		return fmt.Errorf("account_id is required: %w", ErrInvalidField)
+	}
+	if e.Amount == 0 {
+		return fmt.Errorf("amount is required: %w", ErrInvalidField)
+	}
+	if e.Amount < 0 {
+		return fmt.Errorf("amount is less than 0: %w", ErrInvalidField)
+	}
+	if e.Currency == "" {
+		return fmt.Errorf("currency is required: %w", ErrInvalidField)
+	}
+
+	if e.ExchangeRate <= 0 {
+		return fmt.Errorf("exchange_rate must be positive: %w", ErrInvalidField)
+	}
+
+	return nil
+}
+
+func (c *Channel) Validate() error {
+	if c.ID == "" {
+		return fmt.Errorf("id is required: %w", ErrInvalidField)
+	}
+	if c.Name == "" {
+		return fmt.Errorf("name is required: %w", ErrInvalidField)
+	}
+	if len(c.Name) > 100 {
+		return fmt.Errorf("name is invalid: %w", ErrInvalidField)
+	}
+
+	return nil
+}
+
+func (a *Account) Validate() error {
+	if a.ID == "" {
+		return fmt.Errorf("id is required: %w", ErrInvalidField)
+	}
+	if a.ChannelID == "" {
+		return fmt.Errorf("channel_id is required: %w", ErrInvalidField)
+	}
+	if a.Name == "" {
+		return fmt.Errorf("name is required: %w", ErrInvalidField)
+	}
+	if a.Instrument == "" {
+		return fmt.Errorf("instrument is required: %w", ErrInvalidField)
+	}
+	validInstruments := map[string]bool{"credit_card": true, "debit_card": true, "transfer": true, "cash": true}
+	if !validInstruments[a.Instrument] {
+		return fmt.Errorf("instrument is invalid: %w", ErrInvalidField)
+	}
+	if a.LastFour != nil && len(*a.LastFour) != 4 {
+		return fmt.Errorf("last_four is invalid: %w", ErrInvalidField)
+	}
+
+	return nil
+}
+
+func (c *Category) Validate() error {
+	if c.ID == "" {
+		return fmt.Errorf("id is required: %w", ErrInvalidField)
+	}
+	if c.Name == "" {
+		return fmt.Errorf("name is required: %w", ErrInvalidField)
+	}
+	if len(c.Name) > 100 {
+		return fmt.Errorf("name is invalid: %w", ErrInvalidField)
+	}
+
+	return nil
+}
+
+func (s *Subcategory) Validate() error {
+	if s.ID == "" {
+		return fmt.Errorf("id is required: %w", ErrInvalidField)
+	}
+	if s.CategoryID == "" {
+		return fmt.Errorf("category_id is required: %w", ErrInvalidField)
+	}
+	if s.Name == "" {
+		return fmt.Errorf("name is required: %w", ErrInvalidField)
+	}
+	if len(s.Name) > 100 {
+		return fmt.Errorf("name is invalid: %w", ErrInvalidField)
+	}
+
+	return nil
+}
+
+func (ig *InstallmentGroup) Validate() error {
+	if ig.ID == "" {
+		return fmt.Errorf("id is required: %w", ErrInvalidField)
+	}
+	if ig.TotalInstallments <= 0 || ig.TotalInstallments > 120 {
+		return fmt.Errorf("total_installments is invalid: %w", ErrInvalidField)
+	}
+	if ig.StartDate.IsZero() {
+		return fmt.Errorf("start_date is required: %w", ErrInvalidField)
+	}
+
+	return nil
+}
+
+// Batch
+type TransactionAggregateReq struct {
+	Description       string               `json:"description"`
+	Date              timeutils.Date       `json:"date"`
+	Type              TransactionType      `json:"type"`
+	Frequency         TransactionFrequency `json:"frequency"`
+	InstallmentNumber *int                 `json:"installment_number"`
+	Amount            string               `json:"amount"`
+	Currency          Currency             `json:"currency"`
+	ExchangeRate      *float64             `json:"exchange_rate"`
+	CategoryID        string               `json:"category_id"`
+	SubcategoryID     string               `json:"subcategory_id"`
+	ChannelID         string               `json:"channel_id"`
+	AccountID         string               `json:"account_id"`
+}
+
+type CancelInstallmentsReq struct {
+	InstallmentGroupID string `json:"installment_group_id"`
+	FromInstallment    int    `json:"from_installment"`
+}
+
+type TransactionAggregate struct {
+	Group *InstallmentGroup
+	Items []struct {
+		Transaction Transaction
+		Entry       Entry
+	}
+}
+
+type TransactionRowDTO struct {
+	ID          string                `json:"id"`
+	Date        timeutils.Date        `json:"date"`
+	Description *string               `json:"description"`
+	Type        TransactionType       `json:"type"`
+	Frequency   *TransactionFrequency `json:"frequency"`
+
+	EntryID      string   `json:"entry_id"`
+	Amount       string   `json:"amount"`
+	Currency     Currency `json:"currency"`
+	ExchangeRate float64  `json:"exchange_rate"`
+
+	CategoryID   *string `json:"category_id"`
+	CategoryName *string `json:"category_name"`
+
+	SubcategoryID   *string `json:"subcategory_id"`
+	SubcategoryName *string `json:"subcategory_name"`
+
+	AccountID   *string `json:"account_id"`
+	AccountName *string `json:"account_name"`
+
+	ChannelID   string `json:"channel_id"`
+	ChannelName string `json:"channel_name"`
+
+	InstallmentNumber  *int    `json:"installment_number"`
+	TotalInstallments  *int    `json:"total_installments"`
+	InstallmentGroupID *string `json:"installment_group_id"`
+}
+
+// Filters
+type Filter struct {
+	Limit *int
+	Page  *int
+
+	Sort  *string
+	Order *string
+
+	Search      *string
+	Type        *TransactionType
+	Frequency   *TransactionFrequency
+	Currency    *Currency
+	Installment *bool
+	Category    *string
+	Subcategory *string
+	Channel     *string
+	Account     *string
+	DateFrom    *timeutils.Date
+	DateTo      *timeutils.Date
+}
+
+type FilterParams map[string]string
+
+var ErrInvalidFilter = errors.New("invalid filter value")
+
+func NewFilter(params FilterParams) (*Filter, error) {
+	f := &Filter{}
+
+	if v, ok := params["page"]; ok && v != "" {
+		page := 1
+		if _, err := fmt.Sscanf(v, "%d", &page); err != nil || page < 1 {
+			return nil, fmt.Errorf("invalid page: %w", ErrInvalidFilter)
+		}
+		f.Page = &page
+	}
+
+	if v, ok := params["limit"]; ok && v != "" {
+		limit := 20
+		if _, err := fmt.Sscanf(v, "%d", &limit); err != nil || limit < 1 || limit > 100 {
+			return nil, fmt.Errorf("invalid limit: %w", ErrInvalidFilter)
+		}
+		f.Limit = &limit
+	}
+
+	if v, ok := params["sort"]; ok && v != "" {
+		if v != "date" && v != "amount" && v != "created_at" {
+			return nil, fmt.Errorf("invalid sort: %w", ErrInvalidFilter)
+		}
+		f.Sort = &v
+	}
+
+	if v, ok := params["order"]; ok && v != "" {
+		if v != "asc" && v != "desc" {
+			return nil, fmt.Errorf("invalid order: %w", ErrInvalidFilter)
+		}
+		f.Order = &v
+	}
+
+	if v, ok := params["search"]; ok && v != "" {
+		f.Search = &v
+	}
+
+	if v, ok := params["type"]; ok && v != "" {
+		t := TransactionType(v)
+		if t != TypeIncome && t != TypeExpense {
+			return nil, fmt.Errorf("invalid type: %w", ErrInvalidFilter)
+		}
+		f.Type = &t
+	}
+
+	if v, ok := params["frequency"]; ok && v != "" {
+		fr := TransactionFrequency(v)
+		if fr != FrequencyFixed && fr != FrequencyVariable {
+			return nil, fmt.Errorf("invalid frequency: %w", ErrInvalidFilter)
+		}
+		f.Frequency = &fr
+	}
+
+	if v, ok := params["currency"]; ok && v != "" {
+		c := Currency(v)
+		if c != CurrencyARS && c != CurrencyUSD {
+			return nil, fmt.Errorf("invalid currency: %w", ErrInvalidFilter)
+		}
+		f.Currency = &c
+	}
+
+	if v, ok := params["installment"]; ok && v != "" {
+		inst := v == "true"
+		f.Installment = &inst
+	}
+
+	if v, ok := params["category"]; ok && v != "" {
+		f.Category = &v
+	}
+
+	if v, ok := params["subcategory"]; ok && v != "" {
+		f.Subcategory = &v
+	}
+
+	if v, ok := params["channel"]; ok && v != "" {
+		f.Channel = &v
+	}
+
+	if v, ok := params["account"]; ok && v != "" {
+		f.Account = &v
+	}
+
+	if v, ok := params["date_from"]; ok && v != "" {
+		d, err := timeutils.ParseDate(v)
+		if err != nil {
+			return nil, fmt.Errorf("invalid date_from: %w", ErrInvalidFilter)
+		}
+		f.DateFrom = &d
+	}
+
+	if v, ok := params["date_to"]; ok && v != "" {
+		d, err := timeutils.ParseDate(v)
+		if err != nil {
+			return nil, fmt.Errorf("invalid date_to: %w", ErrInvalidFilter)
+		}
+		f.DateTo = &d
+	}
+
+	return f, nil
+}
