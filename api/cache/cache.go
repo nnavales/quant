@@ -6,17 +6,14 @@ import (
 	"time"
 )
 
-// FetchFunc obtiene el valor del recurso.
 type FetchFunc[T any] func(ctx context.Context) (T, error)
 
-// Options configura el comportamiento del recurso.
 type Options struct {
 	TTL             time.Duration
 	RefreshInterval time.Duration
 	AllowStale      bool
 }
 
-// Resource es una entrada de caché genérica, auto-refrescable.
 type Resource[T any] struct {
 	opts  Options
 	fetch FetchFunc[T]
@@ -32,22 +29,20 @@ func New[T any](opts Options, fetch FetchFunc[T]) *Resource[T] {
 	return &Resource[T]{opts: opts, fetch: fetch}
 }
 
-// Get devuelve el valor, refrescando si es necesario.
 func (r *Resource[T]) Get(ctx context.Context) (T, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	if time.Now().Before(r.expiresAt) {
-		return r.value, nil // válido
+		return r.value, nil // valid
 	}
 	if r.opts.AllowStale && !r.fetchedAt.IsZero() {
-		go r.doFetch(context.Background()) // refrescar sin bloquear
+		go r.doFetch(context.Background()) // refresh without blocking
 		return r.value, nil
 	}
 	return r.doFetch(ctx)
 }
 
-// Warmup precarga el valor bloqueando hasta obtenerlo.
 func (r *Resource[T]) Warmup(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -55,7 +50,6 @@ func (r *Resource[T]) Warmup(ctx context.Context) error {
 	return err
 }
 
-// StartRefresh lanza un goroutine que refresca según RefreshInterval.
 func (r *Resource[T]) StartRefresh(ctx context.Context) {
 	if r.opts.RefreshInterval <= 0 {
 		return
@@ -76,24 +70,20 @@ func (r *Resource[T]) StartRefresh(ctx context.Context) {
 	}()
 }
 
-// Invalidate fuerza un nuevo fetch en la próxima llamada.
 func (r *Resource[T]) Invalidate() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.expiresAt = time.Time{}
 }
 
-// Refresh fuerza un fetch inmediato y devuelve el nuevo valor.
 func (r *Resource[T]) Refresh(ctx context.Context) (T, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.expiresAt = time.Time{} // forzar expiración para evitar re-check
+	r.expiresAt = time.Time{}
 	return r.doFetch(ctx)
 }
 
-// doFetch llama a fetch y actualiza el estado. Debe llamarse con mu tomado.
 func (r *Resource[T]) doFetch(ctx context.Context) (T, error) {
-	// re-check dentro del lock (evita thundering herd)
 	if time.Now().Before(r.expiresAt) {
 		return r.value, nil
 	}
@@ -102,7 +92,7 @@ func (r *Resource[T]) doFetch(ctx context.Context) (T, error) {
 	if err != nil {
 		r.lastErr = err
 		if r.opts.AllowStale && !r.fetchedAt.IsZero() {
-			return r.value, nil // stale preferible a error
+			return r.value, nil
 		}
 		var zero T
 		return zero, err
