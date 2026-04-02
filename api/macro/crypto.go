@@ -28,11 +28,6 @@ func (c CryptoCurrency) IsValid() bool {
 	return false
 }
 
-type CryptoSeries struct {
-	Date  timeutils.Date `json:"date"`
-	Value float64        `json:"value"`
-}
-
 func cryptoURL(c CryptoCurrency) (string, error) {
 	switch c {
 	case CryptoBTC:
@@ -46,9 +41,22 @@ func cryptoURL(c CryptoCurrency) (string, error) {
 	}
 }
 
-func FetchCryptoSeries(cryptoCurrency CryptoCurrency) ([]CryptoSeries, error) {
+func FetchCryptoSeries(cryptoCurrency CryptoCurrency) (TimeSeries, error) {
+	points, err := fetchCryptoPoints(cryptoCurrency)
+	if err != nil {
+		return TimeSeries{}, err
+	}
+
+	return TimeSeries{
+		Name:   fmt.Sprintf("Crypto %s", cryptoCurrency),
+		Unit:   "index",
+		Points: points,
+	}, nil
+}
+
+func fetchCryptoPoints(c CryptoCurrency) ([]TimeSeriesPoint, error) {
 	ctx := context.Background()
-	url, err := cryptoURL(cryptoCurrency)
+	url, err := cryptoURL(c)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +90,7 @@ func FetchCryptoSeries(cryptoCurrency CryptoCurrency) ([]CryptoSeries, error) {
 		return nil, fmt.Errorf("decode error: %w", err)
 	}
 
-	series := make([]CryptoSeries, 0)
+	series := make([]TimeSeriesPoint, 0)
 	for _, candle := range rawKlines {
 		openTime := time.UnixMilli(int64(candle[0].(float64)))
 		date := timeutils.NewDate(openTime)
@@ -91,7 +99,7 @@ func FetchCryptoSeries(cryptoCurrency CryptoCurrency) ([]CryptoSeries, error) {
 		if err != nil {
 			return nil, fmt.Errorf("crypto parsing value err: %w", err)
 		}
-		series = append(series, CryptoSeries{Date: date, Value: value})
+		series = append(series, TimeSeriesPoint{Date: date, Value: value})
 
 	}
 
@@ -100,21 +108,4 @@ func FetchCryptoSeries(cryptoCurrency CryptoCurrency) ([]CryptoSeries, error) {
 	})
 
 	return series, nil
-}
-
-func CryptoToTimeSeries(data []CryptoSeries, c CryptoCurrency) TimeSeries {
-	points := make([]TimeSeriesPoint, len(data))
-
-	for i, v := range data {
-		points[i] = TimeSeriesPoint{
-			Date:  v.Date,
-			Value: v.Value,
-		}
-	}
-
-	return TimeSeries{
-		Name:   fmt.Sprintf("Crypto %s", c),
-		Unit:   "index",
-		Points: points,
-	}
 }

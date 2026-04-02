@@ -121,7 +121,7 @@ type Repository interface {
 	DeleteInstallmentGroup(ctx context.Context, id string) error
 
 	CreateTransactionAggregate(ctx context.Context, agg TransactionAggregate) error
-	ListTransactionsAggregate(ctx context.Context, filter *Filter) ([]TransactionRowDTO, error)
+	ListTransactionsAggregate(ctx context.Context, filter *Filter) (*TransactionListResponse, error)
 	GetTransactionAggregate(ctx context.Context, id string) (*TransactionRowDTO, error)
 	DeleteTransactionAggregate(ctx context.Context, id string) error
 	UpdateTransactionAggregate(ctx context.Context, id string, agg TransactionAggregate) error
@@ -571,7 +571,7 @@ type TransactionAggregateReq struct {
 	InstallmentNumber *int                 `json:"installment_number"`
 	Amount            string               `json:"amount"`
 	Currency          Currency             `json:"currency"`
-	ExchangeRate      *float64             `json:"exchange_rate"`
+	ExchangeRate      float64              `json:"exchange_rate"`
 	CategoryID        string               `json:"category_id"`
 	SubcategoryID     string               `json:"subcategory_id"`
 	ChannelID         string               `json:"channel_id"`
@@ -618,6 +618,11 @@ type TransactionRowDTO struct {
 	InstallmentNumber  *int    `json:"installment_number"`
 	TotalInstallments  *int    `json:"total_installments"`
 	InstallmentGroupID *string `json:"installment_group_id"`
+}
+
+type TransactionListResponse struct {
+	Data       []TransactionRowDTO `json:"data"`
+	TotalCount int                 `json:"total_count"`
 }
 
 // Filters

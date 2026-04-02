@@ -11,8 +11,10 @@ import (
 	"github.com/nnavales/summit/api/db"
 	"github.com/nnavales/summit/api/finance"
 	"github.com/nnavales/summit/api/logger"
+	"github.com/nnavales/summit/api/macro"
 	"github.com/nnavales/summit/api/timeutils"
 	"github.com/nnavales/summit/api/transport"
+	"github.com/nnavales/summit/api/users"
 )
 
 func main() {
@@ -43,15 +45,26 @@ func run() error {
 
 	clock := timeutils.RealClock{}
 
+	macroProvider, err := macro.NewEconomicProvider(context.Background())
+	if err != nil {
+		return fmt.Errorf("macro.provider.error: %w", err)
+	}
+	macroService := macro.NewService(macroProvider)
+
 	financeRepo := finance.NewSQLiteRepo(dbConn.DB)
 	financeService := finance.NewService(clock, financeRepo)
 
-	if err := financeService.SeedDefaults(context.Background()); err != nil {
-		slog.Warn("seed.error", "err", err)
+	usersRepo := users.NewRepo(dbConn.DB)
+	usersService := users.NewService(clock, usersRepo)
+
+	if err := users.SeedDefaults(context.Background(), usersRepo, clock); err != nil {
+		slog.Warn("user.config.seed.error", "err", err)
 	}
 
 	services := &transport.Services{
-		Service: financeService,
+		FinanceService: financeService,
+		MacroService:   macroService,
+		UsersService:   usersService,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)

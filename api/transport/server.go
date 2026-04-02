@@ -8,7 +8,9 @@ import (
 
 	"github.com/nnavales/summit/api/config"
 	"github.com/nnavales/summit/api/finance"
+	"github.com/nnavales/summit/api/macro"
 	"github.com/nnavales/summit/api/transport/middleware"
+	"github.com/nnavales/summit/api/users"
 )
 
 type Server struct {
@@ -17,15 +19,19 @@ type Server struct {
 }
 
 type Services struct {
-	*finance.Service
+	FinanceService *finance.Service
+	MacroService   *macro.Service
+	UsersService   *users.Service
 }
 
 func NewServer(cfg config.Config, services *Services) *Server {
-	financeHandler := finance.NewHandler(services.Service)
+	financeHandler := finance.NewHandler(services.FinanceService)
+	macroHandler := macro.NewHandler(services.MacroService)
+	usersHandler := users.NewHandler(services.UsersService)
 
 	api := http.NewServeMux()
 
-	addRoutes(api, financeHandler)
+	addRoutes(api, financeHandler, macroHandler, usersHandler)
 
 	var handler http.Handler = api
 	handler = middleware.CORS(handler)
@@ -41,7 +47,7 @@ func NewServer(cfg config.Config, services *Services) *Server {
 }
 
 func (sv *Server) Run(ctx context.Context) error {
-	slog.Info("server.started", slog.String("addr", "localhost:6969"))
+	slog.Info("server.started", slog.String("addr", sv.Addr))
 
 	if err := sv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return err

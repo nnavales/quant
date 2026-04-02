@@ -4,12 +4,27 @@ import (
 	"net/http"
 
 	"github.com/nnavales/summit/api/finance"
+	"github.com/nnavales/summit/api/macro"
 	"github.com/nnavales/summit/api/transport/httpx"
+	"github.com/nnavales/summit/api/users"
 )
 
-func addRoutes(mux *http.ServeMux, h *finance.Handler) {
+func addRoutes(mux *http.ServeMux, h *finance.Handler, hm *macro.Handler, uh *users.Handler) {
 	mux.HandleFunc("GET /healthz", handlerHealthz)
-	mux.HandleFunc("GET /rates", h.GetRates)
+
+	mux.HandleFunc("GET /economic/ipc", hm.GetIPC)
+	mux.HandleFunc("GET /economic/inflation", hm.GetInflation)
+	mux.HandleFunc("GET /economic/dollar", hm.GetDollarHistoric)
+	mux.HandleFunc("GET /economic/dollar/banks", hm.GetDollarValue)
+	mux.HandleFunc("GET /economic/crypto", hm.GetCryptoCurrency)
+	mux.HandleFunc("GET /economic/country-risk", hm.GetCountryRisk)
+	mux.HandleFunc("GET /economic/fixed-deposits", hm.GetFixedDeposits)
+	mux.HandleFunc("GET /economic/yield-accounts", hm.GetYieldAccounts)
+	mux.HandleFunc("GET /economic/loans", hm.GetLoanRates)
+
+	mux.HandleFunc("GET /users/config", uh.GetConfig)
+	mux.HandleFunc("GET /users/config/{key}", uh.GetConfigByKey)
+	mux.HandleFunc("PATCH /users/config", uh.SetConfig)
 
 	mux.HandleFunc("GET /transactions/{id}", h.GetTransaction)
 	mux.HandleFunc("GET /transactions", h.ListTransactions)

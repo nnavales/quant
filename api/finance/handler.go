@@ -17,16 +17,6 @@ func NewHandler(service *Service) *Handler {
 	}
 }
 
-func (h *Handler) GetRates(w http.ResponseWriter, r *http.Request) {
-	dolars, err := GetExchangeRate()
-	if err != nil {
-		httpx.WriteError(w, r, 500, "dolarAPI error", err)
-		return
-	}
-	rates := ToRateSlice(dolars)
-	httpx.WriteJSON(w, 200, rates)
-}
-
 func (h *Handler) GetTransaction(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {

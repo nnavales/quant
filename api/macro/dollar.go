@@ -12,20 +12,6 @@ import (
 	"github.com/nnavales/summit/api/timeutils"
 )
 
-// const (
-// 	UalaBuyURL     = "https://www.uala.com.ar/api/currency/api/v1/buy-rate"
-// 	UalaSellURL    = "https://www.uala.com.ar/api/currency/api/v1/sell-rate"
-// 	BNAURL         = "https://api.errepar.com/syserrepar/apidolar/api/CotizacionesBNAII/day"
-// 	BBVAURL        = "https://servicios.bbva.com.ar/openmarket/servicios/cotizaciones/monedaExtranjera"
-// 	ProvinciaURL   = "https://www.bancoprovincia.com.ar/Principal/Dolar"
-// 	BruBankURL     = "https://sheets.googleapis.com/v4/spreadsheets/1KG0uD9hojsYyRY4BltuNJByUwygHUBuo5dWdm5uIbrw/values/143BBK!A1:B1?key=AIzaSyC8EJidQr3CidEdb-1xfqS2XsHDuJeKWeA"
-// 	SupervielleURL = "https://www.supervielle.com.ar/api/cotizaciones"
-// 	GaliciaURL     = "https://api.comparadolar.ar/usd"
-// 	NaranjaXURL    = "https://api.comparadolar.ar/usd"
-// 	SantanderURL   = "https://api.comparadolar.ar/usd"
-// 	CocosURL       = "https://api.comparadolar.ar/usd"
-// )
-
 type DollarType string
 
 type DollarQuotation string
@@ -53,12 +39,25 @@ type dollarSeriesRaw struct {
 	Date string `json:"fecha"`
 }
 
-type DollarSeries struct {
-	Date  timeutils.Date `json:"date"`
-	Value float64        `json:"value"`
+func FetchDollarHistoricSeries(c DollarQuotation) (TimeSeries, error) {
+	points, err := fetchDollarHistoricPoints(c)
+	if err != nil {
+		return TimeSeries{}, err
+	}
+
+	cot := "venta"
+	if c == QuotationBuy {
+		cot = "compra"
+	}
+
+	return TimeSeries{
+		Name:   fmt.Sprintf("Dolar Oficial (%s)", cot),
+		Unit:   "index",
+		Points: points,
+	}, nil
 }
 
-func FetchDollarHistoricSeries(c DollarQuotation) ([]DollarSeries, error) {
+func fetchDollarHistoricPoints(c DollarQuotation) ([]TimeSeriesPoint, error) {
 	ctx := context.Background()
 
 	req, err := http.NewRequestWithContext(
@@ -95,7 +94,7 @@ func FetchDollarHistoricSeries(c DollarQuotation) ([]DollarSeries, error) {
 		return nil, fmt.Errorf("decode error: %w", err)
 	}
 
-	series := make([]DollarSeries, 0)
+	series := make([]TimeSeriesPoint, 0)
 	for _, s := range data.Data {
 		date, err := timeutils.ParseDateFromTime(s.Date)
 		if err != nil {
@@ -108,13 +107,13 @@ func FetchDollarHistoricSeries(c DollarQuotation) ([]DollarSeries, error) {
 			if err != nil {
 				return nil, fmt.Errorf("buy parsing failed for the dollar series: %w", err)
 			}
-			series = append(series, DollarSeries{Date: date, Value: buy})
+			series = append(series, TimeSeriesPoint{Date: date, Value: buy})
 		case QuotationSell:
 			sell, err := strconv.ParseFloat(s.Sell, 64)
 			if err != nil {
 				return nil, fmt.Errorf("buy parsing failed for the dollar series: %w", err)
 			}
-			series = append(series, DollarSeries{Date: date, Value: sell})
+			series = append(series, TimeSeriesPoint{Date: date, Value: sell})
 		default:
 			return nil, fmt.Errorf("dollar series: not valid quotation")
 		}
@@ -125,28 +124,6 @@ func FetchDollarHistoricSeries(c DollarQuotation) ([]DollarSeries, error) {
 	})
 
 	return series, nil
-}
-
-func DollarToTimeSeries(data []DollarSeries, c DollarQuotation) TimeSeries {
-	points := make([]TimeSeriesPoint, len(data))
-
-	for i, v := range data {
-		points[i] = TimeSeriesPoint{
-			Date:  v.Date,
-			Value: v.Value,
-		}
-	}
-
-	cot := "venta"
-	if c == QuotationBuy {
-		cot = "compra"
-	}
-
-	return TimeSeries{
-		Name:   fmt.Sprintf("Dolar Oficial (%s)", cot),
-		Unit:   "index",
-		Points: points,
-	}
 }
 
 type dollarRaw struct {
@@ -169,7 +146,7 @@ type DollarValue struct {
 	UpdatedAt     time.Time `json:"updated_at"`
 }
 
-func FetchDolarCotization() ([]DollarValue, error) {
+func FetchDollarCotization() ([]DollarValue, error) {
 	ctx := context.Background()
 	req, err := http.NewRequestWithContext(
 		ctx,

@@ -11,12 +11,20 @@ import (
 	"github.com/nnavales/summit/api/timeutils"
 )
 
-type IPCSeries struct {
-	Date  timeutils.Date `json:"date"`
-	Value float64        `json:"value"`
+func FetchIPCFromAPI() (TimeSeries, error) {
+	points, err := fetchIPCPoints()
+	if err != nil {
+		return TimeSeries{}, err
+	}
+
+	return TimeSeries{
+		Name:   "IPC",
+		Unit:   "index",
+		Points: points,
+	}, nil
 }
 
-func FetchIPCFromAPI() ([]IPCSeries, error) {
+func fetchIPCPoints() ([]TimeSeriesPoint, error) {
 	ctx := context.Background()
 
 	req, err := http.NewRequestWithContext(
@@ -46,7 +54,7 @@ func FetchIPCFromAPI() ([]IPCSeries, error) {
 		return nil, fmt.Errorf("decode error: %w", err)
 	}
 
-	series := make([]IPCSeries, 0, len(records)-1)
+	series := make([]TimeSeriesPoint, 0, len(records)-1)
 	for i, record := range records {
 		if i == 0 {
 			continue
@@ -66,7 +74,7 @@ func FetchIPCFromAPI() ([]IPCSeries, error) {
 			return nil, fmt.Errorf("date parse error: %w", err)
 		}
 
-		series = append(series, IPCSeries{
+		series = append(series, TimeSeriesPoint{
 			Date:  date,
 			Value: val,
 		})
@@ -79,7 +87,7 @@ func FetchIPCFromAPI() ([]IPCSeries, error) {
 	return series, nil
 }
 
-func IPCToTimeSeries(data []IPCSeries) TimeSeries {
+func IPCToTimeSeries(data []TimeSeriesPoint) TimeSeries {
 	points := make([]TimeSeriesPoint, len(data))
 
 	for i, v := range data {
@@ -96,7 +104,7 @@ func IPCToTimeSeries(data []IPCSeries) TimeSeries {
 	}
 }
 
-func IPCToInflationSeries(data []IPCSeries) TimeSeries {
+func IPCToInflationSeries(data []TimeSeriesPoint) TimeSeries {
 	points := make([]TimeSeriesPoint, 0, len(data)-1)
 	for i := 1; i < len(data); i++ {
 		prev := data[i-1]

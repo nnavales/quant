@@ -600,23 +600,7 @@ func (s *Service) CreateTransactionAggregate(ctx context.Context, req Transactio
 			amount += remainder
 		}
 
-		var exchangeRate float64
-		if req.ExchangeRate != nil && *req.ExchangeRate > 0 {
-			exchangeRate = *req.ExchangeRate
-		} else {
-			dolars, err := GetExchangeRate()
-			if err != nil {
-				return err
-			}
-			rates := ToRateMap(dolars)
-			rate, ok := rates.Get(RateOficial)
-			if !ok {
-				return fmt.Errorf("unable to get oficial dolar rate")
-			}
-			exchangeRate = rate.Buy
-		}
-
-		entry := NewEntry(now, tx.ID, req.ChannelID, amount, req.Currency, exchangeRate)
+		entry := NewEntry(now, tx.ID, req.ChannelID, amount, req.Currency, req.ExchangeRate)
 		if req.CategoryID != "" {
 			entry.SetCategoryID(req.CategoryID)
 		}
@@ -652,7 +636,7 @@ func (s *Service) CreateTransactionAggregate(ctx context.Context, req Transactio
 	return nil
 }
 
-func (s *Service) ListTransactionsAggregate(ctx context.Context, filter *Filter) ([]TransactionRowDTO, error) {
+func (s *Service) ListTransactionsAggregate(ctx context.Context, filter *Filter) (*TransactionListResponse, error) {
 	rows, err := s.repo.ListTransactionsAggregate(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list transaction aggregates: %w", err)
@@ -741,23 +725,7 @@ func (s *Service) UpdateTransactionAggregate(ctx context.Context, id string, req
 			amount += remainder
 		}
 
-		var exchangeRate float64
-		if req.ExchangeRate != nil && *req.ExchangeRate > 0 {
-			exchangeRate = *req.ExchangeRate
-		} else {
-			dolars, err := GetExchangeRate()
-			if err != nil {
-				return err
-			}
-			rates := ToRateMap(dolars)
-			rate, ok := rates.Get(RateOficial)
-			if !ok {
-				return fmt.Errorf("unable to get oficial dolar rate")
-			}
-			exchangeRate = rate.Buy
-		}
-
-		entry := NewEntry(now, tx.ID, req.ChannelID, amount, req.Currency, exchangeRate)
+		entry := NewEntry(now, tx.ID, req.ChannelID, amount, req.Currency, req.ExchangeRate)
 		if req.CategoryID != "" {
 			entry.SetCategoryID(req.CategoryID)
 		}

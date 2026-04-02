@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -878,7 +879,7 @@ func (r *SQLiteRepo) CreateTransactionAggregate(ctx context.Context, agg Transac
 	return tx.Commit()
 }
 
-func (r *SQLiteRepo) ListTransactionsAggregate(ctx context.Context, filter *Filter) ([]TransactionRowDTO, error) {
+func (r *SQLiteRepo) ListTransactionsAggregate(ctx context.Context, filter *Filter) (*TransactionListResponse, error) {
 	query := BuildListTransactionsQuery(filter)
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
@@ -917,7 +918,73 @@ func (r *SQLiteRepo) ListTransactionsAggregate(ctx context.Context, filter *Filt
 		t.Amount = FormatAmount(amountCents)
 		transactions = append(transactions, t)
 	}
-	return transactions, rows.Err()
+
+	countQuery := buildCountQuery(filter)
+	var totalCount int
+	if err := r.db.QueryRowContext(ctx, countQuery).Scan(&totalCount); err != nil {
+		return nil, err
+	}
+
+	return &TransactionListResponse{
+		Data:       transactions,
+		TotalCount: totalCount,
+	}, rows.Err()
+}
+
+func buildCountQuery(filter *Filter) string {
+	var whereClauses []string
+
+	whereClauses = append(whereClauses, "t.deleted_at IS NULL", "e.deleted_at IS NULL")
+
+	if filter.Search != nil && *filter.Search != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("t.description LIKE '%%%s'", *filter.Search))
+	}
+
+	if filter.Type != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("t.type = '%s'", *filter.Type))
+	}
+
+	if filter.Frequency != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("t.frequency = '%s'", *filter.Frequency))
+	}
+
+	if filter.Currency != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("e.currency = '%s'", *filter.Currency))
+	}
+
+	if filter.Installment != nil {
+		if *filter.Installment {
+			whereClauses = append(whereClauses, "t.installment_group_id IS NOT NULL")
+		} else {
+			whereClauses = append(whereClauses, "t.installment_group_id IS NULL")
+		}
+	}
+
+	if filter.Category != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("e.category_id = '%s'", *filter.Category))
+	}
+
+	if filter.Subcategory != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("e.subcategory_id = '%s'", *filter.Subcategory))
+	}
+
+	if filter.Channel != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("e.channel_id = '%s'", *filter.Channel))
+	}
+
+	if filter.Account != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("e.account_id = '%s'", *filter.Account))
+	}
+
+	if filter.DateFrom != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("t.date >= '%s'", filter.DateFrom.String()))
+	}
+
+	if filter.DateTo != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("t.date <= '%s'", filter.DateTo.String()))
+	}
+
+	return "SELECT COUNT(DISTINCT t.id) FROM transactions t JOIN entries e ON e.transaction_id = t.id WHERE " + strings.Join(whereClauses, " AND ")
 }
 
 func (r *SQLiteRepo) GetTransactionAggregate(ctx context.Context, id string) (*TransactionRowDTO, error) {

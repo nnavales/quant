@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -30,6 +31,18 @@ func (d Date) AddMonths(n int) (Date, error) {
 }
 
 func ParseDate(s string) (Date, error) {
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		return Date{}, err
+	}
+	return NewDate(t), nil
+}
+
+func ParseDateFromTime(s string) (Date, error) {
+	if i := strings.Index(s, "T"); i != -1 {
+		s = s[:i]
+	}
+
 	t, err := time.Parse("2006-01-02", s)
 	if err != nil {
 		return Date{}, err

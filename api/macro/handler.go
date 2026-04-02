@@ -17,7 +17,8 @@ func NewHandler(service *Service) *Handler {
 }
 
 func (h *Handler) GetIPC(w http.ResponseWriter, r *http.Request) {
-	res, err := h.service.FetchIPC()
+	refresh := r.URL.Query().Get("refresh") == "true"
+	res, err := h.service.FetchIPC(r.Context(), refresh)
 	if err != nil {
 		httpx.WriteError(w, r, 500, "internal error", err)
 		return
@@ -26,7 +27,8 @@ func (h *Handler) GetIPC(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetInflation(w http.ResponseWriter, r *http.Request) {
-	res, err := h.service.FetchInflation()
+	refresh := r.URL.Query().Get("refresh") == "true"
+	res, err := h.service.FetchInflation(r.Context(), refresh)
 	if err != nil {
 		httpx.WriteError(w, r, 500, "internal error", err)
 		return
@@ -36,7 +38,8 @@ func (h *Handler) GetInflation(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetDollarHistoric(w http.ResponseWriter, r *http.Request) {
 	quotation := r.URL.Query().Get("quotation")
-	res, err := h.service.FetchDollarHistoric(quotation)
+	refresh := r.URL.Query().Get("refresh") == "true"
+	res, err := h.service.FetchDollarHistoric(r.Context(), quotation, refresh)
 	if err != nil {
 		httpx.WriteError(w, r, 500, "internal error", err)
 		return
@@ -45,8 +48,8 @@ func (h *Handler) GetDollarHistoric(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetDollarValue(w http.ResponseWriter, r *http.Request) {
-	quotation := r.URL.Query().Get("quotation")
-	res, err := h.service.FetchDollarCotization(quotation)
+	refresh := r.URL.Query().Get("refresh") == "true"
+	res, err := h.service.FetchDollarCotization(r.Context(), refresh)
 	if err != nil {
 		httpx.WriteError(w, r, 500, "internal error", err)
 		return
@@ -56,7 +59,8 @@ func (h *Handler) GetDollarValue(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetCryptoCurrency(w http.ResponseWriter, r *http.Request) {
 	symbol := r.URL.Query().Get("symbol")
-	res, err := h.service.FetchCryptoCurrency(symbol)
+	refresh := r.URL.Query().Get("refresh") == "true"
+	res, err := h.service.FetchCryptoCurrency(r.Context(), symbol, refresh)
 	if err != nil {
 		httpx.WriteError(w, r, 500, "internal error", err)
 		return
@@ -65,7 +69,8 @@ func (h *Handler) GetCryptoCurrency(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetCountryRisk(w http.ResponseWriter, r *http.Request) {
-	res, err := h.service.FetchCountryRisk()
+	refresh := r.URL.Query().Get("refresh") == "true"
+	res, err := h.service.FetchCountryRisk(r.Context(), refresh)
 	if err != nil {
 		httpx.WriteError(w, r, 500, "internal error", err)
 		return
@@ -74,7 +79,8 @@ func (h *Handler) GetCountryRisk(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetFixedDeposits(w http.ResponseWriter, r *http.Request) {
-	res, err := h.service.FetchFixedDeposits()
+	refresh := r.URL.Query().Get("refresh") == "true"
+	res, err := h.service.FetchFixedDeposits(r.Context(), refresh)
 	if err != nil {
 		httpx.WriteError(w, r, 500, "internal error", err)
 		return
@@ -83,7 +89,8 @@ func (h *Handler) GetFixedDeposits(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetYieldAccounts(w http.ResponseWriter, r *http.Request) {
-	res, err := h.service.FetchYieldAccounts()
+	refresh := r.URL.Query().Get("refresh") == "true"
+	res, err := h.service.FetchYieldAccounts(r.Context(), refresh)
 	if err != nil {
 		httpx.WriteError(w, r, 500, "internal error", err)
 		return
@@ -92,7 +99,8 @@ func (h *Handler) GetYieldAccounts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetLoanRates(w http.ResponseWriter, r *http.Request) {
-	res, err := h.service.FetchLoanRates()
+	refresh := r.URL.Query().Get("refresh") == "true"
+	res, err := h.service.FetchLoanRates(r.Context(), refresh)
 	if err != nil {
 		httpx.WriteError(w, r, 500, "internal error", err)
 		return
