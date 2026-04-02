@@ -187,6 +187,10 @@ type EntryReq struct {
 	IsDeleted     *bool     `json:"is_deleted"`
 }
 
+type UpdateEntryPaidReq struct {
+	IsPaid bool `json:"is_paid"`
+}
+
 type ChannelReq struct {
 	ID        *string `json:"id"`
 	Name      *string `json:"name"`
@@ -250,6 +254,7 @@ func NewEntry(now time.Time, transactionID, channelID string, amount int64, curr
 		TransactionID: transactionID,
 		ChannelID:     channelID,
 		Amount:        amount,
+		IsPaid:        false,
 		Currency:      currency,
 		ExchangeRate:  exchangeRate,
 		CreatedAt:     now,
@@ -340,6 +345,10 @@ func (e *Entry) SetAccountID(id string) {
 
 func (e *Entry) SetCategoryID(id string) {
 	e.CategoryID = &id
+}
+
+func (e *Entry) SetIsPaid(b bool) {
+	e.IsPaid = b
 }
 
 func (e *Entry) SetSubcategoryID(id string) {
@@ -578,6 +587,7 @@ type TransactionAggregateReq struct {
 	SubcategoryID     string               `json:"subcategory_id"`
 	ChannelID         string               `json:"channel_id"`
 	AccountID         string               `json:"account_id"`
+	IsPaid            *bool                `json:"is_paid"`
 }
 
 type CancelInstallmentsReq struct {
@@ -601,6 +611,7 @@ type TransactionRowDTO struct {
 	Frequency   *TransactionFrequency `json:"frequency"`
 
 	EntryID      string   `json:"entry_id"`
+	IsPaid       bool     `json:"is_paid"`
 	Amount       string   `json:"amount"`
 	Currency     Currency `json:"currency"`
 	ExchangeRate float64  `json:"exchange_rate"`

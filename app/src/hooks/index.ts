@@ -7,6 +7,7 @@ import {
     subcategories,
     economic,
     config,
+    entries,
     type TransactionFilters,
     type TransactionAggregateReq,
     type CancelInstallmentsReq,
@@ -374,6 +375,18 @@ export function useUpdateUserConfig() {
         mutationFn: (data: UserConfigUpdate) => config.update(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["config"] });
+        },
+    });
+}
+
+export function useUpdateEntryPaid() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, isPaid }: { id: string; isPaid: boolean }) =>
+            entries.updatePaid(id, isPaid),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["transaction-aggregates"] });
         },
     });
 }

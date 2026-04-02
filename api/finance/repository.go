@@ -114,6 +114,7 @@ func (r *SQLiteRepo) GetEntryByID(ctx context.Context, id string) (*Entry, error
 		&e.AccountID,
 		&e.Amount,
 		&e.Currency,
+		&e.IsPaid,
 		&e.ExchangeRate,
 		&e.CategoryID,
 		&e.SubcategoryID,
@@ -149,6 +150,7 @@ func (r *SQLiteRepo) ListEntries(ctx context.Context) ([]Entry, error) {
 			&e.AccountID,
 			&e.Amount,
 			&e.Currency,
+			&e.IsPaid,
 			&e.ExchangeRate,
 			&e.CategoryID,
 			&e.SubcategoryID,
@@ -172,6 +174,7 @@ func (r *SQLiteRepo) UpdateEntry(ctx context.Context, e Entry) (*Entry, error) {
 		e.AccountID,
 		e.Amount,
 		e.Currency,
+		e.IsPaid,
 		e.ExchangeRate,
 		e.CategoryID,
 		e.SubcategoryID,
@@ -833,6 +836,7 @@ func (r *SQLiteRepo) CreateTransactionAggregate(ctx context.Context, agg Transac
 				i.Entry.AccountID,
 				i.Entry.Amount,
 				i.Entry.Currency,
+				i.Entry.IsPaid,
 				i.Entry.ExchangeRate,
 				i.Entry.CategoryID,
 				i.Entry.SubcategoryID,
@@ -865,6 +869,7 @@ func (r *SQLiteRepo) CreateTransactionAggregate(ctx context.Context, agg Transac
 			agg.Items[0].Entry.AccountID,
 			agg.Items[0].Entry.Amount,
 			agg.Items[0].Entry.Currency,
+			agg.Items[0].Entry.IsPaid,
 			agg.Items[0].Entry.ExchangeRate,
 			agg.Items[0].Entry.CategoryID,
 			agg.Items[0].Entry.SubcategoryID,
@@ -880,8 +885,8 @@ func (r *SQLiteRepo) CreateTransactionAggregate(ctx context.Context, agg Transac
 }
 
 func (r *SQLiteRepo) ListTransactionsAggregate(ctx context.Context, filter *Filter) (*TransactionListResponse, error) {
-	query := BuildListTransactionsQuery(filter)
-	rows, err := r.db.QueryContext(ctx, query)
+	query, args := BuildListTransactionsQuery(filter)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -897,6 +902,7 @@ func (r *SQLiteRepo) ListTransactionsAggregate(ctx context.Context, filter *Filt
 			&t.Type,
 			&t.Frequency,
 			&t.EntryID,
+			&t.IsPaid,
 			&amountCents,
 			&t.Currency,
 			&t.ExchangeRate,
@@ -997,6 +1003,7 @@ func (r *SQLiteRepo) GetTransactionAggregate(ctx context.Context, id string) (*T
 		&t.Type,
 		&t.Frequency,
 		&t.EntryID,
+		&t.IsPaid,
 		&amountCents,
 		&t.Currency,
 		&t.ExchangeRate,
@@ -1042,6 +1049,7 @@ func (r *SQLiteRepo) GetTransactionsByInstallmentGroup(ctx context.Context, grou
 			&t.Type,
 			&t.Frequency,
 			&t.EntryID,
+			&t.IsPaid,
 			&amountCents,
 			&t.Currency,
 			&t.ExchangeRate,
@@ -1209,6 +1217,7 @@ func (r *SQLiteRepo) CancelInstallments(ctx context.Context, agg TransactionAggr
 			item.Entry.AccountID,
 			totalAmount,
 			item.Entry.Currency,
+			item.Entry.IsPaid,
 			item.Entry.ExchangeRate,
 			item.Entry.CategoryID,
 			item.Entry.SubcategoryID,
@@ -1338,6 +1347,7 @@ func (r *SQLiteRepo) UpdateTransactionAggregate(ctx context.Context, id string, 
 				i.Entry.AccountID,
 				i.Entry.Amount,
 				i.Entry.Currency,
+				i.Entry.IsPaid,
 				i.Entry.ExchangeRate,
 				i.Entry.CategoryID,
 				i.Entry.SubcategoryID,
@@ -1371,6 +1381,7 @@ func (r *SQLiteRepo) UpdateTransactionAggregate(ctx context.Context, id string, 
 			i.Entry.AccountID,
 			i.Entry.Amount,
 			i.Entry.Currency,
+			i.Entry.IsPaid,
 			i.Entry.ExchangeRate,
 			i.Entry.CategoryID,
 			i.Entry.SubcategoryID,

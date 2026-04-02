@@ -33,19 +33,19 @@ const (
 	`
 
 	QueryCreateEntry = `
-		INSERT INTO entries (id, transaction_id, channel_id, account_id, amount, currency, exchange_rate, category_id, subcategory_id, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO entries (id, transaction_id, channel_id, account_id, amount, currency, is_paid, exchange_rate, category_id, subcategory_id, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	QueryGetEntryByID = `
-		SELECT id, transaction_id, channel_id, account_id, amount, currency, exchange_rate, category_id, subcategory_id, created_at, updated_at, deleted_at
+		SELECT id, transaction_id, channel_id, account_id, amount, currency, is_paid, exchange_rate, category_id, subcategory_id, created_at, updated_at, deleted_at
 		FROM entries WHERE id = ?
 	`
 	QueryListEntries = `
-		SELECT id, transaction_id, channel_id, account_id, amount, currency, exchange_rate, category_id, subcategory_id, created_at, updated_at, deleted_at
+		SELECT id, transaction_id, channel_id, account_id, amount, currency, is_paid, exchange_rate, category_id, subcategory_id, created_at, updated_at, deleted_at
 		FROM entries
 	`
 	QueryUpdateEntry = `
-		UPDATE entries SET transaction_id = ?, channel_id = ?, account_id = ?, amount = ?, currency = ?, exchange_rate = ?, category_id = ?, subcategory_id = ?, updated_at = ?, deleted_at = ?
+		UPDATE entries SET transaction_id = ?, channel_id = ?, account_id = ?, amount = ?, currency = ?, is_paid = ?, exchange_rate = ?, category_id = ?, subcategory_id = ?, updated_at = ?, deleted_at = ?
 		WHERE id = ?
 	`
 	QueryDeleteEntry = `
@@ -179,6 +179,7 @@ const (
 	  t.frequency,
 
 	  e.id,
+	  e.is_paid,
 	  e.amount,
 	  e.currency,
 	  e.exchange_rate,
@@ -220,6 +221,7 @@ const (
 	  t.frequency,
 
 	  e.id,
+	  e.is_paid,
 	  e.amount,
 	  e.currency,
 	  e.exchange_rate,
@@ -259,6 +261,7 @@ const (
 	  t.frequency,
 
 	  e.id,
+	  e.is_paid,
 	  e.amount,
 	  e.currency,
 	  e.exchange_rate,
@@ -301,6 +304,7 @@ const (
 	  t.frequency,
 
 	  e.id,
+	  e.is_paid,
 	  e.amount,
 	  e.currency,
 	  e.exchange_rate,
@@ -329,25 +333,30 @@ const (
 	LEFT JOIN installment_groups ig ON ig.id = t.installment_group_id`
 )
 
-func BuildListTransactionsQuery(filter *Filter) string {
+func BuildListTransactionsQuery(filter *Filter) (string, []interface{}) {
 	var whereClauses []string
+	var args []interface{}
 
 	whereClauses = append(whereClauses, "t.deleted_at IS NULL", "e.deleted_at IS NULL")
 
 	if filter.Search != nil && *filter.Search != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("t.description LIKE '%%%s'", *filter.Search))
+		whereClauses = append(whereClauses, "LOWER(t.description) LIKE LOWER(?)")
+		args = append(args, "%"+*filter.Search+"%")
 	}
 
 	if filter.Type != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("t.type = '%s'", *filter.Type))
+		whereClauses = append(whereClauses, "t.type = ?")
+		args = append(args, *filter.Type)
 	}
 
 	if filter.Frequency != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("t.frequency = '%s'", *filter.Frequency))
+		whereClauses = append(whereClauses, "t.frequency = ?")
+		args = append(args, *filter.Frequency)
 	}
 
 	if filter.Currency != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("e.currency = '%s'", *filter.Currency))
+		whereClauses = append(whereClauses, "e.currency = ?")
+		args = append(args, *filter.Currency)
 	}
 
 	if filter.Installment != nil {
@@ -359,27 +368,33 @@ func BuildListTransactionsQuery(filter *Filter) string {
 	}
 
 	if filter.Category != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("e.category_id = '%s'", *filter.Category))
+		whereClauses = append(whereClauses, "e.category_id = ?")
+		args = append(args, *filter.Category)
 	}
 
 	if filter.Subcategory != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("e.subcategory_id = '%s'", *filter.Subcategory))
+		whereClauses = append(whereClauses, "e.subcategory_id = ?")
+		args = append(args, *filter.Subcategory)
 	}
 
 	if filter.Channel != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("e.channel_id = '%s'", *filter.Channel))
+		whereClauses = append(whereClauses, "e.channel_id = ?")
+		args = append(args, *filter.Channel)
 	}
 
 	if filter.Account != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("e.account_id = '%s'", *filter.Account))
+		whereClauses = append(whereClauses, "e.account_id = ?")
+		args = append(args, *filter.Account)
 	}
 
 	if filter.DateFrom != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("t.date >= '%s'", filter.DateFrom.String()))
+		whereClauses = append(whereClauses, "t.date >= ?")
+		args = append(args, filter.DateFrom.String())
 	}
 
 	if filter.DateTo != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("t.date <= '%s'", filter.DateTo.String()))
+		whereClauses = append(whereClauses, "t.date <= ?")
+		args = append(args, filter.DateTo.String())
 	}
 
 	query := baseListTransactionsDTO + " WHERE " + strings.Join(whereClauses, " AND ")
@@ -390,7 +405,7 @@ func BuildListTransactionsQuery(filter *Filter) string {
 		case "date":
 			sortField = "t.date"
 		case "amount":
-			sortField = "e.amount"
+			sortField = "CASE WHEN e.currency = 'USD' THEN e.amount * e.exchange_rate ELSE e.amount END"
 		case "created_at":
 			sortField = "t.created_at"
 		}
@@ -414,5 +429,5 @@ func BuildListTransactionsQuery(filter *Filter) string {
 
 	query += fmt.Sprintf(" LIMIT %d OFFSET %d", limit, offset)
 
-	return query
+	return query, args
 }

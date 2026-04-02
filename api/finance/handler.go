@@ -169,6 +169,31 @@ func (h *Handler) DeleteEntry(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *Handler) UpdateEntryPaid(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		httpx.WriteError(w, r, 400, "id required", nil)
+		return
+	}
+
+	req, err := httpx.DecodeJSON[UpdateEntryPaidReq](r.Body)
+	if err != nil {
+		httpx.WriteError(w, r, 400, "invalid request", err)
+		return
+	}
+
+	entry, err := h.service.UpdateEntryPaid(r.Context(), id, req.IsPaid)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			httpx.WriteError(w, r, 404, "entry not found", err)
+			return
+		}
+		httpx.WriteError(w, r, 500, "failed to update entry", err)
+		return
+	}
+	httpx.WriteJSON(w, 200, entry)
+}
+
 func (h *Handler) CreateChannel(w http.ResponseWriter, r *http.Request) {
 	req, err := httpx.DecodeJSON[ChannelReq](r.Body)
 	if err != nil {

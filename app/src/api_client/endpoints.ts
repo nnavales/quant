@@ -189,3 +189,8 @@ export const config = {
     getByKey: (key: string) => api.get<unknown>(`/users/config/${key}`),
     update: (data: UserConfigUpdate) => api.patch<ConfigStatusResponse>("/users/config", data),
 };
+
+export const entries = {
+    updatePaid: (id: string, isPaid: boolean) => 
+        api.patch(`/entries/${id}/paid`, { is_paid: isPaid }),
+};

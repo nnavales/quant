@@ -5,7 +5,7 @@ import { Check, X, Pencil, CreditCard, ChevronDown, RefreshCw } from "lucide-rea
 import { colors } from "@/styles/colors";
 import { radius, spacing, shadows } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
-import { useUpdateTransaction, useCategories, useSubcategories, useChannels, useAccounts, useUserConfig } from "@/hooks";
+import { useUpdateTransaction, useCategories, useSubcategories, useChannels, useAccounts, useUserConfig, useUpdateEntryPaid } from "@/hooks";
 import { economic } from "@/api_client";
 
 interface TransactionRowProps {
@@ -236,6 +236,7 @@ export function TransactionRow({ transaction, onDelete }: TransactionRowProps) {
     }, []);
 
     const updateMutation = useUpdateTransaction();
+    const updatePaidMutation = useUpdateEntryPaid();
     const { data: categoriesData } = useCategories();
     const { data: subcategoriesData } = useSubcategories();
     const { data: channelsData } = useChannels();
@@ -315,6 +316,10 @@ export function TransactionRow({ transaction, onDelete }: TransactionRowProps) {
     };
     const handleCancel = () => setIsEditing(false);
 
+    const handleTogglePaid = () => {
+        updatePaidMutation.mutate({ id: transaction.entry_id, isPaid: !transaction.is_paid });
+    };
+
     const getDisplayValue = (type: "category" | "account") => {
         if (type === "category" && formData.subcategory_id) {
             return subcategoriesList.find((s) => s.id === formData.subcategory_id)?.name || "";
@@ -338,7 +343,7 @@ export function TransactionRow({ transaction, onDelete }: TransactionRowProps) {
                 <td style={{ ...tdStyle, ...fixedWidthStyle("250px") }}>
                     <input type="text" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Descripción" style={formInputStyle} required />
                     <div style={{ ...subStyle, marginTop: "4px", display: "flex", alignItems: "center", gap: "8px" }}>
-                        <input type="text" inputMode="numeric" value={transaction.total_installments ?? ""} placeholder={transaction.total_installments ? String(transaction.total_installments) : "1"} onChange={(e) => {
+                        <input type="text" inputMode="numeric" value={formData.installment_number ?? ""} placeholder={transaction.total_installments ? String(transaction.total_installments) : "1"} onChange={(e) => {
                             const val = e.target.value;
                             setFormData({ ...formData, installment_number: val ? parseInt(val) : undefined });
                         }} style={{ ...formInputStyle, width: "50px", height: "22px", fontSize: "11px", padding: "2px 4px" }} />
@@ -558,7 +563,13 @@ export function TransactionRow({ transaction, onDelete }: TransactionRowProps) {
                         {transaction.installment_number && (
                             <button style={getActionBtnStyle(false, false)} title="Cancelar cuotas"><CreditCard size={14} /></button>
                         )}
-                        <button style={getActionBtnStyle(false, false)} title="Marcar como pagado"><Check size={14} /></button>
+                        <button 
+                            onClick={handleTogglePaid}
+                            style={transaction.is_paid ? { ...getActionBtnStyle(false, false), backgroundColor: colors.accent.teal, color: colors.bg.default, border: "none" } : getActionBtnStyle(false, false)}
+                            title={transaction.is_paid ? "Desmarcar como pagado" : "Marcar como pagado"}
+                        >
+                            <Check size={14} />
+                        </button>
                         <button style={getActionBtnStyle(false, false)} onClick={handleEdit} title="Editar"><Pencil size={14} /></button>
                         <button style={getActionBtnStyle(true, hoverDelete)} onMouseEnter={() => setHoverDelete(true)} onMouseLeave={() => setHoverDelete(false)} onClick={handleDelete} title="Eliminar"><X size={14} /></button>
                     </span>

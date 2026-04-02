@@ -57,6 +57,7 @@ export interface TransactionRowDTO {
     frequency: TransactionFrequency | null;
 
     entry_id: string;
+    is_paid: boolean;
     amount: string;
     currency: Currency;
     exchange_rate: number;

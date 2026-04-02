@@ -34,6 +34,7 @@ func addRoutes(mux *http.ServeMux, h *finance.Handler, hm *macro.Handler, uh *us
 	mux.HandleFunc("GET /entries/{id}", h.GetEntry)
 	mux.HandleFunc("GET /entries", h.ListEntries)
 	mux.HandleFunc("PATCH /entries/{id}", h.UpdateEntry)
+	mux.HandleFunc("PATCH /entries/{id}/paid", h.UpdateEntryPaid)
 	mux.HandleFunc("DELETE /entries/{id}", h.DeleteEntry)
 
 	mux.HandleFunc("POST /channels", h.CreateChannel)

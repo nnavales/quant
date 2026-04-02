@@ -163,6 +163,27 @@ func (s *Service) DeleteEntry(ctx context.Context, id string) error {
 	return nil
 }
 
+func (s *Service) UpdateEntryPaid(ctx context.Context, id string, isPaid bool) (*Entry, error) {
+	e, err := s.repo.GetEntryByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get entry for update: %w", err)
+	}
+
+	now := s.clock.Now()
+	e.Touch(now)
+	e.SetIsPaid(isPaid)
+
+	if err := e.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid entry: %w", err)
+	}
+
+	updated, err := s.repo.UpdateEntry(ctx, *e)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update entry: %w", err)
+	}
+	return updated, nil
+}
+
 func (s *Service) CreateChannel(ctx context.Context, req ChannelReq) (*Channel, error) {
 	if req.Name == nil {
 		return nil, fmt.Errorf("name is required")
@@ -601,6 +622,9 @@ func (s *Service) CreateTransactionAggregate(ctx context.Context, req Transactio
 		}
 
 		entry := NewEntry(now, tx.ID, req.ChannelID, amount, req.Currency, req.ExchangeRate)
+		if req.IsPaid != nil {
+			entry.SetIsPaid(*req.IsPaid)
+		}
 		if req.CategoryID != "" {
 			entry.SetCategoryID(req.CategoryID)
 		}
@@ -726,6 +750,9 @@ func (s *Service) UpdateTransactionAggregate(ctx context.Context, id string, req
 		}
 
 		entry := NewEntry(now, tx.ID, req.ChannelID, amount, req.Currency, req.ExchangeRate)
+		if req.IsPaid != nil {
+			entry.SetIsPaid(*req.IsPaid)
+		}
 		if req.CategoryID != "" {
 			entry.SetCategoryID(req.CategoryID)
 		}

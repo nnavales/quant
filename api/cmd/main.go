@@ -57,6 +57,11 @@ func run() error {
 	usersRepo := users.NewRepo(dbConn.DB)
 	usersService := users.NewService(clock, usersRepo)
 
+	err = financeService.SeedDefaults(context.Background())
+	if err != nil {
+		slog.Warn("finances.seed.error", "err", err)
+	}
+
 	if err := users.SeedDefaults(context.Background(), usersRepo, clock); err != nil {
 		slog.Warn("user.config.seed.error", "err", err)
 	}
