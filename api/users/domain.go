@@ -5,9 +5,18 @@ import "context"
 type Config map[string]any
 
 const (
-	KeyDefaultDollarSource = "default_dollar_source"
-	KeyDefaultCurrency     = "default_currency"
+	KeyDollarSource = "dollar_source"
+	KeyCurrency     = "currency"
+	KeyUsername     = "username"
+	KeyTimezone     = "timezone"
 )
+
+var cfg = map[string]any{
+	KeyCurrency:     "ars",
+	KeyDollarSource: "banco-nacion",
+	KeyUsername:     "",
+	KeyTimezone:     "arg",
+}
 
 func NewConfig() Config {
 	return make(Config)

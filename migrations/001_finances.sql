@@ -67,6 +67,7 @@ CREATE TABLE entries (
     account_id       TEXT, 
     amount       INTEGER NOT NULL,
     currency TEXT NOT NULL,
+    is_paid INTEGER NOT NULL,
     exchange_rate    REAL NOT NULL,
     category_id      TEXT,
     subcategory_id   TEXT,

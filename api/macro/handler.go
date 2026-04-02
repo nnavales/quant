@@ -1,6 +1,7 @@
 package macro
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/nnavales/summit/api/transport/httpx"
@@ -49,6 +50,7 @@ func (h *Handler) GetDollarHistoric(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetDollarValue(w http.ResponseWriter, r *http.Request) {
 	refresh := r.URL.Query().Get("refresh") == "true"
+	fmt.Println(refresh)
 	res, err := h.service.FetchDollarCotization(r.Context(), refresh)
 	if err != nil {
 		httpx.WriteError(w, r, 500, "internal error", err)

@@ -53,6 +53,7 @@ type Entry struct {
 	ExchangeRate  float64    `json:"exchange_rate"`
 	CategoryID    *string    `json:"category_id"`
 	SubcategoryID *string    `json:"subcategory_id"`
+	IsPaid        bool       `json:"is_paid"`
 	CreatedAt     time.Time  `json:"created_at"`
 	UpdatedAt     *time.Time `json:"updated_at"`
 	DeletedAt     *time.Time `json:"deleted_at,omitempty"`
@@ -179,6 +180,7 @@ type EntryReq struct {
 	AccountID     *string   `json:"account_id"`
 	Amount        *string   `json:"amount"`
 	Currency      *Currency `json:"currency"`
+	IsPaid        *bool     `json:"is_paid"`
 	ExchangeRate  *float64  `json:"exchange_rate"`
 	CategoryID    *string   `json:"category_id"`
 	SubcategoryID *string   `json:"subcategory_id"`
