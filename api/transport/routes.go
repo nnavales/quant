@@ -3,13 +3,18 @@ package transport
 import (
 	"net/http"
 
+	"github.com/nnavales/summit/api/categories"
+	"github.com/nnavales/summit/api/channels"
+	"github.com/nnavales/summit/api/entries"
 	"github.com/nnavales/summit/api/finance"
+	"github.com/nnavales/summit/api/installments"
 	"github.com/nnavales/summit/api/macro"
+	"github.com/nnavales/summit/api/transactions"
 	"github.com/nnavales/summit/api/transport/httpx"
 	"github.com/nnavales/summit/api/users"
 )
 
-func addRoutes(mux *http.ServeMux, h *finance.Handler, hm *macro.Handler, uh *users.Handler) {
+func addRoutes(mux *http.ServeMux, h *finance.Handler, th *transactions.Handler, eh *entries.Handler, ih *installments.Handler, ch *channels.Handler, cat *categories.Handler, hm *macro.Handler, uh *users.Handler) {
 	mux.HandleFunc("GET /healthz", handlerHealthz)
 
 	mux.HandleFunc("GET /economic/ipc", hm.GetIPC)
@@ -26,45 +31,49 @@ func addRoutes(mux *http.ServeMux, h *finance.Handler, hm *macro.Handler, uh *us
 	mux.HandleFunc("GET /users/config/{key}", uh.GetConfigByKey)
 	mux.HandleFunc("PATCH /users/config", uh.SetConfig)
 
-	mux.HandleFunc("GET /transactions/{id}", h.GetTransaction)
-	mux.HandleFunc("GET /transactions", h.ListTransactions)
-	mux.HandleFunc("PATCH /transactions/{id}", h.UpdateTransaction)
-	mux.HandleFunc("DELETE /transactions/{id}", h.DeleteTransaction)
+	mux.HandleFunc("GET /transactions/{id}", th.GetTransaction)
+	mux.HandleFunc("GET /transactions", th.ListTransactions)
+	mux.HandleFunc("PATCH /transactions/{id}", th.UpdateTransaction)
+	mux.HandleFunc("DELETE /transactions/{id}", th.DeleteTransaction)
+	mux.HandleFunc("PATCH /transaction/{id}/paid", th.UpdateTransactionPaid)
 
-	mux.HandleFunc("GET /entries/{id}", h.GetEntry)
-	mux.HandleFunc("GET /entries", h.ListEntries)
-	mux.HandleFunc("PATCH /entries/{id}", h.UpdateEntry)
-	mux.HandleFunc("PATCH /entries/{id}/paid", h.UpdateEntryPaid)
-	mux.HandleFunc("DELETE /entries/{id}", h.DeleteEntry)
+	mux.HandleFunc("GET /entries/{id}", eh.GetEntry)
+	mux.HandleFunc("GET /entries", eh.ListEntries)
+	mux.HandleFunc("PATCH /entries/{id}", eh.UpdateEntry)
+	mux.HandleFunc("DELETE /entries/{id}", eh.DeleteEntry)
 
-	mux.HandleFunc("POST /channels", h.CreateChannel)
-	mux.HandleFunc("GET /channels/{id}", h.GetChannel)
-	mux.HandleFunc("GET /channels", h.ListChannels)
-	mux.HandleFunc("PATCH /channels/{id}", h.UpdateChannel)
-	mux.HandleFunc("DELETE /channels/{id}", h.DeleteChannel)
+	mux.HandleFunc("POST /channels", ch.CreateChannel)
+	mux.HandleFunc("GET /channels/{id}", ch.GetChannel)
+	mux.HandleFunc("GET /channels", ch.ListChannels)
+	mux.HandleFunc("PATCH /channels/{id}", ch.UpdateChannel)
+	mux.HandleFunc("DELETE /channels/{id}", ch.DeleteChannel)
+	mux.HandleFunc("POST /channels/{id}/restore", ch.RestoreChannel)
 
-	mux.HandleFunc("POST /accounts", h.CreateAccount)
-	mux.HandleFunc("GET /accounts/{id}", h.GetAccount)
-	mux.HandleFunc("GET /accounts", h.ListAccounts)
-	mux.HandleFunc("PATCH /accounts/{id}", h.UpdateAccount)
-	mux.HandleFunc("DELETE /accounts/{id}", h.DeleteAccount)
+	mux.HandleFunc("POST /accounts", ch.CreateAccount)
+	mux.HandleFunc("GET /accounts/{id}", ch.GetAccount)
+	mux.HandleFunc("GET /accounts", ch.ListAccounts)
+	mux.HandleFunc("PATCH /accounts/{id}", ch.UpdateAccount)
+	mux.HandleFunc("DELETE /accounts/{id}", ch.DeleteAccount)
+	mux.HandleFunc("POST /accounts/{id}/restore", ch.RestoreAccount)
 
-	mux.HandleFunc("POST /categories", h.CreateCategory)
-	mux.HandleFunc("GET /categories/{id}", h.GetCategory)
-	mux.HandleFunc("GET /categories", h.ListCategoriesWithSubcategories)
-	mux.HandleFunc("PATCH /categories/{id}", h.UpdateCategory)
-	mux.HandleFunc("DELETE /categories/{id}", h.DeleteCategory)
+	mux.HandleFunc("POST /categories", cat.CreateCategory)
+	mux.HandleFunc("GET /categories/{id}", cat.GetCategory)
+	mux.HandleFunc("GET /categories", cat.ListCategoriesWithSubcategories)
+	mux.HandleFunc("PATCH /categories/{id}", cat.UpdateCategory)
+	mux.HandleFunc("DELETE /categories/{id}", cat.DeleteCategory)
+	mux.HandleFunc("POST /categories/{id}/restore", cat.RestoreCategory)
 
-	mux.HandleFunc("POST /subcategories", h.CreateSubcategory)
-	mux.HandleFunc("GET /subcategories/{id}", h.GetSubcategory)
-	mux.HandleFunc("GET /subcategories", h.ListSubcategories)
-	mux.HandleFunc("PATCH /subcategories/{id}", h.UpdateSubcategory)
-	mux.HandleFunc("DELETE /subcategories/{id}", h.DeleteSubcategory)
+	mux.HandleFunc("POST /subcategories", cat.CreateSubcategory)
+	mux.HandleFunc("GET /subcategories/{id}", cat.GetSubcategory)
+	mux.HandleFunc("GET /subcategories", cat.ListSubcategories)
+	mux.HandleFunc("PATCH /subcategories/{id}", cat.UpdateSubcategory)
+	mux.HandleFunc("DELETE /subcategories/{id}", cat.DeleteSubcategory)
+	mux.HandleFunc("POST /subcategories/{id}/restore", cat.RestoreSubcategory)
 
-	mux.HandleFunc("GET /installment-groups/{id}", h.GetInstallmentGroup)
-	mux.HandleFunc("GET /installment-groups", h.ListInstallmentGroups)
-	mux.HandleFunc("PATCH /installment-groups/{id}", h.UpdateInstallmentGroup)
-	mux.HandleFunc("DELETE /installment-groups/{id}", h.DeleteInstallmentGroup)
+	mux.HandleFunc("GET /installment-groups/{id}", ih.GetInstallmentGroup)
+	mux.HandleFunc("GET /installment-groups", ih.ListInstallmentGroups)
+	mux.HandleFunc("PATCH /installment-groups/{id}", ih.UpdateInstallmentGroup)
+	mux.HandleFunc("DELETE /installment-groups/{id}", ih.DeleteInstallmentGroup)
 
 	mux.HandleFunc("POST /transaction-aggregates", h.CreateTransactionAggregate)
 	mux.HandleFunc("GET /transaction-aggregates", h.ListTransactionsAggregate)

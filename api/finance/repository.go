@@ -4,8 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
+	"strconv"
 	"time"
+
+	"github.com/nnavales/summit/api/categories"
+	"github.com/nnavales/summit/api/channels"
+	"github.com/nnavales/summit/api/entries"
+	"github.com/nnavales/summit/api/installments"
+	"github.com/nnavales/summit/api/transactions"
+	"github.com/oklog/ulid/v2"
 )
 
 type SQLiteRepo struct {
@@ -14,745 +21,6 @@ type SQLiteRepo struct {
 
 func NewSQLiteRepo(db *sql.DB) *SQLiteRepo {
 	return &SQLiteRepo{db: db}
-}
-
-func (r *SQLiteRepo) GetTransactionByID(ctx context.Context, id string) (*Transaction, error) {
-	var t Transaction
-	err := r.db.QueryRowContext(ctx, QueryGetTransactionByID, id).Scan(
-		&t.ID,
-		&t.Date,
-		&t.Description,
-		&t.Type,
-		&t.Frequency,
-		&t.InstallmentGroupID,
-		&t.InstallmentNumber,
-		&t.CreatedAt,
-		&t.UpdatedAt,
-		&t.DeletedAt,
-	)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, ErrNotFound
-		}
-		return nil, err
-	}
-
-	return &t, nil
-}
-
-func (r *SQLiteRepo) ListTransactions(ctx context.Context) ([]Transaction, error) {
-	rows, err := r.db.QueryContext(ctx, QueryListTransactions)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var transactions []Transaction
-	for rows.Next() {
-		var t Transaction
-
-		err := rows.Scan(
-			&t.ID,
-			&t.Date,
-			&t.Description,
-			&t.Type,
-			&t.Frequency,
-			&t.InstallmentGroupID,
-			&t.InstallmentNumber,
-			&t.CreatedAt,
-			&t.UpdatedAt,
-			&t.DeletedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-		transactions = append(transactions, t)
-	}
-	return transactions, rows.Err()
-}
-
-func (r *SQLiteRepo) UpdateTransaction(ctx context.Context, t Transaction) (*Transaction, error) {
-	_, err := r.db.ExecContext(ctx, QueryUpdateTransaction,
-		t.Date,
-		t.Description,
-		t.Type,
-		t.Frequency,
-		t.InstallmentGroupID,
-		t.InstallmentNumber,
-		t.UpdatedAt,
-		t.DeletedAt,
-		t.ID,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &t, nil
-}
-
-func (r *SQLiteRepo) DeleteTransaction(ctx context.Context, id string) error {
-	result, err := r.db.ExecContext(ctx, QueryDeleteTransaction, id)
-	if err != nil {
-		return err
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return ErrNotFound
-	}
-	return nil
-}
-
-func (r *SQLiteRepo) GetEntryByID(ctx context.Context, id string) (*Entry, error) {
-	var e Entry
-
-	err := r.db.QueryRowContext(ctx, QueryGetEntryByID, id).Scan(
-		&e.ID,
-		&e.TransactionID,
-		&e.ChannelID,
-		&e.AccountID,
-		&e.Amount,
-		&e.Currency,
-		&e.IsPaid,
-		&e.ExchangeRate,
-		&e.CategoryID,
-		&e.SubcategoryID,
-		&e.CreatedAt,
-		&e.UpdatedAt,
-		&e.DeletedAt,
-	)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, ErrNotFound
-		}
-		return nil, err
-	}
-
-	return &e, nil
-}
-
-func (r *SQLiteRepo) ListEntries(ctx context.Context) ([]Entry, error) {
-	rows, err := r.db.QueryContext(ctx, QueryListEntries)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var entries []Entry
-	for rows.Next() {
-		var e Entry
-
-		err := rows.Scan(
-			&e.ID,
-			&e.TransactionID,
-			&e.ChannelID,
-			&e.AccountID,
-			&e.Amount,
-			&e.Currency,
-			&e.IsPaid,
-			&e.ExchangeRate,
-			&e.CategoryID,
-			&e.SubcategoryID,
-			&e.CreatedAt,
-			&e.UpdatedAt,
-			&e.DeletedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		entries = append(entries, e)
-	}
-	return entries, rows.Err()
-}
-
-func (r *SQLiteRepo) UpdateEntry(ctx context.Context, e Entry) (*Entry, error) {
-	_, err := r.db.ExecContext(ctx, QueryUpdateEntry,
-		e.TransactionID,
-		e.ChannelID,
-		e.AccountID,
-		e.Amount,
-		e.Currency,
-		e.IsPaid,
-		e.ExchangeRate,
-		e.CategoryID,
-		e.SubcategoryID,
-		e.UpdatedAt,
-		e.DeletedAt,
-		e.ID,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &e, nil
-}
-
-func (r *SQLiteRepo) DeleteEntry(ctx context.Context, id string) error {
-	result, err := r.db.ExecContext(ctx, QueryDeleteEntry, id)
-	if err != nil {
-		return err
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return ErrNotFound
-	}
-	return nil
-}
-
-func (r *SQLiteRepo) CreateChannel(ctx context.Context, c Channel) (*Channel, error) {
-	_, err := r.db.ExecContext(ctx, QueryCreateChannel,
-		c.ID,
-		c.Name,
-		c.CreatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &c, nil
-}
-
-func (r *SQLiteRepo) GetChannelByID(ctx context.Context, id string) (*Channel, error) {
-	var c Channel
-
-	err := r.db.QueryRowContext(ctx, QueryGetChannelByID, id).Scan(
-		&c.ID,
-		&c.Name,
-		&c.CreatedAt,
-		&c.UpdatedAt,
-		&c.DeletedAt,
-	)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, ErrNotFound
-		}
-		return nil, err
-	}
-
-	return &c, nil
-}
-
-func (r *SQLiteRepo) ListChannels(ctx context.Context) ([]Channel, error) {
-	rows, err := r.db.QueryContext(ctx, QueryListChannels)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var channels []Channel
-	for rows.Next() {
-		var c Channel
-
-		err := rows.Scan(
-			&c.ID,
-			&c.Name,
-			&c.CreatedAt,
-			&c.UpdatedAt,
-			&c.DeletedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		channels = append(channels, c)
-	}
-	return channels, rows.Err()
-}
-
-func (r *SQLiteRepo) ListChannelsWithAccounts(ctx context.Context) ([]ChannelWithAccounts, error) {
-	rows, err := r.db.QueryContext(ctx, QueryListChannelsWithAccounts)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var result []ChannelWithAccounts
-	var lastID string
-
-	for rows.Next() {
-		var ch Channel
-		var aID, aName, aInstrument, aLastFour *string
-		var aCreatedAt, aUpdatedAt, aDeletedAt *time.Time
-
-		err := rows.Scan(
-			&ch.ID,
-			&ch.Name,
-			&ch.CreatedAt,
-			&ch.UpdatedAt,
-			&ch.DeletedAt,
-			&aID,
-			&aName,
-			&aInstrument,
-			&aLastFour,
-			&aCreatedAt,
-			&aUpdatedAt,
-			&aDeletedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		if ch.ID != lastID {
-			result = append(result, ChannelWithAccounts{
-				Channel: ch,
-			})
-			lastID = ch.ID
-		}
-
-		if aID != nil {
-			acc := Account{
-				ID:         *aID,
-				ChannelID:  ch.ID,
-				Name:       *aName,
-				Instrument: *aInstrument,
-				LastFour:   aLastFour,
-				CreatedAt:  *aCreatedAt,
-				UpdatedAt:  aUpdatedAt,
-				DeletedAt:  aDeletedAt,
-			}
-			result[len(result)-1].Accounts = append(result[len(result)-1].Accounts, acc)
-		}
-	}
-	return result, rows.Err()
-}
-
-func (r *SQLiteRepo) UpdateChannel(ctx context.Context, c Channel) (*Channel, error) {
-	_, err := r.db.ExecContext(ctx, QueryUpdateChannel,
-		c.Name,
-		c.UpdatedAt,
-		c.DeletedAt,
-		c.ID,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &c, nil
-}
-
-func (r *SQLiteRepo) DeleteChannel(ctx context.Context, id string) error {
-	result, err := r.db.ExecContext(ctx, QueryDeleteChannel, id)
-	if err != nil {
-		return err
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return ErrNotFound
-	}
-	return nil
-}
-
-func (r *SQLiteRepo) CreateAccount(ctx context.Context, a Account) (*Account, error) {
-	_, err := r.db.ExecContext(ctx, QueryCreateAccount,
-		a.ID,
-		a.ChannelID,
-		a.Name,
-		a.Instrument,
-		a.LastFour,
-		a.CreatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &a, nil
-}
-
-func (r *SQLiteRepo) GetAccountByID(ctx context.Context, id string) (*Account, error) {
-	var a Account
-
-	err := r.db.QueryRowContext(ctx, QueryGetAccountByID, id).Scan(
-		&a.ID,
-		&a.ChannelID,
-		&a.Name,
-		&a.Instrument,
-		&a.LastFour,
-		&a.CreatedAt,
-		&a.UpdatedAt,
-		&a.DeletedAt,
-	)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, ErrNotFound
-		}
-		return nil, err
-	}
-
-	return &a, nil
-}
-
-func (r *SQLiteRepo) ListAccounts(ctx context.Context) ([]Account, error) {
-	rows, err := r.db.QueryContext(ctx, QueryListAccounts)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var accounts []Account
-	for rows.Next() {
-		var a Account
-
-		err := rows.Scan(
-			&a.ID,
-			&a.ChannelID,
-			&a.Name,
-			&a.Instrument,
-			&a.LastFour,
-			&a.CreatedAt,
-			&a.UpdatedAt,
-			&a.DeletedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		accounts = append(accounts, a)
-	}
-	return accounts, rows.Err()
-}
-
-func (r *SQLiteRepo) UpdateAccount(ctx context.Context, a Account) (*Account, error) {
-	_, err := r.db.ExecContext(ctx, QueryUpdateAccount,
-		a.ChannelID,
-		a.Name,
-		a.Instrument,
-		a.LastFour,
-		a.UpdatedAt,
-		a.DeletedAt,
-		a.ID,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &a, nil
-}
-
-func (r *SQLiteRepo) DeleteAccount(ctx context.Context, id string) error {
-	result, err := r.db.ExecContext(ctx, QueryDeleteAccount, id)
-	if err != nil {
-		return err
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return ErrNotFound
-	}
-	return nil
-}
-
-func (r *SQLiteRepo) CreateCategory(ctx context.Context, c Category) (*Category, error) {
-	_, err := r.db.ExecContext(ctx, QueryCreateCategory,
-		c.ID,
-		c.Name,
-		c.CreatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &c, nil
-}
-
-func (r *SQLiteRepo) GetCategoryByID(ctx context.Context, id string) (*Category, error) {
-	var c Category
-
-	err := r.db.QueryRowContext(ctx, QueryGetCategoryByID, id).Scan(
-		&c.ID,
-		&c.Name,
-		&c.CreatedAt,
-		&c.UpdatedAt,
-		&c.DeletedAt,
-	)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, ErrNotFound
-		}
-		return nil, err
-	}
-
-	return &c, nil
-}
-
-func (r *SQLiteRepo) ListCategories(ctx context.Context) ([]Category, error) {
-	rows, err := r.db.QueryContext(ctx, QueryListCategories)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var categories []Category
-	for rows.Next() {
-		var c Category
-		err := rows.Scan(
-			&c.ID,
-			&c.Name,
-			&c.CreatedAt,
-			&c.UpdatedAt,
-			&c.DeletedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		categories = append(categories, c)
-	}
-	return categories, rows.Err()
-}
-
-func (r *SQLiteRepo) ListCategoriesWithSubcategories(ctx context.Context) ([]CategoryWithSubcategories, error) {
-	rows, err := r.db.QueryContext(ctx, QueryListCategoriesWithSubcategories)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var result []CategoryWithSubcategories
-	var lastID string
-
-	for rows.Next() {
-		var c Category
-		var sID, sName *string
-		var sCreatedAt, sUpdatedAt, sDeletedAt *time.Time
-
-		err := rows.Scan(
-			&c.ID,
-			&c.Name,
-			&c.CreatedAt,
-			&c.UpdatedAt,
-			&c.DeletedAt,
-			&sID,
-			&sName,
-			&sCreatedAt,
-			&sUpdatedAt,
-			&sDeletedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		if c.ID != lastID {
-			result = append(result, CategoryWithSubcategories{
-				Category:      c,
-				Subcategories: []Subcategory{},
-			})
-			lastID = c.ID
-		}
-
-		if sID != nil {
-			sub := Subcategory{
-				ID:         *sID,
-				CategoryID: c.ID,
-				Name:       *sName,
-				CreatedAt:  *sCreatedAt,
-				UpdatedAt:  sUpdatedAt,
-				DeletedAt:  sDeletedAt,
-			}
-			result[len(result)-1].Subcategories = append(result[len(result)-1].Subcategories, sub)
-		}
-	}
-	return result, rows.Err()
-}
-
-func (r *SQLiteRepo) UpdateCategory(ctx context.Context, c Category) (*Category, error) {
-	_, err := r.db.ExecContext(ctx, QueryUpdateCategory,
-		c.Name,
-		c.UpdatedAt,
-		c.DeletedAt,
-		c.ID,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &c, nil
-}
-
-func (r *SQLiteRepo) DeleteCategory(ctx context.Context, id string) error {
-	result, err := r.db.ExecContext(ctx, QueryDeleteCategory, id)
-	if err != nil {
-		return err
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return ErrNotFound
-	}
-	return nil
-}
-
-func (r *SQLiteRepo) CreateSubcategory(ctx context.Context, s Subcategory) (*Subcategory, error) {
-	_, err := r.db.ExecContext(ctx, QueryCreateSubcategory,
-		s.ID,
-		s.CategoryID,
-		s.Name,
-		s.CreatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &s, nil
-}
-
-func (r *SQLiteRepo) GetSubcategoryByID(ctx context.Context, id string) (*Subcategory, error) {
-	var s Subcategory
-
-	err := r.db.QueryRowContext(ctx, QueryGetSubcategoryByID, id).Scan(
-		&s.ID,
-		&s.CategoryID,
-		&s.Name,
-		&s.CreatedAt,
-		&s.UpdatedAt,
-		&s.DeletedAt,
-	)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, ErrNotFound
-		}
-		return nil, err
-	}
-
-	return &s, nil
-}
-
-func (r *SQLiteRepo) ListSubcategories(ctx context.Context) ([]Subcategory, error) {
-	rows, err := r.db.QueryContext(ctx, QueryListSubcategories)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var subcategories []Subcategory
-	for rows.Next() {
-		var s Subcategory
-
-		err := rows.Scan(
-			&s.ID,
-			&s.CategoryID,
-			&s.Name,
-			&s.CreatedAt,
-			&s.UpdatedAt,
-			&s.DeletedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		subcategories = append(subcategories, s)
-	}
-	return subcategories, rows.Err()
-}
-
-func (r *SQLiteRepo) UpdateSubcategory(ctx context.Context, s Subcategory) (*Subcategory, error) {
-	_, err := r.db.ExecContext(ctx, QueryUpdateSubcategory,
-		s.CategoryID,
-		s.Name,
-		s.UpdatedAt,
-		s.DeletedAt,
-		s.ID,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &s, nil
-}
-
-func (r *SQLiteRepo) DeleteSubcategory(ctx context.Context, id string) error {
-	result, err := r.db.ExecContext(ctx, QueryDeleteSubcategory, id)
-	if err != nil {
-		return err
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return ErrNotFound
-	}
-	return nil
-}
-
-func (r *SQLiteRepo) GetInstallmentGroupByID(ctx context.Context, id string) (*InstallmentGroup, error) {
-	var ig InstallmentGroup
-
-	err := r.db.QueryRowContext(ctx, QueryGetInstallmentGroupByID, id).Scan(
-		&ig.ID,
-		&ig.TotalInstallments,
-		&ig.StartDate,
-		&ig.CreatedAt,
-		&ig.UpdatedAt,
-		&ig.DeletedAt,
-	)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, ErrNotFound
-		}
-		return nil, err
-	}
-
-	return &ig, nil
-}
-
-func (r *SQLiteRepo) ListInstallmentGroups(ctx context.Context) ([]InstallmentGroup, error) {
-	rows, err := r.db.QueryContext(ctx, QueryListInstallmentGroups)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var groups []InstallmentGroup
-	for rows.Next() {
-		var ig InstallmentGroup
-
-		err := rows.Scan(
-			&ig.ID,
-			&ig.TotalInstallments,
-			&ig.StartDate,
-			&ig.CreatedAt,
-			&ig.UpdatedAt,
-			&ig.DeletedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		groups = append(groups, ig)
-	}
-	return groups, rows.Err()
-}
-
-func (r *SQLiteRepo) UpdateInstallmentGroup(ctx context.Context, ig InstallmentGroup) (*InstallmentGroup, error) {
-	_, err := r.db.ExecContext(ctx, QueryUpdateInstallmentGroup,
-		ig.TotalInstallments,
-		ig.StartDate,
-		ig.UpdatedAt,
-		ig.DeletedAt,
-		ig.ID,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &ig, nil
-}
-
-func (r *SQLiteRepo) DeleteInstallmentGroup(ctx context.Context, id string) error {
-	result, err := r.db.ExecContext(ctx, QueryDeleteInstallmentGroup, id)
-	if err != nil {
-		return err
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return ErrNotFound
-	}
-	return nil
 }
 
 func (r *SQLiteRepo) CreateTransactionAggregate(ctx context.Context, agg TransactionAggregate) error {
@@ -770,8 +38,8 @@ func (r *SQLiteRepo) CreateTransactionAggregate(ctx context.Context, agg Transac
 	entry := agg.Items[0].Entry
 
 	if entry.AccountID != nil && *entry.AccountID != "" {
-		var account Account
-		err := tx.QueryRowContext(ctx, QueryGetAccountByID, *entry.AccountID).Scan(
+		var account channels.Account
+		err := tx.QueryRowContext(ctx, channels.QueryGetAccountByID, *entry.AccountID).Scan(
 			&account.ID, &account.ChannelID, &account.Name, &account.Instrument, &account.LastFour, &account.CreatedAt, &account.UpdatedAt, &account.DeletedAt,
 		)
 		if err != nil {
@@ -786,8 +54,8 @@ func (r *SQLiteRepo) CreateTransactionAggregate(ctx context.Context, agg Transac
 	}
 
 	if entry.SubcategoryID != nil && *entry.SubcategoryID != "" {
-		var subcategory Subcategory
-		err := tx.QueryRowContext(ctx, QueryGetSubcategoryByID, *entry.SubcategoryID).Scan(
+		var subcategory categories.Subcategory
+		err := tx.QueryRowContext(ctx, categories.QueryGetSubcategoryByID, *entry.SubcategoryID).Scan(
 			&subcategory.ID, &subcategory.CategoryID, &subcategory.Name, &subcategory.CreatedAt, &subcategory.UpdatedAt, &subcategory.DeletedAt,
 		)
 		if err != nil {
@@ -804,18 +72,22 @@ func (r *SQLiteRepo) CreateTransactionAggregate(ctx context.Context, agg Transac
 	}
 
 	if agg.Group != nil {
-		_, err := tx.ExecContext(ctx, QueryCreateInstallmentGroup,
+		_, err := tx.ExecContext(ctx, installments.QueryCreateInstallmentGroup,
 			agg.Group.ID,
 			agg.Group.TotalInstallments,
 			agg.Group.StartDate,
 			agg.Group.CreatedAt,
+			agg.Group.OriginalAmount,
+			agg.Group.Description,
+			agg.Group.Currency,
+			agg.Group.IsCanceled,
 		)
 		if err != nil {
 			return err
 		}
 
 		for _, i := range agg.Items {
-			_, err = tx.ExecContext(ctx, QueryCreateTransaction,
+			_, err = tx.ExecContext(ctx, transactions.QueryCreateTransaction,
 				i.Transaction.ID,
 				i.Transaction.Date,
 				i.Transaction.Description,
@@ -823,20 +95,20 @@ func (r *SQLiteRepo) CreateTransactionAggregate(ctx context.Context, agg Transac
 				i.Transaction.Frequency,
 				i.Transaction.InstallmentGroupID,
 				i.Transaction.InstallmentNumber,
+				i.Transaction.IsPaid,
 				i.Transaction.CreatedAt,
 			)
 			if err != nil {
 				return err
 			}
 
-			_, err := tx.ExecContext(ctx, QueryCreateEntry,
+			_, err := tx.ExecContext(ctx, entries.QueryCreateEntry,
 				i.Entry.ID,
 				i.Entry.TransactionID,
 				i.Entry.ChannelID,
 				i.Entry.AccountID,
 				i.Entry.Amount,
 				i.Entry.Currency,
-				i.Entry.IsPaid,
 				i.Entry.ExchangeRate,
 				i.Entry.CategoryID,
 				i.Entry.SubcategoryID,
@@ -848,7 +120,7 @@ func (r *SQLiteRepo) CreateTransactionAggregate(ctx context.Context, agg Transac
 		}
 
 	} else {
-		_, err = tx.ExecContext(ctx, QueryCreateTransaction,
+		_, err = tx.ExecContext(ctx, transactions.QueryCreateTransaction,
 			agg.Items[0].Transaction.ID,
 			agg.Items[0].Transaction.Date,
 			agg.Items[0].Transaction.Description,
@@ -856,20 +128,20 @@ func (r *SQLiteRepo) CreateTransactionAggregate(ctx context.Context, agg Transac
 			agg.Items[0].Transaction.Frequency,
 			nil,
 			nil,
+			agg.Items[0].Transaction.IsPaid,
 			agg.Items[0].Transaction.CreatedAt,
 		)
 		if err != nil {
 			return err
 		}
 
-		_, err := tx.ExecContext(ctx, QueryCreateEntry,
+		_, err := tx.ExecContext(ctx, entries.QueryCreateEntry,
 			agg.Items[0].Entry.ID,
 			agg.Items[0].Entry.TransactionID,
 			agg.Items[0].Entry.ChannelID,
 			agg.Items[0].Entry.AccountID,
 			agg.Items[0].Entry.Amount,
 			agg.Items[0].Entry.Currency,
-			agg.Items[0].Entry.IsPaid,
 			agg.Items[0].Entry.ExchangeRate,
 			agg.Items[0].Entry.CategoryID,
 			agg.Items[0].Entry.SubcategoryID,
@@ -895,14 +167,15 @@ func (r *SQLiteRepo) ListTransactionsAggregate(ctx context.Context, filter *Filt
 	for rows.Next() {
 		var t TransactionRowDTO
 		var amountCents int64
+		var originalAmountCents sql.NullInt64
 		err := rows.Scan(
 			&t.ID,
 			&t.Date,
 			&t.Description,
 			&t.Type,
 			&t.Frequency,
-			&t.EntryID,
 			&t.IsPaid,
+			&t.EntryID,
 			&amountCents,
 			&t.Currency,
 			&t.ExchangeRate,
@@ -916,12 +189,19 @@ func (r *SQLiteRepo) ListTransactionsAggregate(ctx context.Context, filter *Filt
 			&t.ChannelName,
 			&t.InstallmentNumber,
 			&t.TotalInstallments,
+			&t.InstallmentStartDate,
 			&t.InstallmentGroupID,
+			&t.IsCanceled,
+			&originalAmountCents,
 		)
 		if err != nil {
 			return nil, err
 		}
-		t.Amount = FormatAmount(amountCents)
+		t.Amount = entries.FormatAmount(amountCents)
+		if originalAmountCents.Valid {
+			originalAmount := entries.FormatAmount(originalAmountCents.Int64)
+			t.OriginalAmount = &originalAmount
+		}
 		transactions = append(transactions, t)
 	}
 
@@ -937,65 +217,10 @@ func (r *SQLiteRepo) ListTransactionsAggregate(ctx context.Context, filter *Filt
 	}, rows.Err()
 }
 
-func buildCountQuery(filter *Filter) string {
-	var whereClauses []string
-
-	whereClauses = append(whereClauses, "t.deleted_at IS NULL", "e.deleted_at IS NULL")
-
-	if filter.Search != nil && *filter.Search != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("t.description LIKE '%%%s'", *filter.Search))
-	}
-
-	if filter.Type != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("t.type = '%s'", *filter.Type))
-	}
-
-	if filter.Frequency != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("t.frequency = '%s'", *filter.Frequency))
-	}
-
-	if filter.Currency != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("e.currency = '%s'", *filter.Currency))
-	}
-
-	if filter.Installment != nil {
-		if *filter.Installment {
-			whereClauses = append(whereClauses, "t.installment_group_id IS NOT NULL")
-		} else {
-			whereClauses = append(whereClauses, "t.installment_group_id IS NULL")
-		}
-	}
-
-	if filter.Category != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("e.category_id = '%s'", *filter.Category))
-	}
-
-	if filter.Subcategory != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("e.subcategory_id = '%s'", *filter.Subcategory))
-	}
-
-	if filter.Channel != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("e.channel_id = '%s'", *filter.Channel))
-	}
-
-	if filter.Account != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("e.account_id = '%s'", *filter.Account))
-	}
-
-	if filter.DateFrom != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("t.date >= '%s'", filter.DateFrom.String()))
-	}
-
-	if filter.DateTo != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("t.date <= '%s'", filter.DateTo.String()))
-	}
-
-	return "SELECT COUNT(DISTINCT t.id) FROM transactions t JOIN entries e ON e.transaction_id = t.id WHERE " + strings.Join(whereClauses, " AND ")
-}
-
 func (r *SQLiteRepo) GetTransactionAggregate(ctx context.Context, id string) (*TransactionRowDTO, error) {
 	var t TransactionRowDTO
 	var amountCents int64
+	var originalAmountCents sql.NullInt64
 	err := r.db.QueryRowContext(ctx, QueryGetTransactionDTOByID, id).Scan(
 		&t.ID,
 		&t.Date,
@@ -1017,7 +242,10 @@ func (r *SQLiteRepo) GetTransactionAggregate(ctx context.Context, id string) (*T
 		&t.ChannelName,
 		&t.InstallmentNumber,
 		&t.TotalInstallments,
+		&t.InstallmentStartDate,
 		&t.InstallmentGroupID,
+		&t.IsCanceled,
+		&originalAmountCents,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -1025,7 +253,11 @@ func (r *SQLiteRepo) GetTransactionAggregate(ctx context.Context, id string) (*T
 		}
 		return nil, err
 	}
-	t.Amount = FormatAmount(amountCents)
+	t.Amount = entries.FormatAmount(amountCents)
+	if originalAmountCents.Valid {
+		originalAmount := entries.FormatAmount(originalAmountCents.Int64)
+		t.OriginalAmount = &originalAmount
+	}
 
 	return &t, nil
 
@@ -1048,8 +280,8 @@ func (r *SQLiteRepo) GetTransactionsByInstallmentGroup(ctx context.Context, grou
 			&t.Description,
 			&t.Type,
 			&t.Frequency,
-			&t.EntryID,
 			&t.IsPaid,
+			&t.EntryID,
 			&amountCents,
 			&t.Currency,
 			&t.ExchangeRate,
@@ -1063,12 +295,15 @@ func (r *SQLiteRepo) GetTransactionsByInstallmentGroup(ctx context.Context, grou
 			&t.ChannelName,
 			&t.InstallmentNumber,
 			&t.TotalInstallments,
+			&t.InstallmentStartDate,
 			&t.InstallmentGroupID,
+			&t.IsCanceled,
+			&t.OriginalAmount,
 		)
 		if err != nil {
 			return nil, err
 		}
-		t.Amount = FormatAmount(amountCents)
+		t.Amount = entries.FormatAmount(amountCents)
 		transactions = append(transactions, t)
 	}
 	return transactions, rows.Err()
@@ -1081,8 +316,8 @@ func (r *SQLiteRepo) DeleteTransactionAggregate(ctx context.Context, id string) 
 	}
 
 	defer tx.Rollback()
-	var t Transaction
-	err = tx.QueryRowContext(ctx, QueryGetTransactionByID, id).Scan(
+	var t transactions.Transaction
+	err = tx.QueryRowContext(ctx, transactions.QueryGetTransactionByID, id).Scan(
 		&t.ID,
 		&t.Date,
 		&t.Description,
@@ -1090,6 +325,7 @@ func (r *SQLiteRepo) DeleteTransactionAggregate(ctx context.Context, id string) 
 		&t.Frequency,
 		&t.InstallmentGroupID,
 		&t.InstallmentNumber,
+		&t.IsPaid,
 		&t.CreatedAt,
 		&t.UpdatedAt,
 		&t.DeletedAt,
@@ -1103,7 +339,7 @@ func (r *SQLiteRepo) DeleteTransactionAggregate(ctx context.Context, id string) 
 	}
 
 	if t.InstallmentGroupID != nil {
-		result, err := tx.ExecContext(ctx, QueryDeleteInstallmentGroup, t.InstallmentGroupID)
+		result, err := tx.ExecContext(ctx, installments.QueryDeleteInstallmentGroup, t.InstallmentGroupID)
 		if err != nil {
 			return err
 		}
@@ -1115,7 +351,7 @@ func (r *SQLiteRepo) DeleteTransactionAggregate(ctx context.Context, id string) 
 			return ErrNotFound
 		}
 	} else {
-		result, err := tx.ExecContext(ctx, QueryDeleteTransaction, t.ID)
+		result, err := tx.ExecContext(ctx, transactions.QueryDeleteTransaction, t.ID)
 		if err != nil {
 			return err
 		}
@@ -1142,7 +378,7 @@ func (r *SQLiteRepo) DeleteTransactionsByInstallmentGroup(ctx context.Context, g
 	return nil
 }
 
-func (r *SQLiteRepo) CancelInstallments(ctx context.Context, agg TransactionAggregate, groupID string, fromInstallment int) error {
+func (r *SQLiteRepo) CancelInstallments(ctx context.Context, groupID string, fromInstallment int, now time.Time) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -1153,20 +389,18 @@ func (r *SQLiteRepo) CancelInstallments(ctx context.Context, agg TransactionAggr
 	if err != nil {
 		return err
 	}
-
-	var txIDs []string
-	var totalAmount int64
+	var trans []TransactionRowDTO
 	for rows.Next() {
 		var t TransactionRowDTO
-		var amountCents int64
 		err := rows.Scan(
 			&t.ID,
 			&t.Date,
 			&t.Description,
 			&t.Type,
 			&t.Frequency,
+			&t.IsPaid,
 			&t.EntryID,
-			&amountCents,
+			&t.Amount,
 			&t.Currency,
 			&t.ExchangeRate,
 			&t.CategoryID,
@@ -1179,60 +413,91 @@ func (r *SQLiteRepo) CancelInstallments(ctx context.Context, agg TransactionAggr
 			&t.ChannelName,
 			&t.InstallmentNumber,
 			&t.TotalInstallments,
+			&t.InstallmentStartDate,
 			&t.InstallmentGroupID,
+			&t.IsCanceled,
+			&t.OriginalAmount,
 		)
 		if err != nil {
 			rows.Close()
 			return err
 		}
-		txIDs = append(txIDs, t.ID)
-		txIDs = append(txIDs, t.EntryID)
-		totalAmount += amountCents
+
+		trans = append(trans, t)
 	}
 	rows.Close()
 
-	if len(txIDs) == 0 {
+	if len(trans) == 0 {
 		return ErrNotFound
 	}
 
-	for _, item := range agg.Items {
-		_, err = tx.ExecContext(ctx, QueryCreateTransaction,
-			item.Transaction.ID,
-			item.Transaction.Date,
-			item.Transaction.Description,
-			item.Transaction.Type,
-			item.Transaction.Frequency,
-			item.Transaction.InstallmentGroupID,
-			item.Transaction.InstallmentNumber,
-			item.Transaction.CreatedAt,
-		)
-		if err != nil {
-			return err
-		}
+	base := trans[0]
 
-		_, err = tx.ExecContext(ctx, QueryCreateEntry,
-			item.Entry.ID,
-			item.Entry.TransactionID,
-			item.Entry.ChannelID,
-			item.Entry.AccountID,
-			totalAmount,
-			item.Entry.Currency,
-			item.Entry.IsPaid,
-			item.Entry.ExchangeRate,
-			item.Entry.CategoryID,
-			item.Entry.SubcategoryID,
-			item.Entry.CreatedAt,
-		)
-		if err != nil {
-			return err
+	var canceledAmount int64
+	for _, t := range trans {
+		if *t.InstallmentNumber >= fromInstallment {
+			v, err := strconv.Atoi(t.Amount)
+			if err != nil {
+				return err
+			}
+			canceledAmount += int64(v)
 		}
 	}
 
-	for i := 0; i < len(txIDs); i += 2 {
-		_, err = tx.ExecContext(ctx, QueryDeleteTransaction, txIDs[i])
-		if err != nil {
-			return err
+	newTxID := ulid.Make().String()
+	newEntryID := ulid.Make().String()
+
+	_, err = tx.ExecContext(ctx, transactions.QueryCreateTransaction,
+		newTxID,
+		base.Date,
+		base.Description,
+		base.Type,
+		base.Frequency,
+		base.InstallmentGroupID,
+		nil,
+		true,
+		now,
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, entries.QueryCreateEntry,
+		newEntryID,
+		newTxID,
+		base.ChannelID,
+		base.AccountID,
+		canceledAmount,
+		base.Currency,
+		base.ExchangeRate,
+		base.CategoryID,
+		base.SubcategoryID,
+		now,
+	)
+	if err != nil {
+		return err
+	}
+
+	for _, t := range trans {
+		if *t.InstallmentNumber >= fromInstallment {
+			_, err := tx.ExecContext(ctx, transactions.QueryDeleteTransaction, t.ID)
+			if err != nil {
+				return err
+			}
+		} else {
+			_, err := tx.ExecContext(ctx, transactions.QueryMarkAsPaid,
+				now,
+				t.ID,
+			)
+			if err != nil {
+				return err
+			}
 		}
+	}
+
+	_, err = tx.ExecContext(ctx, installments.QuerySetCancelled, now, true, base.InstallmentGroupID)
+	if err != nil {
+		return err
 	}
 
 	return tx.Commit()
@@ -1245,8 +510,8 @@ func (r *SQLiteRepo) UpdateTransactionAggregate(ctx context.Context, id string, 
 	}
 	defer tx.Rollback()
 
-	var t Transaction
-	err = tx.QueryRowContext(ctx, QueryGetTransactionByID, id).Scan(
+	var t transactions.Transaction
+	err = tx.QueryRowContext(ctx, transactions.QueryGetTransactionByID, id).Scan(
 		&t.ID,
 		&t.Date,
 		&t.Description,
@@ -1254,6 +519,7 @@ func (r *SQLiteRepo) UpdateTransactionAggregate(ctx context.Context, id string, 
 		&t.Frequency,
 		&t.InstallmentGroupID,
 		&t.InstallmentNumber,
+		&t.IsPaid,
 		&t.CreatedAt,
 		&t.UpdatedAt,
 		&t.DeletedAt,
@@ -1272,8 +538,8 @@ func (r *SQLiteRepo) UpdateTransactionAggregate(ctx context.Context, id string, 
 	entry := agg.Items[0].Entry
 
 	if entry.AccountID != nil && *entry.AccountID != "" {
-		var account Account
-		err := tx.QueryRowContext(ctx, QueryGetAccountByID, *entry.AccountID).Scan(
+		var account channels.Account
+		err := tx.QueryRowContext(ctx, channels.QueryGetAccountByID, *entry.AccountID).Scan(
 			&account.ID, &account.ChannelID, &account.Name, &account.Instrument, &account.LastFour, &account.CreatedAt, &account.UpdatedAt, &account.DeletedAt,
 		)
 		if err != nil {
@@ -1288,8 +554,8 @@ func (r *SQLiteRepo) UpdateTransactionAggregate(ctx context.Context, id string, 
 	}
 
 	if entry.SubcategoryID != nil && *entry.SubcategoryID != "" {
-		var subcategory Subcategory
-		err := tx.QueryRowContext(ctx, QueryGetSubcategoryByID, *entry.SubcategoryID).Scan(
+		var subcategory categories.Subcategory
+		err := tx.QueryRowContext(ctx, categories.QueryGetSubcategoryByID, *entry.SubcategoryID).Scan(
 			&subcategory.ID, &subcategory.CategoryID, &subcategory.Name, &subcategory.CreatedAt, &subcategory.UpdatedAt, &subcategory.DeletedAt,
 		)
 		if err != nil {
@@ -1306,27 +572,31 @@ func (r *SQLiteRepo) UpdateTransactionAggregate(ctx context.Context, id string, 
 	}
 
 	if t.InstallmentGroupID != nil {
-		_, err = tx.ExecContext(ctx, QueryDeleteInstallmentGroup, *t.InstallmentGroupID)
+		_, err = tx.ExecContext(ctx, installments.QueryDeleteInstallmentGroup, *t.InstallmentGroupID)
 	} else {
-		_, err = tx.ExecContext(ctx, QueryDeleteTransaction, t.ID)
+		_, err = tx.ExecContext(ctx, transactions.QueryDeleteTransaction, t.ID)
 	}
 	if err != nil {
 		return err
 	}
 
 	if agg.Group != nil {
-		_, err := tx.ExecContext(ctx, QueryCreateInstallmentGroup,
+		_, err := tx.ExecContext(ctx, installments.QueryCreateInstallmentGroup,
 			agg.Group.ID,
 			agg.Group.TotalInstallments,
 			agg.Group.StartDate,
 			agg.Group.CreatedAt,
+			agg.Group.OriginalAmount,
+			agg.Group.Description,
+			agg.Group.Currency,
+			agg.Group.IsCanceled,
 		)
 		if err != nil {
 			return err
 		}
 
 		for _, i := range agg.Items {
-			_, err = tx.ExecContext(ctx, QueryCreateTransaction,
+			_, err = tx.ExecContext(ctx, transactions.QueryCreateTransaction,
 				i.Transaction.ID,
 				i.Transaction.Date,
 				i.Transaction.Description,
@@ -1334,20 +604,20 @@ func (r *SQLiteRepo) UpdateTransactionAggregate(ctx context.Context, id string, 
 				i.Transaction.Frequency,
 				i.Transaction.InstallmentGroupID,
 				i.Transaction.InstallmentNumber,
+				i.Transaction.IsPaid,
 				i.Transaction.CreatedAt,
 			)
 			if err != nil {
 				return err
 			}
 
-			_, err = tx.ExecContext(ctx, QueryCreateEntry,
+			_, err = tx.ExecContext(ctx, entries.QueryCreateEntry,
 				i.Entry.ID,
 				i.Transaction.ID,
 				i.Entry.ChannelID,
 				i.Entry.AccountID,
 				i.Entry.Amount,
 				i.Entry.Currency,
-				i.Entry.IsPaid,
 				i.Entry.ExchangeRate,
 				i.Entry.CategoryID,
 				i.Entry.SubcategoryID,
@@ -1360,7 +630,7 @@ func (r *SQLiteRepo) UpdateTransactionAggregate(ctx context.Context, id string, 
 
 	} else {
 		i := agg.Items[0]
-		_, err = tx.ExecContext(ctx, QueryCreateTransaction,
+		_, err = tx.ExecContext(ctx, transactions.QueryCreateTransaction,
 			i.Transaction.ID,
 			i.Transaction.Date,
 			i.Transaction.Description,
@@ -1368,20 +638,20 @@ func (r *SQLiteRepo) UpdateTransactionAggregate(ctx context.Context, id string, 
 			i.Transaction.Frequency,
 			nil,
 			nil,
+			i.Transaction.IsPaid,
 			i.Transaction.CreatedAt,
 		)
 		if err != nil {
 			return err
 		}
 
-		_, err = tx.ExecContext(ctx, QueryCreateEntry,
+		_, err = tx.ExecContext(ctx, entries.QueryCreateEntry,
 			i.Entry.ID,
 			i.Transaction.ID,
 			i.Entry.ChannelID,
 			i.Entry.AccountID,
 			i.Entry.Amount,
 			i.Entry.Currency,
-			i.Entry.IsPaid,
 			i.Entry.ExchangeRate,
 			i.Entry.CategoryID,
 			i.Entry.SubcategoryID,

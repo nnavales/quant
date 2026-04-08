@@ -7,12 +7,17 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/nnavales/summit/api/categories"
+	"github.com/nnavales/summit/api/channels"
 	"github.com/nnavales/summit/api/config"
 	"github.com/nnavales/summit/api/db"
+	"github.com/nnavales/summit/api/entries"
 	"github.com/nnavales/summit/api/finance"
+	"github.com/nnavales/summit/api/installments"
 	"github.com/nnavales/summit/api/logger"
 	"github.com/nnavales/summit/api/macro"
 	"github.com/nnavales/summit/api/timeutils"
+	"github.com/nnavales/summit/api/transactions"
 	"github.com/nnavales/summit/api/transport"
 	"github.com/nnavales/summit/api/users"
 )
@@ -54,22 +59,45 @@ func run() error {
 	financeRepo := finance.NewSQLiteRepo(dbConn.DB)
 	financeService := finance.NewService(clock, financeRepo)
 
+	transactionsRepo := transactions.NewSQLiteRepo(dbConn.DB)
+	transactionsService := transactions.NewService(clock, transactionsRepo)
+
+	entriesRepo := entries.NewSQLiteRepo(dbConn.DB)
+	entriesService := entries.NewService(clock, entriesRepo)
+
+	channelsRepo := channels.NewSQLiteRepo(dbConn.DB)
+	channelsService := channels.NewService(clock, channelsRepo)
+
+	categoriesRepo := categories.NewSQLiteRepo(dbConn.DB)
+	categoriesService := categories.NewService(clock, categoriesRepo)
+
+	installmentsRepo := installments.NewSQLiteRepo(dbConn.DB)
+	installmentsService := installments.NewService(clock, installmentsRepo)
+
 	usersRepo := users.NewRepo(dbConn.DB)
 	usersService := users.NewService(clock, usersRepo)
-
-	err = financeService.SeedDefaults(context.Background())
-	if err != nil {
-		slog.Warn("finances.seed.error", "err", err)
-	}
 
 	if err := users.SeedDefaults(context.Background(), usersRepo, clock); err != nil {
 		slog.Warn("user.config.seed.error", "err", err)
 	}
 
+	if err := channels.SeedDefaults(context.Background(), channelsRepo, clock); err != nil {
+		slog.Warn("channel.config.seed.error", "err", err)
+	}
+
+	if err := categories.SeedDefaults(context.Background(), categoriesRepo, clock); err != nil {
+		slog.Warn("category.config.seed.error", "err", err)
+	}
+
 	services := &transport.Services{
-		FinanceService: financeService,
-		MacroService:   macroService,
-		UsersService:   usersService,
+		FinanceService:      financeService,
+		TransactionsService: transactionsService,
+		EntriesService:      entriesService,
+		InstallmentsService: installmentsService,
+		ChannelsService:     channelsService,
+		CategoriesService:   categoriesService,
+		MacroService:        macroService,
+		UsersService:        usersService,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)

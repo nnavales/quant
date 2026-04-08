@@ -10,7 +10,7 @@ CREATE TABLE channels (
 CREATE TABLE accounts (
     id         TEXT PRIMARY KEY,
     channel_id TEXT NOT NULL,
-    name       TEXT NOT NULL,
+    name       TEXT NOT NULL UNIQUE,
     instrument TEXT NOT NULL,
     last_four  TEXT,
     created_at DATETIME NOT NULL,
@@ -30,17 +30,21 @@ CREATE TABLE categories (
 CREATE TABLE subcategories (
     id          TEXT PRIMARY KEY,
     category_id TEXT NOT NULL,
-    name        TEXT NOT NULL,
+    name        TEXT NOT NULL UNIQUE,
     created_at DATETIME NOT NULL,
     updated_at DATETIME,
     deleted_at DATETIME,
-    FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE CASCADE
+    FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE RESTRICT
 );
 
 CREATE TABLE installment_groups (
     id                 TEXT PRIMARY KEY,
     total_installments INTEGER NOT NULL,
     start_date         TEXT NOT NULL,
+    original_amount INTEGER NOT NULL,
+    description TEXT NOT NULL,
+    currency TEXT NOT NULL,
+    is_canceled INTEGER NOT NULL,
     created_at DATETIME NOT NULL,
     updated_at DATETIME,
     deleted_at DATETIME
@@ -54,11 +58,13 @@ CREATE TABLE transactions (
     frequency            TEXT,
     installment_group_id TEXT,
     installment_number   INTEGER,
+    is_paid INTEGER NOT NULL,
     created_at DATETIME NOT NULL,
     updated_at DATETIME,
     deleted_at DATETIME,
     FOREIGN KEY(installment_group_id) REFERENCES installment_groups(id) ON DELETE CASCADE
 );
+
 
 CREATE TABLE entries (
     id               TEXT PRIMARY KEY,
@@ -67,7 +73,6 @@ CREATE TABLE entries (
     account_id       TEXT, 
     amount       INTEGER NOT NULL,
     currency TEXT NOT NULL,
-    is_paid INTEGER NOT NULL,
     exchange_rate    REAL NOT NULL,
     category_id      TEXT,
     subcategory_id   TEXT,
@@ -76,6 +81,7 @@ CREATE TABLE entries (
     deleted_at DATETIME,
     FOREIGN KEY(transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
     FOREIGN KEY(account_id)     REFERENCES accounts(id) ON DELETE RESTRICT,
+    FOREIGN KEY(channel_id) REFERENCES channels(id) ON DELETE RESTRICT,
     FOREIGN KEY(category_id)    REFERENCES categories(id) ON DELETE SET NULL,
     FOREIGN KEY(subcategory_id) REFERENCES subcategories(id) ON DELETE SET NULL
 );
