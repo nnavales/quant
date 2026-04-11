@@ -28,7 +28,6 @@ type CountryRiskValue struct {
 
 func FetchCountryRiskFromAPI() (CountryRiskValue, error) {
 	ctx := context.Background()
-
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",

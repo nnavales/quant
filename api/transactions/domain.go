@@ -45,6 +45,7 @@ type Repository interface {
 	ListTransactions(ctx context.Context) ([]Transaction, error)
 	UpdateTransaction(ctx context.Context, t Transaction) (*Transaction, error)
 	DeleteTransaction(ctx context.Context, id string) error
+	GetMinTransactionDate(ctx context.Context) (*timeutils.Date, error)
 }
 
 // CTOs

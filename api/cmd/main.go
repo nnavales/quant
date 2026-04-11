@@ -10,9 +10,11 @@ import (
 	"github.com/nnavales/summit/api/categories"
 	"github.com/nnavales/summit/api/channels"
 	"github.com/nnavales/summit/api/config"
+	"github.com/nnavales/summit/api/dashboard"
 	"github.com/nnavales/summit/api/db"
 	"github.com/nnavales/summit/api/entries"
 	"github.com/nnavales/summit/api/finance"
+	"github.com/nnavales/summit/api/historical"
 	"github.com/nnavales/summit/api/installments"
 	"github.com/nnavales/summit/api/logger"
 	"github.com/nnavales/summit/api/macro"
@@ -56,11 +58,16 @@ func run() error {
 	}
 	macroService := macro.NewService(macroProvider)
 
-	financeRepo := finance.NewSQLiteRepo(dbConn.DB)
-	financeService := finance.NewService(clock, financeRepo)
+	dashboardRepo := dashboard.NewSQLiteRepo(dbConn.DB)
+	dashboardService := dashboard.NewService(dashboardRepo)
 
 	transactionsRepo := transactions.NewSQLiteRepo(dbConn.DB)
 	transactionsService := transactions.NewService(clock, transactionsRepo)
+
+	financeRepo := finance.NewSQLiteRepo(dbConn.DB)
+	historicalRepo := historical.NewSQLiteRepo(dbConn.DB)
+	historicalService := historical.NewService(clock, historicalRepo, transactionsRepo)
+	financeService := finance.NewService(clock, financeRepo, historicalRepo)
 
 	entriesRepo := entries.NewSQLiteRepo(dbConn.DB)
 	entriesService := entries.NewService(clock, entriesRepo)
@@ -98,6 +105,8 @@ func run() error {
 		CategoriesService:   categoriesService,
 		MacroService:        macroService,
 		UsersService:        usersService,
+		HistoricalService:   historicalService,
+		DashboardService:    dashboardService,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)

@@ -5,8 +5,10 @@ import (
 
 	"github.com/nnavales/summit/api/categories"
 	"github.com/nnavales/summit/api/channels"
+	"github.com/nnavales/summit/api/dashboard"
 	"github.com/nnavales/summit/api/entries"
 	"github.com/nnavales/summit/api/finance"
+	"github.com/nnavales/summit/api/historical"
 	"github.com/nnavales/summit/api/installments"
 	"github.com/nnavales/summit/api/macro"
 	"github.com/nnavales/summit/api/transactions"
@@ -14,7 +16,12 @@ import (
 	"github.com/nnavales/summit/api/users"
 )
 
-func addRoutes(mux *http.ServeMux, h *finance.Handler, th *transactions.Handler, eh *entries.Handler, ih *installments.Handler, ch *channels.Handler, cat *categories.Handler, hm *macro.Handler, uh *users.Handler) {
+func addRoutes(mux *http.ServeMux,
+	h *finance.Handler, th *transactions.Handler, eh *entries.Handler,
+	ih *installments.Handler, ch *channels.Handler, cat *categories.Handler,
+	hm *macro.Handler, uh *users.Handler, hh *historical.Handler,
+	dh *dashboard.Handler,
+) {
 	mux.HandleFunc("GET /healthz", handlerHealthz)
 
 	mux.HandleFunc("GET /economic/ipc", hm.GetIPC)
@@ -81,6 +88,16 @@ func addRoutes(mux *http.ServeMux, h *finance.Handler, th *transactions.Handler,
 	mux.HandleFunc("PATCH /transaction-aggregates/{id}", h.UpdateTransactionAggregate)
 	mux.HandleFunc("DELETE /transaction-aggregates/{id}", h.DeleteTransactionAggregate)
 	mux.HandleFunc("POST /transaction-aggregates/cancel-installments", h.CancelInstallments)
+	mux.HandleFunc("GET /historical-entries", h.ListHistoricalEntries)
+
+	mux.HandleFunc("GET /dashboard/kpis", dh.GetKPIs)
+
+	mux.HandleFunc("POST /historical", hh.CreateHistoricalEntry)
+	mux.HandleFunc("GET /historical", hh.ListHistoricalEntries)
+	mux.HandleFunc("GET /historical/{date}", hh.GetHistoricalEntryByDate)
+	mux.HandleFunc("PATCH /historical/{date}", hh.UpdateHistoricalEntry)
+	mux.HandleFunc("DELETE /historical/{date}", hh.DeleteHistoricalEntry)
+	mux.HandleFunc("POST /historical/bulk", hh.BulkCreateHistoricalEntries)
 }
 
 func handlerHealthz(w http.ResponseWriter, r *http.Request) {

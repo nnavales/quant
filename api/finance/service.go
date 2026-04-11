@@ -5,20 +5,23 @@ import (
 	"fmt"
 
 	"github.com/nnavales/summit/api/entries"
+	"github.com/nnavales/summit/api/historical"
 	"github.com/nnavales/summit/api/installments"
 	"github.com/nnavales/summit/api/timeutils"
 	"github.com/nnavales/summit/api/transactions"
 )
 
 type Service struct {
-	repo  Repository
-	clock timeutils.Clock
+	repo     Repository
+	histRepo historical.Repository
+	clock    timeutils.Clock
 }
 
-func NewService(clock timeutils.Clock, repo Repository) *Service {
+func NewService(clock timeutils.Clock, repo Repository, histRepo historical.Repository) *Service {
 	return &Service{
-		repo:  repo,
-		clock: clock,
+		repo:     repo,
+		histRepo: histRepo,
+		clock:    clock,
 	}
 }
 
@@ -59,6 +62,11 @@ func (s *Service) CreateTransactionAggregate(ctx context.Context, req Transactio
 
 	baseAmount := totalAmount / int64(installmentCount)
 	remainder := totalAmount % int64(installmentCount)
+
+	cutoff, err := s.histRepo.GetCutOff(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get cutoff: %w", err)
+	}
 
 	for i := 1; i <= installmentCount; i++ {
 		installmentNum := i
@@ -106,6 +114,10 @@ func (s *Service) CreateTransactionAggregate(ctx context.Context, req Transactio
 
 		if err := entry.Validate(); err != nil {
 			return fmt.Errorf("invalid entry: %w", err)
+		}
+
+		if cutoff != nil && timeutils.IsSameOrBeforeMonth(txDate.Time, cutoff.Time) {
+			return fmt.Errorf("transaction month overlaps cutoff: %w", ErrInvalidField)
 		}
 
 		items = append(items, struct {
@@ -191,6 +203,11 @@ func (s *Service) UpdateTransactionAggregate(ctx context.Context, id string, req
 	baseAmount := totalAmount / int64(installmentCount)
 	remainder := totalAmount % int64(installmentCount)
 
+	cutoff, err := s.histRepo.GetCutOff(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get cutoff: %w", err)
+	}
+
 	for i := 1; i <= installmentCount; i++ {
 		txDate := req.Date
 		if i > 1 {
@@ -201,6 +218,10 @@ func (s *Service) UpdateTransactionAggregate(ctx context.Context, id string, req
 		}
 
 		tx := transactions.NewTransaction(now, txDate, req.Type)
+
+		if cutoff != nil && timeutils.IsSameOrBeforeMonth(txDate.Time, cutoff.Time) {
+			return fmt.Errorf("transaction month overlaps cutoff: %w", ErrInvalidField)
+		}
 
 		if req.Description != "" {
 			tx.SetDescription(req.Description)
@@ -264,4 +285,12 @@ func (s *Service) CancelInstallments(ctx context.Context, req CancelInstallments
 	}
 
 	return nil
+}
+
+func (s *Service) ListHistoricalEntries(ctx context.Context, filter *Filter) (*HistoricalListResponse, error) {
+	rows, err := s.repo.ListHistoricalEntries(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list historical entries: %w", err)
+	}
+	return rows, nil
 }

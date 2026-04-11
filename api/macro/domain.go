@@ -1,6 +1,7 @@
 package macro
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -10,6 +11,11 @@ import (
 var httpClient = &http.Client{
 	Timeout: 10 * time.Second,
 }
+
+var (
+	ErrTimeoutConnection = errors.New("connection timeout")
+	ErrNetworkError      = errors.New("network error")
+)
 
 // For dashboard
 type TimeSeriesPoint struct {
@@ -24,8 +30,8 @@ type TimeSeries struct {
 }
 
 type TimeSeriesDelta struct {
-	Diff float64 `json:"diff"` // diferencia absoluta
-	Pct  float64 `json:"pct"`  // porcentaje
+	Diff float64 `json:"diff"`
+	Pct  float64 `json:"pct"`
 }
 
 type EconomicSeriesResponse struct {

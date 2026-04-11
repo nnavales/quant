@@ -89,3 +89,17 @@ func (d *Date) Scan(value any) error {
 	*d = parsed
 	return nil
 }
+
+func IsSameOrBeforeMonth(a, b time.Time) bool {
+	ay, am, _ := a.Date()
+	by, bm, _ := b.Date()
+
+	return ay < by || (ay == by && am <= bm)
+}
+
+func IsSameOrAfterMonth(a, b time.Time) bool {
+	ay, am, _ := a.Date()
+	by, bm, _ := b.Date()
+
+	return ay > by || (ay == by && am >= bm)
+}

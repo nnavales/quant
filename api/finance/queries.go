@@ -184,7 +184,101 @@ const (
 	LEFT JOIN channels ch ON ch.id = e.channel_id
 
 	LEFT JOIN installment_groups ig ON ig.id = t.installment_group_id`
+
+	baseListHistoricalDTO = `
+	SELECT 
+	month, 
+	exchange_rate, 
+	income, 
+	income_fixed,
+	income_variable,  
+	expense, 
+	expense_fixed, 
+	expense_variable, 
+	savings, 
+	source   
+	FROM finance_summary
+	`
 )
+
+func BuildListHistoricalEntriesQuery(filter *Filter) (string, []interface{}) {
+	var whereClauses []string
+	var args []interface{}
+
+	if filter.DateFrom != nil {
+		whereClauses = append(whereClauses, "month >= ?")
+		args = append(args, filter.DateFrom.String())
+	}
+
+	if filter.DateTo != nil {
+		whereClauses = append(whereClauses, "month <= ?")
+		args = append(args, filter.DateTo.String())
+	}
+
+	query := baseListHistoricalDTO
+
+	if len(whereClauses) > 0 {
+		query += " WHERE " + strings.Join(whereClauses, " AND ")
+	}
+
+	// sorting
+	sortField := "month"
+	if filter.Sort != nil {
+		switch *filter.Sort {
+		case "month":
+			sortField = "month"
+		case "income":
+			sortField = "income"
+		case "expense":
+			sortField = "expense"
+		}
+	}
+
+	order := "DESC"
+	if filter.Order != nil && *filter.Order == "asc" {
+		order = "ASC"
+	}
+
+	query += " ORDER BY " + sortField + " " + order
+
+	// pagination
+	limit := 20
+	offset := 0
+
+	if filter.Limit != nil {
+		limit = *filter.Limit
+	}
+	if filter.Page != nil && *filter.Page > 1 {
+		offset = (*filter.Page - 1) * limit
+	}
+
+	query += " LIMIT ? OFFSET ?"
+	args = append(args, limit, offset)
+
+	return query, args
+}
+
+func buildHistoricalCountQuery(filter *Filter) string {
+	var whereClauses []string
+
+	if filter.DateFrom != nil {
+		whereClauses = append(whereClauses,
+			fmt.Sprintf("month >= '%s'", filter.DateFrom.String()))
+	}
+
+	if filter.DateTo != nil {
+		whereClauses = append(whereClauses,
+			fmt.Sprintf("month <= '%s'", filter.DateTo.String()))
+	}
+
+	query := "SELECT COUNT(*) FROM finance_summary"
+
+	if len(whereClauses) > 0 {
+		query += " WHERE " + strings.Join(whereClauses, " AND ")
+	}
+
+	return query
+}
 
 func BuildListTransactionsQuery(filter *Filter) (string, []interface{}) {
 	var whereClauses []string
@@ -250,7 +344,10 @@ func BuildListTransactionsQuery(filter *Filter) (string, []interface{}) {
 		args = append(args, filter.DateTo.String())
 	}
 
-	query := baseListTransactionsDTO + " WHERE " + strings.Join(whereClauses, " AND ")
+	query := baseListHistoricalDTO
+	if len(whereClauses) > 0 {
+		query = baseListTransactionsDTO + " WHERE " + strings.Join(whereClauses, " AND ")
+	}
 
 	sortField := "t.created_at"
 	if filter.Sort != nil {

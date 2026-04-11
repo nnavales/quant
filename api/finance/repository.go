@@ -664,3 +664,71 @@ func (r *SQLiteRepo) UpdateTransactionAggregate(ctx context.Context, id string, 
 
 	return tx.Commit()
 }
+
+func (r *SQLiteRepo) ListHistoricalEntries(ctx context.Context, filter *Filter) (*HistoricalListResponse, error) {
+	query, args := BuildListHistoricalEntriesQuery(filter)
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var histEntry []HistoricalRowDTO
+	for rows.Next() {
+		var h HistoricalRowDTO
+		var incomeCents sql.NullInt64
+		var incomeFixedCents sql.NullInt64
+		var incomeVariableCents sql.NullInt64
+		var expenseCents sql.NullInt64
+		var expenseFixedCents sql.NullInt64
+		var expenseVariableCents sql.NullInt64
+		var savings sql.NullInt64
+		err := rows.Scan(
+			&h.Month,
+			&h.ExchangeRate,
+			&incomeCents,
+			&incomeFixedCents,
+			&incomeVariableCents,
+			&expenseCents,
+			&expenseFixedCents,
+			&expenseVariableCents,
+			&savings,
+			&h.Source,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if incomeCents.Valid {
+			h.Income = entries.FormatAmount(incomeCents.Int64)
+		}
+		if incomeFixedCents.Valid {
+			h.IncomeFixed = entries.FormatAmount(incomeFixedCents.Int64)
+		}
+		if incomeVariableCents.Valid {
+			h.IncomeVariable = entries.FormatAmount(incomeVariableCents.Int64)
+		}
+		if expenseCents.Valid {
+			h.Expense = entries.FormatAmount(expenseCents.Int64)
+		}
+		if expenseFixedCents.Valid {
+			h.ExpenseFixed = entries.FormatAmount(expenseFixedCents.Int64)
+		}
+		if expenseVariableCents.Valid {
+			h.ExpenseVariable = entries.FormatAmount(expenseVariableCents.Int64)
+		}
+		if savings.Valid {
+			h.Savings = entries.FormatAmount(savings.Int64)
+		}
+		histEntry = append(histEntry, h)
+	}
+
+	countQuery := buildHistoricalCountQuery(filter)
+	var totalCount int
+	if err := r.db.QueryRowContext(ctx, countQuery).Scan(&totalCount); err != nil {
+		return nil, err
+	}
+
+	return &HistoricalListResponse{
+		Data:       histEntry,
+		TotalCount: totalCount,
+	}, rows.Err()
+}

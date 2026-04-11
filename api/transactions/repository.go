@@ -3,6 +3,8 @@ package transactions
 import (
 	"context"
 	"database/sql"
+
+	"github.com/nnavales/summit/api/timeutils"
 )
 
 type SQLiteRepo struct {
@@ -100,4 +102,27 @@ func (r *SQLiteRepo) DeleteTransaction(ctx context.Context, id string) error {
 		return ErrNotFound
 	}
 	return nil
+}
+
+func (r *SQLiteRepo) GetMinTransactionDate(ctx context.Context) (*timeutils.Date, error) {
+	row := r.db.QueryRowContext(ctx, `
+        SELECT MIN(date) 
+        FROM transactions;
+    `)
+
+	var date sql.NullString
+	if err := row.Scan(&date); err != nil {
+		return nil, err
+	}
+
+	if !date.Valid {
+		return nil, nil
+	}
+
+	parsedDate, err := timeutils.ParseDate(date.String)
+	if err != nil {
+		return nil, err
+	}
+
+	return &parsedDate, nil
 }

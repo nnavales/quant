@@ -9,8 +9,10 @@ import (
 	"github.com/nnavales/summit/api/categories"
 	"github.com/nnavales/summit/api/channels"
 	"github.com/nnavales/summit/api/config"
+	"github.com/nnavales/summit/api/dashboard"
 	"github.com/nnavales/summit/api/entries"
 	"github.com/nnavales/summit/api/finance"
+	"github.com/nnavales/summit/api/historical"
 	"github.com/nnavales/summit/api/installments"
 	"github.com/nnavales/summit/api/macro"
 	"github.com/nnavales/summit/api/transactions"
@@ -32,6 +34,8 @@ type Services struct {
 	CategoriesService   *categories.Service
 	MacroService        *macro.Service
 	UsersService        *users.Service
+	HistoricalService   *historical.Service
+	DashboardService    *dashboard.Service
 }
 
 func NewServer(cfg config.Config, services *Services) *Server {
@@ -43,10 +47,16 @@ func NewServer(cfg config.Config, services *Services) *Server {
 	categoriesHandler := categories.NewHandler(services.CategoriesService)
 	macroHandler := macro.NewHandler(services.MacroService)
 	usersHandler := users.NewHandler(services.UsersService)
+	historicalHandler := historical.NewHandler(services.HistoricalService)
+	dashboardHandler := dashboard.NewHandler(services.DashboardService)
 
 	api := http.NewServeMux()
 
-	addRoutes(api, financeHandler, transactionsHandler, entriesHandler, installmentsHandler, channelsHandler, categoriesHandler, macroHandler, usersHandler)
+	addRoutes(api,
+		financeHandler, transactionsHandler, entriesHandler,
+		installmentsHandler, channelsHandler, categoriesHandler,
+		macroHandler, usersHandler, historicalHandler, dashboardHandler,
+	)
 
 	var handler http.Handler = api
 	handler = middleware.CORS(handler)

@@ -141,3 +141,23 @@ func (h *Handler) CancelInstallments(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusCreated)
 }
+
+func (h *Handler) ListHistoricalEntries(w http.ResponseWriter, r *http.Request) {
+	params := make(FilterParams)
+	for k, v := range r.URL.Query() {
+		params[k] = v[0]
+	}
+
+	filter, err := NewHistoricalFilter(params)
+	if err != nil {
+		httpx.WriteError(w, r, 400, err.Error(), nil)
+		return
+	}
+
+	rows, err := h.service.ListHistoricalEntries(r.Context(), filter)
+	if err != nil {
+		httpx.WriteError(w, r, 500, "failed to list historical entries", err)
+		return
+	}
+	httpx.WriteJSON(w, 200, rows)
+}

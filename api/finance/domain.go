@@ -26,6 +26,20 @@ type Repository interface {
 	GetTransactionsByInstallmentGroup(ctx context.Context, groupID string, fromInstallment int) ([]TransactionRowDTO, error)
 	CancelInstallments(ctx context.Context, groupID string, fromInstallment int, now time.Time) error
 	DeleteTransactionsByInstallmentGroup(ctx context.Context, groupID string, fromInstallment int) error
+	ListHistoricalEntries(ctx context.Context, filter *Filter) (*HistoricalListResponse, error)
+}
+
+type HistoricalRowDTO struct {
+	Month           string  `json:"month"`
+	Income          string  `json:"income"`
+	IncomeFixed     string  `json:"income_fixed"`
+	IncomeVariable  string  `json:"income_variable"`
+	Expense         string  `json:"expense"`
+	ExpenseFixed    string  `json:"expense_fixed"`
+	ExpenseVariable string  `json:"expense_variable"`
+	ExchangeRate    float64 `json:"exchange_rate"`
+	Savings         string  `json:"savings"`
+	Source          string  `json:"source"`
 }
 
 // Validations
@@ -92,6 +106,11 @@ type TransactionRowDTO struct {
 type TransactionListResponse struct {
 	Data       []TransactionRowDTO `json:"data"`
 	TotalCount int                 `json:"total_count"`
+}
+
+type HistoricalListResponse struct {
+	Data       []HistoricalRowDTO `json:"data"`
+	TotalCount int                `json:"total_count"`
 }
 
 // Filters
@@ -199,6 +218,57 @@ func NewFilter(params FilterParams) (*Filter, error) {
 
 	if v, ok := params["account"]; ok && v != "" {
 		f.Account = &v
+	}
+
+	if v, ok := params["date_from"]; ok && v != "" {
+		d, err := timeutils.ParseDate(v)
+		if err != nil {
+			return nil, fmt.Errorf("invalid date_from: %w", ErrInvalidFilter)
+		}
+		f.DateFrom = &d
+	}
+
+	if v, ok := params["date_to"]; ok && v != "" {
+		d, err := timeutils.ParseDate(v)
+		if err != nil {
+			return nil, fmt.Errorf("invalid date_to: %w", ErrInvalidFilter)
+		}
+		f.DateTo = &d
+	}
+
+	return f, nil
+}
+
+func NewHistoricalFilter(params FilterParams) (*Filter, error) {
+	f := &Filter{}
+	if v, ok := params["page"]; ok && v != "" {
+		page := 1
+		if _, err := fmt.Sscanf(v, "%d", &page); err != nil || page < 1 {
+			return nil, fmt.Errorf("invalid page: %w", ErrInvalidFilter)
+		}
+		f.Page = &page
+	}
+
+	if v, ok := params["limit"]; ok && v != "" {
+		limit := 20
+		if _, err := fmt.Sscanf(v, "%d", &limit); err != nil || limit < 1 || limit > 100 {
+			return nil, fmt.Errorf("invalid limit: %w", ErrInvalidFilter)
+		}
+		f.Limit = &limit
+	}
+
+	if v, ok := params["sort"]; ok && v != "" {
+		if v != "month" && v != "income" && v != "expense" {
+			return nil, fmt.Errorf("invalid sort: %w", ErrInvalidFilter)
+		}
+		f.Sort = &v
+	}
+
+	if v, ok := params["order"]; ok && v != "" {
+		if v != "asc" && v != "desc" {
+			return nil, fmt.Errorf("invalid order: %w", ErrInvalidFilter)
+		}
+		f.Order = &v
 	}
 
 	if v, ok := params["date_from"]; ok && v != "" {
