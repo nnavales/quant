@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { X, ChevronRight, Plus, Check } from "lucide-react";
+import { X, ChevronRight, Plus, Check, RotateCcw } from "lucide-react";
 import { categories, subcategories } from "@/api_client";
 import type { Category, Subcategory } from "@/api_client/types";
 import { InputGroup } from "./ui/InputGroup";
@@ -76,13 +76,16 @@ export function CategoryManager() {
     const loadData = () => {
         Promise.all([categories.listWithSubcategories(), subcategories.list()])
             .then(([catsWithSubs, allSubs]) => {
-                const grouped: CategoryGroup[] = catsWithSubs.map((cws) => ({
+                const catsData = catsWithSubs || [];
+                const subsData = allSubs || [];
+
+                const grouped: CategoryGroup[] = catsData.map((cws) => ({
                     category: cws.category,
-                    subcategories: cws.subcategories,
+                    subcategories: cws.subcategories || [],
                 }));
 
-                const categoriesWithoutSubs = allSubs.filter(
-                    (sub) => !catsWithSubs.some((cws) => cws.category.id === sub.category_id)
+                const categoriesWithoutSubs = subsData.filter(
+                    (sub) => !catsData.some((cws) => cws.category.id === sub.category_id)
                 );
 
                 if (categoriesWithoutSubs.length > 0) {
@@ -140,6 +143,24 @@ export function CategoryManager() {
         }
     };
 
+    const handleRestoreCategory = async (id: string) => {
+        try {
+            await categories.restore(id);
+            loadData();
+        } catch (err: unknown) {
+            toast(err instanceof Error ? err.message : "Error");
+        }
+    };
+
+    const handleRestoreSubcategory = async (id: string) => {
+        try {
+            await subcategories.restore(id);
+            loadData();
+        } catch (err: unknown) {
+            toast(err instanceof Error ? err.message : "Error");
+        }
+    };
+
     const startEditCategory = (cat: Category) => {
         setEditingCategoryId(cat.id);
         setEditingCategoryName(cat.name);
@@ -182,6 +203,9 @@ export function CategoryManager() {
 
     if (loading) return <div style={{ color: "var(--fg-muted)", textAlign: "center", padding: "var(--spacing-8)" }}>Cargando...</div>;
 
+    const activeGroups = categoryGroups.filter((g) => !g.category.deleted_at);
+    const deletedGroups = categoryGroups.filter((g) => g.category.deleted_at);
+
     return (
         <div>
             <InputGroup
@@ -193,7 +217,7 @@ export function CategoryManager() {
             />
 
             <div style={{ display: "flex", flexDirection: "column", gap: "var(--spacing-3)" }}>
-                {categoryGroups.map((group) => (
+                {activeGroups.map((group) => (
                     <div
                         key={group.category.id}
                         style={cardStyle}
@@ -241,12 +265,15 @@ export function CategoryManager() {
                                         ({group.subcategories.length})
                                     </span>
                                 </div>
-                                {group.category.id !== "__uncategorized__" && hoveredCategoryId === group.category.id && (
+                                {group.category.id !== "__uncategorized__" && (
                                     <button
                                         onClick={() => handleDeleteCategory(group.category.id)}
-                                        style={deleteButtonStyle}
+                                        style={{
+                                            ...deleteButtonStyle,
+                                            opacity: hoveredCategoryId === group.category.id ? "1" : "0.3",
+                                        }}
                                         onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-                                        onMouseLeave={(e) => (e.currentTarget.style.opacity = "0")}
+                                        onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.3")}
                                     >
                                         <X size={14} style={{ color: "var(--semantic-error)" }} />
                                     </button>
@@ -255,7 +282,7 @@ export function CategoryManager() {
                         )}
 
                         <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--spacing-2)" }}>
-                            {group.subcategories.map((sub) =>
+                            {group.subcategories.filter(s => !s.deleted_at).map((sub) =>
                                 editingSubcategoryId === sub.id ? (
                                     <input
                                         key={sub.id}
@@ -294,6 +321,27 @@ export function CategoryManager() {
                                     </div>
                                 )
                             )}
+
+                            {group.subcategories.filter(s => s.deleted_at).map((sub) => (
+                                <div
+                                    key={sub.id}
+                                    style={{
+                                        ...chipStyle(false),
+                                        backgroundColor: "var(--bg-dim)",
+                                        border: "1px dashed var(--fg-muted)",
+                                        opacity: 0.6,
+                                    }}
+                                >
+                                    {sub.name}
+                                    <button
+                                        onClick={() => handleRestoreSubcategory(sub.id)}
+                                        style={{ ...deleteButtonStyle, opacity: 1 }}
+                                        title="Restaurar"
+                                    >
+                                        <RotateCcw size={12} />
+                                    </button>
+                                </div>
+                            ))}
 
                             {selectedCategoryId === group.category.id ? (
                                 <div style={{ display: "flex", gap: "var(--spacing-1)" }}>
@@ -346,6 +394,40 @@ export function CategoryManager() {
                     </div>
                 ))}
             </div>
+
+            {deletedGroups.length > 0 && (
+                <div style={{ marginTop: "var(--spacing-6)" }}>
+                    <h4 style={{ color: "var(--fg-muted)", fontSize: "var(--font-size-sm)", marginBottom: "var(--spacing-3)" }}>
+                        Categorías borradas
+                    </h4>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--spacing-2)" }}>
+                        {deletedGroups.map((group) => (
+                            <div
+                                key={group.category.id}
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    padding: "var(--spacing-3) var(--spacing-4)",
+                                    backgroundColor: "var(--bg-dim)",
+                                    border: "1px dashed var(--fg-muted)",
+                                    borderRadius: "var(--radius-md)",
+                                    opacity: 0.6,
+                                }}
+                            >
+                                <span>{group.category.name}</span>
+                                <button
+                                    onClick={() => handleRestoreCategory(group.category.id)}
+                                    style={{ ...deleteButtonStyle, opacity: 1 }}
+                                    title="Restaurar"
+                                >
+                                    <RotateCcw size={14} style={{ color: "var(--fg-muted)" }} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

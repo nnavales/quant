@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Check, ChevronRight, CreditCard, Wallet, Plus } from "lucide-react";
+import { X, Check, ChevronRight, CreditCard, Wallet, Plus, RotateCcw } from "lucide-react";
 import { channels, accounts } from "@/api_client";
 import type { Channel, Account, Instrument } from "@/api_client/types";
 import { InputGroup } from "./ui/InputGroup";
@@ -81,13 +81,16 @@ export function ChannelAccountManager() {
     const loadData = () => {
         Promise.all([channels.listWithAccounts(), accounts.list()])
             .then(([chansWithAccs, allAccs]) => {
-                const grouped: ChannelGroup[] = chansWithAccs.map((cwa) => ({
+                const chansData = chansWithAccs || [];
+                const accsData = allAccs || [];
+
+                const grouped: ChannelGroup[] = chansData.map((cwa) => ({
                     channel: cwa.channel,
                     accounts: cwa.accounts || [],
                 }));
 
-                const accountsWithoutChannel = allAccs.filter(
-                    (acc) => !chansWithAccs.some((cwa) => cwa.channel?.id === acc.channel_id)
+                const accountsWithoutChannel = accsData.filter(
+                    (acc) => !chansData.some((cwa) => cwa.channel?.id === acc.channel_id)
                 );
 
                 if (accountsWithoutChannel.length > 0) {
@@ -152,6 +155,24 @@ export function ChannelAccountManager() {
         }
     };
 
+    const handleRestoreChannel = async (id: string) => {
+        try {
+            await channels.restore(id);
+            loadData();
+        } catch (err: unknown) {
+            toast(err instanceof Error ? err.message : "Error");
+        }
+    };
+
+    const handleRestoreAccount = async (id: string) => {
+        try {
+            await accounts.restore(id);
+            loadData();
+        } catch (err: unknown) {
+            toast(err instanceof Error ? err.message : "Error");
+        }
+    };
+
     const startEditChannel = (channel: Channel) => {
         setEditingChannelId(channel.id);
         setEditingChannelName(channel.name);
@@ -202,6 +223,9 @@ export function ChannelAccountManager() {
 
     if (loading) return <div style={{ color: "var(--fg-muted)", textAlign: "center", padding: "var(--spacing-8)" }}>Cargando...</div>;
 
+    const activeGroups = channelGroups.filter((g) => !g.channel.deleted_at);
+    const deletedGroups = channelGroups.filter((g) => g.channel.deleted_at);
+
     return (
         <div>
             <InputGroup
@@ -213,7 +237,7 @@ export function ChannelAccountManager() {
             />
 
             <div style={{ display: "flex", flexDirection: "column", gap: "var(--spacing-3)" }}>
-                {channelGroups.map((group) => (
+                {activeGroups.map((group) => (
                     <div
                         key={group.channel.id}
                         style={cardStyle}
@@ -261,12 +285,15 @@ export function ChannelAccountManager() {
                                         ({group.accounts.length})
                                     </span>
                                 </div>
-                                {group.channel.id !== "__uncategorized__" && hoveredChannelId === group.channel.id && (
+                                {group.channel.id !== "__uncategorized__" && (
                                     <button
                                         onClick={() => handleDeleteChannel(group.channel.id)}
-                                        style={deleteButtonStyle}
+                                        style={{
+                                            ...deleteButtonStyle,
+                                            opacity: hoveredChannelId === group.channel.id ? "1" : "0.3",
+                                        }}
                                         onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-                                        onMouseLeave={(e) => (e.currentTarget.style.opacity = "0")}
+                                        onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.3")}
                                     >
                                         <X size={14} style={{ color: "var(--semantic-error)" }} />
                                     </button>
@@ -275,7 +302,7 @@ export function ChannelAccountManager() {
                         )}
 
                         <div style={{ display: "flex", flexDirection: "column", gap: "var(--spacing-2)" }}>
-                            {group.accounts.map((acc) => (
+                            {group.accounts.filter(a => !a.deleted_at).map((acc) => (
                                 <div
                                     key={acc.id}
                                     style={{
@@ -345,14 +372,54 @@ export function ChannelAccountManager() {
                                             </div>
                                             <button
                                                 onClick={() => handleDeleteAccount(acc.id)}
-                                                style={{ ...deleteButtonStyle, opacity: 0.5 }}
+                                                style={{
+                                                    ...deleteButtonStyle,
+                                                    opacity: 0.3,
+                                                }}
                                                 onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-                                                onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.5")}
+                                                onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.3")}
                                             >
                                                 <X size={12} style={{ color: "var(--semantic-error)" }} />
                                             </button>
                                         </>
                                     )}
+                                </div>
+                            ))}
+
+                            {group.accounts.filter(a => a.deleted_at).map((acc) => (
+                                <div
+                                    key={acc.id}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        padding: "var(--spacing-2) var(--spacing-3)",
+                                        backgroundColor: "var(--bg-dim)",
+                                        border: "1px dashed var(--fg-muted)",
+                                        borderRadius: "var(--radius-md)",
+                                        opacity: 0.6,
+                                    }}
+                                >
+                                    <div style={{ display: "flex", alignItems: "center", gap: "var(--spacing-2)" }}>
+                                        {(() => {
+                                            const Icon = instrumentIcons[acc.instrument];
+                                            return <Icon size={14} style={{ color: "var(--fg-muted)" }} />;
+                                        })()}
+                                        <span style={{ fontSize: "var(--font-size-sm)", color: "var(--fg-default)" }}>
+                                            {acc.name}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={() => handleRestoreAccount(acc.id)}
+                                        style={{
+                                            ...deleteButtonStyle,
+                                            opacity: 0.3,
+                                        }}
+                                        onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                                        onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.3")}
+                                    >
+                                        <RotateCcw size={12} style={{ color: "var(--fg-muted)" }} />
+                                    </button>
                                 </div>
                             ))}
 
@@ -447,6 +514,44 @@ export function ChannelAccountManager() {
                     </div>
                 ))}
             </div>
+
+            {deletedGroups.length > 0 && (
+                <div style={{ marginTop: "var(--spacing-6)" }}>
+                    <h4 style={{ color: "var(--fg-muted)", fontSize: "var(--font-size-sm)", marginBottom: "var(--spacing-3)" }}>
+                        Canales borrados
+                    </h4>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--spacing-2)" }}>
+                        {deletedGroups.map((group) => (
+                            <div
+                                key={group.channel.id}
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    padding: "var(--spacing-3) var(--spacing-4)",
+                                    backgroundColor: "var(--bg-dim)",
+                                    border: "1px dashed var(--fg-muted)",
+                                    borderRadius: "var(--radius-md)",
+                                    opacity: 0.6,
+                                }}
+                            >
+                                <span>{group.channel.name}</span>
+                                <button
+                                    onClick={() => handleRestoreChannel(group.channel.id)}
+                                    style={{
+                                        ...deleteButtonStyle,
+                                        opacity: 0.3,
+                                    }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.3")}
+                                >
+                                    <RotateCcw size={14} style={{ color: "var(--fg-muted)" }} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -77,6 +77,9 @@ export interface TransactionRowDTO {
     installment_number: number | null;
     total_installments: number | null;
     installment_group_id: string | null;
+    installment_start_date: string | null;
+    is_canceled: boolean | null;
+    original_amount: string | null;
 }
 
 export interface ChannelReq {
@@ -229,4 +232,44 @@ export type UserConfigUpdate = Partial<UserConfig>;
 
 export interface ConfigStatusResponse {
     status: string;
+}
+
+// ============================================
+// Historical Types
+// ============================================
+
+export interface HistoricalEntry {
+    month: string;
+    income: string;
+    income_fixed: string;
+    income_variable: string;
+    expense: string;
+    expense_fixed: string;
+    expense_variable: string;
+    exchange_rate: number;
+    savings: string;
+    source: string;
+}
+
+export interface HistoricalEntryResponse {
+    data: HistoricalEntry[];
+    total_count: number;
+}
+
+export type HistoricalEntryCreate = Partial<Omit<HistoricalEntry, "source">>;
+
+export interface BulkCreateHistoricalReq {
+    data: HistoricalFinanceReq[];
+}
+
+export interface HistoricalFinanceReq {
+    date?: string;
+    exchange_rate?: number;
+    income_usd?: string;
+    income_fixed_usd?: string;
+    income_variable_usd?: string;
+    expense_usd?: string;
+    expense_fixed_usd?: string;
+    expense_variable_usd?: string;
+    savings_usd?: string;
 }

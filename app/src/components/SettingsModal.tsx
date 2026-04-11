@@ -90,6 +90,7 @@ const closeButtonStyle: React.CSSProperties = {
 const contentScrollStyle: React.CSSProperties = {
     padding: "var(--spacing-4) var(--spacing-6)",
     overflowY: "auto",
+    overscrollBehavior: "contain",
     flex: 1,
 };
 

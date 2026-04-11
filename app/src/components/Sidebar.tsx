@@ -16,6 +16,9 @@ const navItems = [
 const sidebarStyle: React.CSSProperties = {
     width: "60px",
     height: "100vh",
+    position: "sticky",
+    top: 0,
+    flexShrink: 0,
     backgroundColor: colors.bg.dim,
     borderRight: `1px solid ${colors.highlight.medium}`,
     display: "flex",

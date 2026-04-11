@@ -583,7 +583,7 @@ function ComparativesSection({ onRefresh }: { onRefresh?: () => void }) {
 
             return (
                 <>
-                    <div style={{ maxHeight: 300, overflowY: "auto" }}>
+                    <div style={{ maxHeight: 300, overflowY: "auto", overscrollBehavior: "contain" }}>
                         <div
                             style={{
                                 display: "grid",
@@ -658,7 +658,7 @@ function ComparativesSection({ onRefresh }: { onRefresh?: () => void }) {
 
             return (
                 <>
-                    <div style={{ maxHeight: 300, overflowY: "auto" }}>
+                    <div style={{ maxHeight: 300, overflowY: "auto", overscrollBehavior: "contain" }}>
                         <div
                             style={{
                                 display: "grid",
@@ -732,7 +732,7 @@ function ComparativesSection({ onRefresh }: { onRefresh?: () => void }) {
 
             return (
                 <>
-                    <div style={{ maxHeight: 300, overflowY: "auto" }}>
+                    <div style={{ maxHeight: 300, overflowY: "auto", overscrollBehavior: "contain" }}>
                         <div
                             style={{
                                 display: "grid",
@@ -811,7 +811,7 @@ function ComparativesSection({ onRefresh }: { onRefresh?: () => void }) {
 
             return (
                 <>
-                    <div style={{ maxHeight: 300, overflowY: "auto" }}>
+                    <div style={{ maxHeight: 300, overflowY: "auto", overscrollBehavior: "contain" }}>
                         <div
                             style={{
                                 display: "grid",

@@ -7,12 +7,16 @@ import {
     subcategories,
     economic,
     config,
-    entries,
+    transactions,
+    historical,
     type TransactionFilters,
     type TransactionAggregateReq,
     type CancelInstallmentsReq,
     type UserConfigUpdate,
+    type HistoricalEntryCreate,
+    type HistoricalFinanceReq,
 } from "@/api_client";
+import { type HistoricalFilters } from "@/api_client/endpoints";
 
 export function useTransactionAggregates(filters: TransactionFilters) {
     return useQuery({
@@ -384,9 +388,73 @@ export function useUpdateEntryPaid() {
 
     return useMutation({
         mutationFn: ({ id, isPaid }: { id: string; isPaid: boolean }) =>
-            entries.updatePaid(id, isPaid),
+            transactions.updatePaid(id, isPaid),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["transaction-aggregates"] });
+        },
+    });
+}
+
+// ============================================
+// Historical Hooks
+// ============================================
+
+export function useHistoricalEntries(filters?: HistoricalFilters) {
+    return useQuery({
+        queryKey: ["historical", filters],
+        queryFn: () => historical.list(filters),
+    });
+}
+
+export function useHistoricalEntry(month: string) {
+    return useQuery({
+        queryKey: ["historical", month],
+        queryFn: () => historical.get(month),
+        enabled: !!month,
+    });
+}
+
+export function useCreateHistoricalEntry() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (data: HistoricalEntryCreate) => historical.create(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["historical"] });
+        },
+    });
+}
+
+export function useUpdateHistoricalEntry() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ month, data }: { month: string; data: Partial<HistoricalEntryCreate> }) =>
+            historical.update(month, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["historical"] });
+        },
+    });
+}
+
+export function useDeleteHistoricalEntry() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (month: string) => historical.delete(month),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["historical"] });
+        },
+    });
+}
+
+export function useBulkCreateHistoricalEntries() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (data: HistoricalFinanceReq[]) => historical.bulkCreate(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["historical"] });
         },
     });
 }

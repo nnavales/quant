@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { TransactionRowDTO } from "@/api_client";
 import { TransactionRow } from "./TransactionRow";
 import { spacing, radius } from "@/styles/theme";
@@ -10,6 +11,7 @@ interface TransactionListProps {
     order?: "asc" | "desc";
     onSort?: (sort: "date" | "amount" | "created_at") => void;
     onDelete?: (transaction: TransactionRowDTO) => void;
+    onCancelInstallments?: (transaction: TransactionRowDTO) => void;
 }
 
 const tableStyle: React.CSSProperties = {
@@ -49,7 +51,8 @@ const sortableThStyle: React.CSSProperties = {
     gap: spacing[1],
 };
 
-export function TransactionList({ transactions, sort, order, onSort, onDelete }: TransactionListProps) {
+export function TransactionList({ transactions, sort, order, onSort, onDelete, onCancelInstallments }: TransactionListProps) {
+    const [editingId, setEditingId] = useState<string | null>(null);
     const handleSortClick = (column: "date" | "amount" | "created_at") => {
         if (onSort) {
             onSort(column);
@@ -95,13 +98,22 @@ export function TransactionList({ transactions, sort, order, onSort, onDelete }:
                         <th style={{ ...thStyle(!!onSort, sort === "amount"), textAlign: "right", width: "140px" }} onClick={() => handleSortClick("amount")}>
                             Monto{renderSortIcon("amount")}
                         </th>
-                        <th style={{ ...thStyle(false, false), textAlign: "right", width: "60px" }}>T.C.</th>
-                        <th style={{ ...thStyle(false, false), textAlign: "right", width: "130px" }}>Opciones</th>
+                        <th style={{ ...thStyle(false, false), textAlign: "center", width: "60px" }}>T.C.</th>
+                        <th style={{ ...thStyle(false, false), textAlign: "center", width: "90px" }}>Estado</th>
+                        <th style={{ ...thStyle(false, false), textAlign: "right", width: "100px" }}>Opciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {transactions.map((transaction) => (
-                        <TransactionRow key={transaction.id} transaction={transaction} onDelete={onDelete!} />
+                        <TransactionRow
+                            key={transaction.id}
+                            transaction={transaction}
+                            onDelete={onDelete!}
+                            onCancelInstallments={onCancelInstallments!}
+                            isEditing={editingId === transaction.id}
+                            onStartEdit={() => setEditingId(transaction.id)}
+                            onFinishEdit={() => setEditingId(null)}
+                        />
                     ))}
                 </tbody>
             </table>

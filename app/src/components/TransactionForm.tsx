@@ -5,6 +5,7 @@ import { useCreateTransaction, useCategories, useSubcategories, useChannels, use
 import { economic } from "@/api_client";
 import { spacing, radius, shadows } from "@/styles/theme";
 import { colors } from "@/styles/colors";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 const inputStyle: React.CSSProperties = {
     padding: "6px 12px",
@@ -31,6 +32,7 @@ const dropdownStyle: React.CSSProperties = {
     minWidth: "250px",
     maxHeight: "400px",
     overflowY: "auto",
+    overscrollBehavior: "contain",
     zIndex: 50,
     boxShadow: shadows.lg,
 };
@@ -418,16 +420,11 @@ export function TransactionForm() {
                                 alignItems: "flex-end",
                             }}
                         >
-                            <div style={{ width: "130px", flexShrink: 0 }}>
+                            <div style={{ width: "140px", flexShrink: 0 }}>
                                 <label style={labelStyle}>Fecha</label>
-                                <input
-                                    type="date"
+                                <DatePicker
                                     value={formData.date}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, date: e.target.value })
-                                    }
-                                    style={inputStyle}
-                                    required
+                                    onChange={(value) => setFormData({ ...formData, date: value })}
                                 />
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
@@ -576,7 +573,7 @@ export function TransactionForm() {
                                     <ChevronDown size={14} style={{ color: colors.fg.muted }} />
                                 </button>
                                 {openDropdown === "frequency" && (
-                                    <div style={dropdownStyle} data-dropdown-panel>
+                                    <div style={{ ...dropdownStyle, left: "auto", right: 0 }} data-dropdown-panel>
                                         <div
                                             style={{
                                                 ...dropdownItemStyle,
@@ -615,12 +612,13 @@ export function TransactionForm() {
                                 <input
                                     type="number"
                                     min="1"
+                                    max="500"
                                     value={formData.installment_number || ""}
                                     onChange={(e) =>
                                         setFormData({
                                             ...formData,
                                             installment_number: e.target.value
-                                                ? parseInt(e.target.value)
+                                                ? Math.min(parseInt(e.target.value), 500)
                                                 : undefined,
                                         })
                                     }

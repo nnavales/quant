@@ -22,6 +22,11 @@ import type {
     UserConfig,
     UserConfigUpdate,
     ConfigStatusResponse,
+    HistoricalEntry,
+    HistoricalEntryResponse,
+    HistoricalEntryCreate,
+    HistoricalFinanceReq,
+    BulkCreateHistoricalReq,
 } from "./types";
 
 export const channels = {
@@ -31,6 +36,7 @@ export const channels = {
     create: (data: ChannelReq) => api.post<Channel>("/channels", data),
     update: (id: string, data: Partial<ChannelReq>) => api.patch<Channel>(`/channels/${id}`, data),
     delete: (id: string) => api.delete<void>(`/channels/${id}`),
+    restore: (id: string) => api.post<void>(`/channels/${id}/restore`),
 };
 
 export const accounts = {
@@ -39,6 +45,7 @@ export const accounts = {
     create: (data: AccountReq) => api.post<Account>("/accounts", data),
     update: (id: string, data: Partial<AccountReq>) => api.patch<Account>(`/accounts/${id}`, data),
     delete: (id: string) => api.delete<void>(`/accounts/${id}`),
+    restore: (id: string) => api.post<void>(`/accounts/${id}/restore`),
 };
 
 export const categories = {
@@ -49,6 +56,7 @@ export const categories = {
     update: (id: string, data: Partial<CategoryReq>) =>
         api.patch<Category>(`/categories/${id}`, data),
     delete: (id: string) => api.delete<void>(`/categories/${id}`),
+    restore: (id: string) => api.post<void>(`/categories/${id}/restore`),
 };
 
 export const subcategories = {
@@ -58,6 +66,7 @@ export const subcategories = {
     update: (id: string, data: Partial<SubcategoryReq>) =>
         api.patch<Subcategory>(`/subcategories/${id}`, data),
     delete: (id: string) => api.delete<void>(`/subcategories/${id}`),
+    restore: (id: string) => api.post<void>(`/subcategories/${id}/restore`),
 };
 
 export interface TransactionFilters {
@@ -190,7 +199,48 @@ export const config = {
     update: (data: UserConfigUpdate) => api.patch<ConfigStatusResponse>("/users/config", data),
 };
 
-export const entries = {
+export const transactions = {
     updatePaid: (id: string, isPaid: boolean) => 
-        api.patch(`/entries/${id}/paid`, { is_paid: isPaid }),
+        api.patch(`/transaction/${id}/paid`, { is_paid: isPaid }),
+};
+
+// ============================================
+// Historical Endpoints
+// ============================================
+
+export interface HistoricalFilters {
+    page?: number;
+    limit?: number;
+    sort?: "month" | "income" | "expense";
+    order?: "asc" | "desc";
+    date_from?: string;
+    date_to?: string;
+}
+
+export const historical = {
+    list: (filters?: HistoricalFilters) => {
+        const params = new URLSearchParams();
+        if (filters) {
+            if (filters.page) params.set("page", String(filters.page));
+            if (filters.limit) params.set("limit", String(filters.limit));
+            if (filters.sort) params.set("sort", filters.sort);
+            if (filters.order) params.set("order", filters.order);
+            if (filters.date_from) params.set("date_from", filters.date_from);
+            if (filters.date_to) params.set("date_to", filters.date_to);
+        }
+        const query = params.toString();
+        return api.get<HistoricalEntryResponse>(`/historical-entries${query ? `?${query}` : ""}`).then((response) => ({
+            data: response.data || [],
+            total: response.total_count || 0,
+            page: filters?.page || 1,
+            limit: filters?.limit || 20,
+        }));
+    },
+    get: (month: string) => api.get<HistoricalEntry>(`/historical/${month}`),
+    create: (data: HistoricalEntryCreate) => api.post<HistoricalEntry>("/historical", data),
+    update: (month: string, data: Partial<HistoricalEntryCreate>) => 
+        api.patch<HistoricalEntry>(`/historical/${month}`, data),
+    delete: (month: string) => api.delete<void>(`/historical/${month}`),
+    bulkCreate: (data: HistoricalFinanceReq[]) => 
+        api.post<void>("/historical/bulk", { data } as BulkCreateHistoricalReq),
 };

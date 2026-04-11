@@ -4,6 +4,7 @@ import type { TransactionFilters } from "@/api_client";
 import { colors } from "@/styles/colors";
 import { spacing, radius, shadows } from "@/styles/theme";
 import { useCategories, useSubcategories, useChannels, useAccounts } from "@/hooks";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 interface TransactionFiltersProps {
     filters: TransactionFilters;
@@ -52,6 +53,7 @@ const dropdownStyle: React.CSSProperties = {
     minWidth: "250px",
     maxHeight: "400px",
     overflowY: "auto",
+    overscrollBehavior: "contain",
     zIndex: 50,
     boxShadow: shadows.lg,
 };
@@ -202,7 +204,12 @@ export function TransactionFilters({ filters, onChange, total, page, limit, onPa
     const hasValue = (key: keyof TransactionFilters) => !!filters[key];
 
     return (
-        <div style={filterContainerStyle} ref={dropdownRef}>
+        <div>
+            <div style={{ display: "flex", alignItems: "center", gap: spacing[1], marginBottom: spacing[1] }}>
+                <Filter size={12} style={{ color: colors.fg.muted }} />
+                <span style={{ fontSize: "11px", fontWeight: 500, color: colors.fg.muted, textTransform: "uppercase", letterSpacing: "0.5px" }}>Filtros</span>
+            </div>
+            <div style={filterContainerStyle} ref={dropdownRef}>
             {/* Search */}
             <div style={inputWrapperStyle}>
                 <input
@@ -226,7 +233,6 @@ export function TransactionFilters({ filters, onChange, total, page, limit, onPa
             {/* Date range dropdown */}
             <div style={filterWrapperStyle}>
                 <button style={filterButtonStyle(!!filters.date_from || !!filters.date_to)} onClick={() => toggleDropdown("date")}>
-                    <Filter size={14} />
                     {filters.date_from && filters.date_to
                         ? `${filters.date_from} - ${filters.date_to}`
                         : filters.date_from
@@ -253,37 +259,17 @@ export function TransactionFilters({ filters, onChange, total, page, limit, onPa
                             ))}
                         </div>
                         <div style={{ marginTop: spacing[1], borderTop: `1px solid ${colors.highlight.medium}`, paddingTop: spacing[1] }}>
-                            <div style={{ display: "flex", flexDirection: "column", gap: spacing[1] }}>
-                                <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                                    <input
-                                        type="date"
-                                        value={dateFrom}
-                                        onChange={(e) => { setDateFrom(e.target.value); onChange({ ...filters, date_from: e.target.value || undefined, page: 1 }); }}
-                                        style={{ ...inputStyle, width: "100%" }}
-                                    />
-                                    {dateFrom && (
-                                        <X
-                                            size={12}
-                                            style={{ position: "absolute", right: "8px", cursor: "pointer", color: colors.fg.muted }}
-                                            onClick={() => { setDateFrom(""); onChange({ ...filters, date_from: undefined, page: 1 }); }}
-                                        />
-                                    )}
-                                </div>
-                                <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                                    <input
-                                        type="date"
-                                        value={dateTo}
-                                        onChange={(e) => { setDateTo(e.target.value); onChange({ ...filters, date_to: e.target.value || undefined, page: 1 }); }}
-                                        style={{ ...inputStyle, width: "100%" }}
-                                    />
-                                    {dateTo && (
-                                        <X
-                                            size={12}
-                                            style={{ position: "absolute", right: "8px", cursor: "pointer", color: colors.fg.muted }}
-                                            onClick={() => { setDateTo(""); onChange({ ...filters, date_to: undefined, page: 1 }); }}
-                                        />
-                                    )}
-                                </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
+                                <DatePicker
+                                    value={dateFrom}
+                                    onChange={(value) => { setDateFrom(value); onChange({ ...filters, date_from: value || undefined, page: 1 }); }}
+                                    placeholder="Desde"
+                                />
+                                <DatePicker
+                                    value={dateTo}
+                                    onChange={(value) => { setDateTo(value); onChange({ ...filters, date_to: value || undefined, page: 1 }); }}
+                                    placeholder="Hasta"
+                                />
                             </div>
                         </div>
                         <div
@@ -299,19 +285,18 @@ export function TransactionFilters({ filters, onChange, total, page, limit, onPa
             {/* Type */}
             <div style={filterWrapperStyle}>
                 <button style={filterButtonStyle(hasValue("type"))} onClick={() => toggleDropdown("type")}>
-                    <Filter size={14} />
                     Tipo
                     <ChevronDown size={14} />
                 </button>
                 {openDropdown === "type" && (
                     <div style={dropdownStyle}>
-                        <div style={{ ...dropdownItemStyle, backgroundColor: !filters.type ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, type: undefined, page: 1 }); setOpenDropdown(null); }}>
+                        <div style={{ ...dropdownItemStyle, backgroundColor: !filters.type ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, type: undefined, page: 1 }); setOpenDropdown(null); }}>
                             Todos
                         </div>
-                        <div style={{ ...dropdownItemStyle, backgroundColor: filters.type === "expense" ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, type: "expense", page: 1 }); setOpenDropdown(null); }}>
+                        <div style={{ ...dropdownItemStyle, backgroundColor: filters.type === "expense" ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, type: "expense", page: 1 }); setOpenDropdown(null); }}>
                             Egreso
                         </div>
-                        <div style={{ ...dropdownItemStyle, backgroundColor: filters.type === "income" ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, type: "income", page: 1 }); setOpenDropdown(null); }}>
+                        <div style={{ ...dropdownItemStyle, backgroundColor: filters.type === "income" ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, type: "income", page: 1 }); setOpenDropdown(null); }}>
                             Ingreso
                         </div>
                     </div>
@@ -326,13 +311,13 @@ export function TransactionFilters({ filters, onChange, total, page, limit, onPa
                 </button>
                 {openDropdown === "currency" && (
                     <div style={dropdownStyle}>
-                        <div style={{ ...dropdownItemStyle, backgroundColor: !filters.currency ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, currency: undefined, page: 1 }); setOpenDropdown(null); }}>
+                        <div style={{ ...dropdownItemStyle, backgroundColor: !filters.currency ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, currency: undefined, page: 1 }); setOpenDropdown(null); }}>
                             Todas
                         </div>
-                        <div style={{ ...dropdownItemStyle, backgroundColor: filters.currency === "ARS" ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, currency: "ARS", page: 1 }); setOpenDropdown(null); }}>
+                        <div style={{ ...dropdownItemStyle, backgroundColor: filters.currency === "ARS" ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, currency: "ARS", page: 1 }); setOpenDropdown(null); }}>
                             ARS
                         </div>
-                        <div style={{ ...dropdownItemStyle, backgroundColor: filters.currency === "USD" ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, currency: "USD", page: 1 }); setOpenDropdown(null); }}>
+                        <div style={{ ...dropdownItemStyle, backgroundColor: filters.currency === "USD" ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, currency: "USD", page: 1 }); setOpenDropdown(null); }}>
                             USD
                         </div>
                     </div>
@@ -347,13 +332,13 @@ export function TransactionFilters({ filters, onChange, total, page, limit, onPa
                 </button>
                 {openDropdown === "frequency" && (
                     <div style={dropdownStyle}>
-                        <div style={{ ...dropdownItemStyle, backgroundColor: !filters.frequency ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, frequency: undefined, page: 1 }); setOpenDropdown(null); }}>
+                        <div style={{ ...dropdownItemStyle, backgroundColor: !filters.frequency ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, frequency: undefined, page: 1 }); setOpenDropdown(null); }}>
                             Todas
                         </div>
-                        <div style={{ ...dropdownItemStyle, backgroundColor: filters.frequency === "fixed" ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, frequency: "fixed", page: 1 }); setOpenDropdown(null); }}>
+                        <div style={{ ...dropdownItemStyle, backgroundColor: filters.frequency === "fixed" ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, frequency: "fixed", page: 1 }); setOpenDropdown(null); }}>
                             Fija
                         </div>
-                        <div style={{ ...dropdownItemStyle, backgroundColor: filters.frequency === "variable" ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, frequency: "variable", page: 1 }); setOpenDropdown(null); }}>
+                        <div style={{ ...dropdownItemStyle, backgroundColor: filters.frequency === "variable" ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, frequency: "variable", page: 1 }); setOpenDropdown(null); }}>
                             Variable
                         </div>
                     </div>
@@ -368,13 +353,13 @@ export function TransactionFilters({ filters, onChange, total, page, limit, onPa
                 </button>
                 {openDropdown === "installments" && (
                     <div style={dropdownStyle}>
-                        <div style={{ ...dropdownItemStyle, backgroundColor: filters.installments === undefined ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, installments: undefined, page: 1 }); setOpenDropdown(null); }}>
+                        <div style={{ ...dropdownItemStyle, backgroundColor: filters.installments === undefined ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, installments: undefined, page: 1 }); setOpenDropdown(null); }}>
                             Todas
                         </div>
-                        <div style={{ ...dropdownItemStyle, backgroundColor: filters.installments === true ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, installments: true, page: 1 }); setOpenDropdown(null); }}>
+                        <div style={{ ...dropdownItemStyle, backgroundColor: filters.installments === true ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, installments: true, page: 1 }); setOpenDropdown(null); }}>
                             Con cuotas
                         </div>
-                        <div style={{ ...dropdownItemStyle, backgroundColor: filters.installments === false ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, installments: false, page: 1 }); setOpenDropdown(null); }}>
+                        <div style={{ ...dropdownItemStyle, backgroundColor: filters.installments === false ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, installments: false, page: 1 }); setOpenDropdown(null); }}>
                             Sin cuotas
                         </div>
                     </div>
@@ -389,11 +374,11 @@ export function TransactionFilters({ filters, onChange, total, page, limit, onPa
                 </button>
                 {openDropdown === "category" && (
                     <div style={dropdownStyle}>
-                        <div style={{ ...dropdownItemStyle, backgroundColor: !filters.category ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, category: undefined, page: 1 }); setOpenDropdown(null); }}>
+                        <div style={{ ...dropdownItemStyle, backgroundColor: !filters.category ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, category: undefined, page: 1 }); setOpenDropdown(null); }}>
                             Todas
                         </div>
                         {categoriesList.map((cat) => (
-                            <div key={cat.id} style={{ ...dropdownItemStyle, backgroundColor: filters.category === cat.id ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, category: cat.id, page: 1 }); setOpenDropdown(null); }}>
+                            <div key={cat.id} style={{ ...dropdownItemStyle, backgroundColor: filters.category === cat.id ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, category: cat.id, page: 1 }); setOpenDropdown(null); }}>
                                 {cat.name}
                             </div>
                         ))}
@@ -409,11 +394,11 @@ export function TransactionFilters({ filters, onChange, total, page, limit, onPa
                 </button>
                 {openDropdown === "subcategory" && (
                     <div style={dropdownStyle}>
-                        <div style={{ ...dropdownItemStyle, backgroundColor: !filters.subcategory ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, subcategory: undefined, page: 1 }); setOpenDropdown(null); }}>
+                        <div style={{ ...dropdownItemStyle, backgroundColor: !filters.subcategory ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, subcategory: undefined, page: 1 }); setOpenDropdown(null); }}>
                             Todas
                         </div>
                         {subcategoriesList.map((sub) => (
-                            <div key={sub.id} style={{ ...dropdownItemStyle, backgroundColor: filters.subcategory === sub.id ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, subcategory: sub.id, page: 1 }); setOpenDropdown(null); }}>
+                            <div key={sub.id} style={{ ...dropdownItemStyle, backgroundColor: filters.subcategory === sub.id ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, subcategory: sub.id, page: 1 }); setOpenDropdown(null); }}>
                                 {sub.name}
                             </div>
                         ))}
@@ -429,11 +414,11 @@ export function TransactionFilters({ filters, onChange, total, page, limit, onPa
                 </button>
                 {openDropdown === "channel" && (
                     <div style={dropdownStyle}>
-                        <div style={{ ...dropdownItemStyle, backgroundColor: !filters.channel ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, channel: undefined, page: 1 }); setOpenDropdown(null); }}>
+                        <div style={{ ...dropdownItemStyle, backgroundColor: !filters.channel ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, channel: undefined, page: 1 }); setOpenDropdown(null); }}>
                             Todos
                         </div>
                         {channelsList.map((ch) => (
-                            <div key={ch.id} style={{ ...dropdownItemStyle, backgroundColor: filters.channel === ch.id ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, channel: ch.id, page: 1 }); setOpenDropdown(null); }}>
+                            <div key={ch.id} style={{ ...dropdownItemStyle, backgroundColor: filters.channel === ch.id ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, channel: ch.id, page: 1 }); setOpenDropdown(null); }}>
                                 {ch.name}
                             </div>
                         ))}
@@ -449,11 +434,11 @@ export function TransactionFilters({ filters, onChange, total, page, limit, onPa
                 </button>
                 {openDropdown === "account" && (
                     <div style={dropdownStyle}>
-                        <div style={{ ...dropdownItemStyle, backgroundColor: !filters.account ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, account: undefined, page: 1 }); setOpenDropdown(null); }}>
+                        <div style={{ ...dropdownItemStyle, backgroundColor: !filters.account ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, account: undefined, page: 1 }); setOpenDropdown(null); }}>
                             Todas
                         </div>
                         {accountsList.map((acc) => (
-                            <div key={acc.id} style={{ ...dropdownItemStyle, backgroundColor: filters.account === acc.id ? "colors.highlight.low" : "transparent" }} onClick={() => { onChange({ ...filters, account: acc.id, page: 1 }); setOpenDropdown(null); }}>
+                            <div key={acc.id} style={{ ...dropdownItemStyle, backgroundColor: filters.account === acc.id ? colors.highlight.low : "transparent" }} onClick={() => { onChange({ ...filters, account: acc.id, page: 1 }); setOpenDropdown(null); }}>
                                 {acc.name}
                             </div>
                         ))}
@@ -533,6 +518,7 @@ export function TransactionFilters({ filters, onChange, total, page, limit, onPa
                         outline: "none",
                     }}
                 />
+            </div>
             </div>
         </div>
     );

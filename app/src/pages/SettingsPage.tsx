@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChannelList } from "@/components/ChannelList";
 import { AccountList } from "@/components/AccountList";
-import { CategoryList } from "@/components/CategoryList";
+import { CategoryManager } from "@/components/CategoryManager";
 import { SubcategoryList } from "@/components/SubcategoryList";
 import { UserSettings } from "@/components/UserSettings";
 
@@ -58,7 +58,7 @@ export function SettingsPage() {
             {activeTab === "user" && <UserSettings />}
             {activeTab === "channels" && <ChannelList />}
             {activeTab === "accounts" && <AccountList />}
-            {activeTab === "categories" && <CategoryList />}
+            {activeTab === "categories" && <CategoryManager />}
             {activeTab === "subcategories" && <SubcategoryList />}
         </div>
     );

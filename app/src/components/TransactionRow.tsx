@@ -7,10 +7,15 @@ import { radius, spacing, shadows } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
 import { useUpdateTransaction, useCategories, useSubcategories, useChannels, useAccounts, useUserConfig, useUpdateEntryPaid } from "@/hooks";
 import { economic } from "@/api_client";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 interface TransactionRowProps {
     transaction: TransactionRowDTO;
     onDelete?: (transaction: TransactionRowDTO) => void;
+    onCancelInstallments?: (transaction: TransactionRowDTO) => void;
+    isEditing: boolean;
+    onStartEdit: () => void;
+    onFinishEdit: () => void;
 }
 
 const trStyle: React.CSSProperties = {
@@ -19,7 +24,7 @@ const trStyle: React.CSSProperties = {
 };
 
 const tdStyle: React.CSSProperties = {
-    padding: `${spacing[2]} ${spacing[3]}`,
+    padding: `${spacing[1]} ${spacing[3]}`,
     verticalAlign: "middle",
 };
 
@@ -113,6 +118,7 @@ const dropdownStyle: React.CSSProperties = {
     minWidth: "250px",
     maxHeight: "400px",
     overflowY: "auto",
+    overscrollBehavior: "contain",
     zIndex: 60,
     boxShadow: shadows.lg,
 };
@@ -190,8 +196,7 @@ function Tooltip({ content, children }: TooltipProps) {
     );
 }
 
-export function TransactionRow({ transaction, onDelete }: TransactionRowProps) {
-    const [isEditing, setIsEditing] = useState(false);
+export function TransactionRow({ transaction, onDelete, onCancelInstallments, isEditing, onStartEdit, onFinishEdit }: TransactionRowProps) {
     const [hoverDelete, setHoverDelete] = useState(false);
     const [dateFormat, setDateFormat] = useState<DateFormat>(() => getStoredFormat());
 
@@ -202,13 +207,17 @@ export function TransactionRow({ transaction, onDelete }: TransactionRowProps) {
         window.dispatchEvent(new Event("date-format-changed"));
     };
 
+    const dateValue = transaction.installment_group_id && transaction.installment_start_date 
+        ? transaction.installment_start_date 
+        : transaction.date;
+
     const [formData, setFormData] = useState<TransactionAggregateReq>({
         description: transaction.description || "",
-        date: transaction.date,
+        date: dateValue,
         type: transaction.type as "expense" | "income",
         frequency: transaction.frequency as "fixed" | "variable",
-        installment_number: transaction.installment_number ?? undefined,
-        amount: transaction.amount,
+        installment_number: transaction.total_installments ?? 1,
+                amount: transaction.original_amount ?? transaction.amount,
         currency: transaction.currency as "ARS" | "USD",
         exchange_rate: transaction.exchange_rate,
         category_id: transaction.category_id || "",
@@ -261,13 +270,16 @@ export function TransactionRow({ transaction, onDelete }: TransactionRowProps) {
 
     useEffect(() => {
         if (isEditing) {
+            const startDate = transaction.installment_group_id && transaction.installment_start_date 
+                ? transaction.installment_start_date 
+                : transaction.date;
             setFormData({
                 description: transaction.description || "",
-                date: transaction.date,
+                date: startDate,
                 type: transaction.type as "expense" | "income",
                 frequency: transaction.frequency as "fixed" | "variable",
-                installment_number: transaction.installment_number ?? undefined,
-                amount: transaction.amount,
+                installment_number: transaction.total_installments ?? 1,
+        amount: transaction.original_amount ?? transaction.amount,
                 currency: transaction.currency as "ARS" | "USD",
                 exchange_rate: transaction.exchange_rate,
                 category_id: transaction.category_id || "",
@@ -310,14 +322,20 @@ export function TransactionRow({ transaction, onDelete }: TransactionRowProps) {
     };
 
     const handleDelete = () => onDelete?.(transaction);
-    const handleEdit = () => setIsEditing(true);
+    const handleEdit = () => onStartEdit();
     const handleSave = () => {
-        updateMutation.mutate({ id: transaction.id, data: formData }, { onSuccess: () => setIsEditing(false) });
+        updateMutation.mutate({ id: transaction.id, data: formData }, { onSuccess: () => onFinishEdit() });
     };
-    const handleCancel = () => setIsEditing(false);
+    const handleCancel = () => onFinishEdit();
 
     const handleTogglePaid = () => {
-        updatePaidMutation.mutate({ id: transaction.entry_id, isPaid: !transaction.is_paid });
+        updatePaidMutation.mutate({ id: transaction.id, isPaid: !transaction.is_paid });
+    };
+
+    const handleCancelInstallments = () => {
+        if (onCancelInstallments) {
+            onCancelInstallments(transaction);
+        }
     };
 
     const getDisplayValue = (type: "category" | "account") => {
@@ -337,17 +355,24 @@ export function TransactionRow({ transaction, onDelete }: TransactionRowProps) {
     if (isEditing) {
         return (
             <tr style={{ ...trStyle, backgroundColor: colors.bg.dim }}>
-                <td style={{ ...tdStyle, ...fixedWidthStyle("100px") }}>
-                    <input type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} style={formInputStyle} required />
+                <td style={{ ...tdStyle, ...fixedWidthStyle("110px") }}>
+                    <DatePicker
+                        value={formData.date}
+                        onChange={(value) => setFormData({ ...formData, date: value })}
+                    />
                 </td>
                 <td style={{ ...tdStyle, ...fixedWidthStyle("250px") }}>
                     <input type="text" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Descripción" style={formInputStyle} required />
                     <div style={{ ...subStyle, marginTop: "4px", display: "flex", alignItems: "center", gap: "8px" }}>
-                        <input type="text" inputMode="numeric" value={formData.installment_number ?? ""} placeholder={transaction.total_installments ? String(transaction.total_installments) : "1"} onChange={(e) => {
-                            const val = e.target.value;
-                            setFormData({ ...formData, installment_number: val ? parseInt(val) : undefined });
-                        }} style={{ ...formInputStyle, width: "50px", height: "22px", fontSize: "11px", padding: "2px 4px" }} />
-                        <span>Cuotas</span>
+                        <input 
+                            type="number" 
+                            inputMode="numeric"
+                            min="1"
+                            value={formData.installment_number ?? ""}
+                            onChange={(e) => setFormData({ ...formData, installment_number: parseInt(e.target.value) || 1 })}
+                            style={{ ...formInputStyle, fontSize: "11px", width: "50px", height: "20px", padding: "2px 4px" }}
+                        />
+                        <span style={{ fontSize: "11px", color: colors.fg.muted }}>cuotas</span>
                     </div>
                 </td>
                 <td style={{ ...tdStyle, ...fixedWidthStyle("80px") }}>
@@ -421,11 +446,11 @@ export function TransactionRow({ transaction, onDelete }: TransactionRowProps) {
                 <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("60px") }}>
                     <div style={{ position: "relative" }}>
                         <button type="button" data-dropdown-btn onMouseDown={(e) => toggleDropdown("currency", e)} style={{ ...formSelectStyle, width: "100%", height: "28px", justifyContent: "center" }}>
-                            <span>{formData.currency}</span>
+                            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{formData.currency}</span>
                             <ChevronDown size={12} />
                         </button>
                         {openDropdown === "currency" && (
-                            <div style={{ ...dropdownStyle, width: "100%", minWidth: "60px" }}>
+                            <div style={{ ...dropdownStyle, width: "100%", minWidth: "70px" }}>
                                 <div style={{ ...dropdownItemStyle, backgroundColor: formData.currency === "ARS" ? colors.highlight.low : "transparent" }} onMouseDown={(e) => { e.stopPropagation(); setFormData({ ...formData, currency: "ARS" }); setOpenDropdown(null); }}>ARS</div>
                                 <div style={{ ...dropdownItemStyle, backgroundColor: formData.currency === "USD" ? colors.highlight.low : "transparent" }} onMouseDown={(e) => { e.stopPropagation(); setFormData({ ...formData, currency: "USD" }); setOpenDropdown(null); }}>USD</div>
                             </div>
@@ -433,9 +458,11 @@ export function TransactionRow({ transaction, onDelete }: TransactionRowProps) {
                     </div>
                 </td>
                 <td style={{ ...tdStyle, textAlign: "right", paddingRight: spacing[3], ...fixedWidthStyle("140px") }}>
-                    <input type="text" inputMode="decimal" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} style={{ ...formInputStyle, textAlign: "right", fontFamily: fonts.family.mono, fontWeight: 600 }} required />
+                    <input type="text" inputMode="decimal" value={formData.amount} onChange={(e) => {
+                        setFormData({ ...formData, amount: e.target.value });
+                    }} style={{ ...formInputStyle, textAlign: "right", fontFamily: fonts.family.mono, fontWeight: 600 }} required />
                 </td>
-                <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("100px") }}>
+                <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("100px") }}>
                     <div style={{ position: "relative" }}>
                         <input type="text" inputMode="decimal" value={formData.exchange_rate} onChange={(e) => setFormData({ ...formData, exchange_rate: parseFloat(e.target.value) || 1 })} style={{ ...formInputStyle, textAlign: "right", fontFamily: fonts.family.mono, paddingRight: "28px" }} />
                         <button
@@ -470,6 +497,24 @@ export function TransactionRow({ transaction, onDelete }: TransactionRowProps) {
                         </button>
                     </div>
                 </td>
+                <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("90px") }}>
+                    <button
+                        onClick={handleTogglePaid}
+                        style={{
+                            fontSize: fonts.size.xs,
+                            padding: `${spacing[1]} ${spacing[2]}`,
+                            borderRadius: radius.md,
+                            fontWeight: 500,
+                            cursor: "pointer",
+                            border: "none",
+                            textTransform: "uppercase",
+                            backgroundColor: transaction.is_paid ? `${colors.accent.teal}26` : `${colors.fg.muted}26`,
+                            color: transaction.is_paid ? colors.accent.teal : colors.fg.muted,
+                        }}
+                    >
+                        {transaction.is_paid ? "Pagado" : "Pendiente"}
+                    </button>
+                </td>
                 <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap", width: "130px" }}>
                     <span style={{ display: "flex", gap: spacing[2], justifyContent: "flex-end" }}>
                         <button onClick={handleSave} disabled={updateMutation.isPending} style={{ ...getActionBtnStyle(false, false), backgroundColor: colors.accent.teal, color: colors.bg.default, border: "none" }} title="Guardar">
@@ -487,14 +532,20 @@ export function TransactionRow({ transaction, onDelete }: TransactionRowProps) {
     return (
         <>
             <tr style={trStyle} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.highlight.low)} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}>
-                <td style={{ ...tdStyle, ...fixedWidthStyle("100px"), cursor: "pointer" }} onClick={handleFormatClick} title="Cambiar formato">{formatDate(transaction.date, dateFormat)}</td>
+                <td style={{ ...tdStyle, ...fixedWidthStyle("110px"), cursor: "pointer" }} onClick={handleFormatClick} title="Cambiar formato">{formatDate(transaction.date, dateFormat)}</td>
                 <td style={{ ...tdStyle, ...fixedWidthStyle("250px"), overflow: "hidden" }}>
                     <Tooltip content={transaction.description || "Sin descripción"}>
                         <span style={{ fontWeight: 500, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {transaction.description || "Sin descripción"}
                         </span>
                     </Tooltip>
-                    {transaction.installment_number && <div style={subStyle}>Cuota {transaction.installment_number}/{transaction.total_installments}</div>}
+                    {transaction.total_installments && (
+                        <div style={subStyle}>
+                            {transaction.installment_number 
+                                ? `${transaction.installment_number}/${transaction.total_installments} Cuotas` 
+                                : "Cancelación de Cuotas"}
+                        </div>
+                    )}
                 </td>
                 <td style={{ ...tdStyle, ...fixedWidthStyle("80px") }}>
                     <span style={{ ...badgeStyle, backgroundColor: isExpense ? `${colors.semantic.error}26` : `${colors.semantic.success}26`, color: isExpense ? colors.semantic.error : colors.semantic.success }}>
@@ -553,23 +604,41 @@ export function TransactionRow({ transaction, onDelete }: TransactionRowProps) {
                         </span>
                     </Tooltip>
                 </td>
-                <td style={{ ...tdStyle, textAlign: "right", fontFamily: fonts.family.mono, fontSize: fonts.size.xs, color: colors.fg.muted, opacity: 0.7, ...fixedWidthStyle("100px") }}>
+                <td style={{ ...tdStyle, textAlign: "center", fontFamily: fonts.family.mono, fontSize: fonts.size.xs, color: colors.fg.muted, opacity: 0.7, ...fixedWidthStyle("100px") }}>
                     <Tooltip content={transaction.exchange_rate % 1 === 0 ? String(transaction.exchange_rate) : transaction.exchange_rate.toFixed(2)}>
                         <span>{transaction.exchange_rate % 1 === 0 ? transaction.exchange_rate.toString() : transaction.exchange_rate.toFixed(2)}</span>
                     </Tooltip>
                 </td>
-                <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap", width: "130px" }}>
+                <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("90px") }}>
+                    <button
+                        onClick={handleTogglePaid}
+                        style={{
+                            fontSize: fonts.size.xs,
+                            padding: `${spacing[1]} ${spacing[2]}`,
+                            borderRadius: radius.md,
+                            fontWeight: 500,
+                            cursor: "pointer",
+                            border: "none",
+                            textTransform: "uppercase",
+                            backgroundColor: transaction.is_paid ? `${colors.accent.teal}26` : `${colors.fg.muted}26`,
+                            color: transaction.is_paid ? colors.accent.teal : colors.fg.muted,
+                        }}
+                        title={transaction.is_paid ? "Marcar como pendiente" : "Marcar como pagado"}
+                    >
+                        {transaction.is_paid ? "Pagado" : "Pendiente"}
+                    </button>
+                </td>
+                <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap", width: "100px" }}>
                     <span style={{ display: "flex", gap: spacing[2], justifyContent: "flex-end" }}>
-                        {transaction.installment_number && (
-                            <button style={getActionBtnStyle(false, false)} title="Cancelar cuotas"><CreditCard size={14} /></button>
+                        {transaction.installment_group_id && !transaction.is_canceled && (
+                            <button
+                                style={getActionBtnStyle(false, false)}
+                                title="Cancelar cuotas"
+                                onClick={handleCancelInstallments}
+                            >
+                                <CreditCard size={14} />
+                            </button>
                         )}
-                        <button 
-                            onClick={handleTogglePaid}
-                            style={transaction.is_paid ? { ...getActionBtnStyle(false, false), backgroundColor: colors.accent.teal, color: colors.bg.default, border: "none" } : getActionBtnStyle(false, false)}
-                            title={transaction.is_paid ? "Desmarcar como pagado" : "Marcar como pagado"}
-                        >
-                            <Check size={14} />
-                        </button>
                         <button style={getActionBtnStyle(false, false)} onClick={handleEdit} title="Editar"><Pencil size={14} /></button>
                         <button style={getActionBtnStyle(true, hoverDelete)} onMouseEnter={() => setHoverDelete(true)} onMouseLeave={() => setHoverDelete(false)} onClick={handleDelete} title="Eliminar"><X size={14} /></button>
                     </span>
