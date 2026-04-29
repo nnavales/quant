@@ -6,13 +6,17 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/nnavales/summit/api/apperrors"
 	"github.com/oklog/ulid/v2"
 )
 
 var (
-	ErrNotFound  = errors.New("resource not found")
-	ErrDuplicate = errors.New("resource already exists")
+	ErrNotFound     = apperrors.ErrNotFound
+	ErrDuplicate    = apperrors.ErrDuplicate
+	ErrInvalidField = apperrors.ErrInvalidInput
 )
+
+var _ = errors.New
 
 type Category struct {
 	ID        string     `json:"id"`
@@ -40,6 +44,7 @@ type Repository interface {
 	// must
 	CreateCategory(ctx context.Context, c Category) (*Category, error)
 	GetCategoryByID(ctx context.Context, id string) (*Category, error)
+	GetCategoryByName(ctx context.Context, name string) (*Category, error)
 	ListCategories(ctx context.Context, filter Filter) ([]Category, error)
 	ListCategoriesWithSubcategories(ctx context.Context, filter Filter) ([]CategoryWithSubcategories, error)
 	UpdateCategory(ctx context.Context, c Category) (*Category, error)
@@ -48,12 +53,16 @@ type Repository interface {
 	// must
 	CreateSubcategory(ctx context.Context, s Subcategory) (*Subcategory, error)
 	GetSubcategoryByID(ctx context.Context, id string) (*Subcategory, error)
+	GetSubcategoryByName(ctx context.Context, name string) (*Subcategory, error)
 	ListSubcategories(ctx context.Context, filter Filter) ([]Subcategory, error)
 	UpdateSubcategory(ctx context.Context, s Subcategory) (*Subcategory, error)
 	DeleteSubcategory(ctx context.Context, id string, now time.Time) error
 
 	RestoreCategory(ctx context.Context, id string) error
 	RestoreSubcategory(ctx context.Context, id string) error
+
+	HardDeleteCategory(ctx context.Context, id string) error
+	HardDeleteSubcategory(ctx context.Context, id string) error
 }
 
 type CategoryReq struct {
@@ -118,8 +127,6 @@ func (s *Subcategory) SetDeleted(now time.Time, isDeleted bool) {
 }
 
 // Validations
-var ErrInvalidField = errors.New("invalid field")
-
 func (c *Category) Validate() error {
 	if c.ID == "" {
 		return fmt.Errorf("id is required: %w", ErrInvalidField)

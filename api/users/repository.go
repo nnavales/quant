@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"time"
+
+	"github.com/nnavales/summit/api/apperrors"
 )
 
 type Repo struct {
@@ -58,7 +60,7 @@ func (r *Repo) Get(ctx context.Context, key string) (any, error) {
 	var value any
 	err := r.db.QueryRowContext(ctx, QueryGet, key).Scan(&value)
 	if err == sql.ErrNoRows {
-		return nil, nil
+		return nil, apperrors.ErrNotFound
 	}
 	return value, err
 }

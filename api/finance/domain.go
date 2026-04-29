@@ -6,44 +6,70 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/nnavales/summit/api/apperrors"
 	"github.com/nnavales/summit/api/entries"
 	"github.com/nnavales/summit/api/installments"
+	"github.com/nnavales/summit/api/money"
 	"github.com/nnavales/summit/api/timeutils"
 	"github.com/nnavales/summit/api/transactions"
 )
 
 var (
-	ErrNotFound = errors.New("resource not found")
+	ErrNotFound      = apperrors.ErrNotFound
+	ErrAlreadyExists = apperrors.ErrDuplicate
+	ErrInvalidField  = apperrors.ErrInvalidInput
+	ErrInvalidFilter = errors.New("invalid filter value")
 )
 
 // Repository
 type Repository interface {
 	CreateTransactionAggregate(ctx context.Context, agg TransactionAggregate) error
+	BulkCreateTransactionAggregate(ctx context.Context, agg []TransactionAggregate) error
 	ListTransactionsAggregate(ctx context.Context, filter *Filter) (*TransactionListResponse, error)
 	GetTransactionAggregate(ctx context.Context, id string) (*TransactionRowDTO, error)
 	DeleteTransactionAggregate(ctx context.Context, id string) error
 	UpdateTransactionAggregate(ctx context.Context, id string, agg TransactionAggregate) error
-	GetTransactionsByInstallmentGroup(ctx context.Context, groupID string, fromInstallment int) ([]TransactionRowDTO, error)
+	GetTransactionsByInstallmentGroup(ctx context.Context, groupID string) ([]TransactionRowDTO, error)
 	CancelInstallments(ctx context.Context, groupID string, fromInstallment int, now time.Time) error
 	DeleteTransactionsByInstallmentGroup(ctx context.Context, groupID string, fromInstallment int) error
 	ListHistoricalEntries(ctx context.Context, filter *Filter) (*HistoricalListResponse, error)
 }
 
-type HistoricalRowDTO struct {
-	Month           string  `json:"month"`
-	Income          string  `json:"income"`
-	IncomeFixed     string  `json:"income_fixed"`
-	IncomeVariable  string  `json:"income_variable"`
-	Expense         string  `json:"expense"`
-	ExpenseFixed    string  `json:"expense_fixed"`
-	ExpenseVariable string  `json:"expense_variable"`
-	ExchangeRate    float64 `json:"exchange_rate"`
-	Savings         string  `json:"savings"`
-	Source          string  `json:"source"`
+type InstallmentRowDTO struct {
+	ID                string                             `json:"id"`
+	StartDate         timeutils.Date                     `json:"start_date"`
+	EndDate           timeutils.Date                     `json:"end_date"`
+	Description       *string                            `json:"description"`
+	Type              transactions.TransactionType       `json:"type"`
+	Frequency         *transactions.TransactionFrequency `json:"frequency"`
+	CategoryID        *string                            `json:"category_id"`
+	CategoryName      *string                            `json:"category_name"`
+	SubcategoryID     *string                            `json:"subcategory_id"`
+	SubcategoryName   *string                            `json:"subcategory_name"`
+	AccountID         *string                            `json:"account_id"`
+	AccountName       *string                            `json:"account_name"`
+	ChannelID         string                             `json:"channel_id"`
+	ChannelName       string                             `json:"channel_name"`
+	TotalInstallments *int                               `json:"total_installments"`
+	TotalAmount       money.Money                        `json:"total_amount"`
+	IsCanceled        *bool                              `json:"is_canceled"`
+	Currency          entries.Currency                   `json:"currency"`
+	ExchangeRate      float64                            `json:"exchange_rate"`
+	Installments      []TransactionRowDTO                `json:"installments"`
 }
 
-// Validations
-var ErrInvalidField = errors.New("invalid field")
+type HistoricalRowDTO struct {
+	Month           string      `json:"month"`
+	Income          money.Money `json:"income"`
+	IncomeFixed     money.Money `json:"income_fixed"`
+	IncomeVariable  money.Money `json:"income_variable"`
+	Expense         money.Money `json:"expense"`
+	ExpenseFixed    money.Money `json:"expense_fixed"`
+	ExpenseVariable money.Money `json:"expense_variable"`
+	ExchangeRate    float64     `json:"exchange_rate"`
+	Savings         money.Money `json:"savings"`
+	Source          string      `json:"source"`
+}
 
 // Batch
 type TransactionAggregateReq struct {
@@ -60,6 +86,10 @@ type TransactionAggregateReq struct {
 	ChannelID         string                            `json:"channel_id"`
 	AccountID         string                            `json:"account_id"`
 	IsPaid            *bool                             `json:"is_paid"`
+}
+
+type BulkTransactionReq struct {
+	Data []TransactionAggregateReq `json:"data"`
 }
 
 type TransactionAggregate struct {
@@ -79,7 +109,7 @@ type TransactionRowDTO struct {
 
 	EntryID      string           `json:"entry_id"`
 	IsPaid       bool             `json:"is_paid"`
-	Amount       string           `json:"amount"`
+	Amount       money.Money      `json:"amount"`
 	Currency     entries.Currency `json:"currency"`
 	ExchangeRate float64          `json:"exchange_rate"`
 
@@ -100,7 +130,7 @@ type TransactionRowDTO struct {
 	InstallmentGroupID   *string         `json:"installment_group_id"`
 	InstallmentStartDate *timeutils.Date `json:"installment_start_date"`
 	IsCanceled           *bool           `json:"is_canceled"`
-	OriginalAmount       *string         `json:"original_amount"`
+	OriginalAmount       *money.Money    `json:"original_amount"`
 }
 
 type TransactionListResponse struct {
@@ -132,11 +162,11 @@ type Filter struct {
 	Account     *string
 	DateFrom    *timeutils.Date
 	DateTo      *timeutils.Date
+	IsPaid      *bool
+	Source      *string
 }
 
 type FilterParams map[string]string
-
-var ErrInvalidFilter = errors.New("invalid filter value")
 
 func NewFilter(params FilterParams) (*Filter, error) {
 	f := &Filter{}
@@ -236,6 +266,11 @@ func NewFilter(params FilterParams) (*Filter, error) {
 		f.DateTo = &d
 	}
 
+	if v, ok := params["is_paid"]; ok && v != "" {
+		paid := v == "true"
+		f.IsPaid = &paid
+	}
+
 	return f, nil
 }
 
@@ -285,6 +320,13 @@ func NewHistoricalFilter(params FilterParams) (*Filter, error) {
 			return nil, fmt.Errorf("invalid date_to: %w", ErrInvalidFilter)
 		}
 		f.DateTo = &d
+	}
+
+	if v, ok := params["source"]; ok && v != "" {
+		if v != "historical" && v != "transactions" {
+			return nil, fmt.Errorf("invalid source: %w", ErrInvalidFilter)
+		}
+		f.Source = &v
 	}
 
 	return f, nil

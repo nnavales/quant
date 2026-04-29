@@ -6,8 +6,11 @@ build:
 	@mkdir -p ./bin
 	@go build -o ./bin/summit ./api/cmd/main.go
 
-run: build
+api: build
 	@./bin/summit 
+
+client: 
+	@cd app && WEBKIT_DISABLE_COMPOSITING_MODE=1 GDK_BACKEND=x11 bun run tauri dev 
 
 clean:
 	@rm -rf ./bin/*
@@ -17,6 +20,9 @@ test:
 
 dev: 
 	@bash -c "air & cd app && WEBKIT_DISABLE_COMPOSITING_MODE=1 GDK_BACKEND=x11 bun run tauri dev"
+
+dev-release:
+	@bash -c "air & cd app && WEBKIT_DISABLE_COMPOSITING_MODE=1 GDK_BACKEND=x11 bunx tauri dev --release"
 
 help:
 	@echo "Usage: make [OPTION]..."

@@ -1,7 +1,6 @@
 package categories
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/nnavales/summit/api/transport/httpx"
@@ -20,43 +19,31 @@ func NewHandler(service *Service) *Handler {
 func (h *Handler) CreateCategory(w http.ResponseWriter, r *http.Request) {
 	req, err := httpx.DecodeJSON[CategoryReq](r.Body)
 	if err != nil {
-		httpx.WriteError(w, r, 400, "invalid request", err)
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid request", err)
 		return
 	}
 
 	c, err := h.service.CreateCategory(r.Context(), req)
 	if err != nil {
-		if errors.Is(err, ErrInvalidField) {
-			httpx.WriteError(w, r, 400, "invalid field", err)
-			return
-		}
-		if errors.Is(err, ErrDuplicate) {
-			httpx.WriteError(w, r, 409, "category already exists", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to create category", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, 201, c)
+	httpx.WriteJSON(w, http.StatusCreated, c)
 }
 
 func (h *Handler) GetCategory(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		httpx.WriteError(w, r, 400, "id required", nil)
+		httpx.WriteError(w, r, http.StatusBadRequest, "id required", nil)
 		return
 	}
 
 	c, err := h.service.GetCategory(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			httpx.WriteError(w, r, 404, "category not found", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to get category", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, 200, c)
+	httpx.WriteJSON(w, http.StatusOK, c)
 }
 
 func (h *Handler) ListCategories(w http.ResponseWriter, r *http.Request) {
@@ -70,10 +57,10 @@ func (h *Handler) ListCategories(w http.ResponseWriter, r *http.Request) {
 
 	categories, err := h.service.ListCategories(r.Context(), filter)
 	if err != nil {
-		httpx.WriteError(w, r, 500, "failed to list categories", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, 200, categories)
+	httpx.WriteJSON(w, http.StatusOK, categories)
 }
 
 func (h *Handler) ListCategoriesWithSubcategories(w http.ResponseWriter, r *http.Request) {
@@ -93,55 +80,43 @@ func (h *Handler) ListCategoriesWithSubcategories(w http.ResponseWriter, r *http
 
 	categories, err := h.service.ListCategoriesWithSubcategories(r.Context(), filter)
 	if err != nil {
-		httpx.WriteError(w, r, 500, "failed to list categories", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, 200, categories)
+	httpx.WriteJSON(w, http.StatusOK, categories)
 }
 
 func (h *Handler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		httpx.WriteError(w, r, 400, "id required", nil)
+		httpx.WriteError(w, r, http.StatusBadRequest, "id required", nil)
 		return
 	}
 
 	req, err := httpx.DecodeJSON[CategoryReq](r.Body)
 	if err != nil {
-		httpx.WriteError(w, r, 400, "invalid request", err)
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid request", err)
 		return
 	}
 
 	c, err := h.service.UpdateCategory(r.Context(), id, req)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			httpx.WriteError(w, r, 404, "category not found", err)
-			return
-		}
-		if errors.Is(err, ErrInvalidField) {
-			httpx.WriteError(w, r, 400, "invalid field", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to update category", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, 200, c)
+	httpx.WriteJSON(w, http.StatusOK, c)
 }
 
 func (h *Handler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		httpx.WriteError(w, r, 400, "id required", nil)
+		httpx.WriteError(w, r, http.StatusBadRequest, "id required", nil)
 		return
 	}
 
 	err := h.service.DeleteCategory(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			httpx.WriteError(w, r, 404, "category not found", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to delete category", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -150,43 +125,31 @@ func (h *Handler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) CreateSubcategory(w http.ResponseWriter, r *http.Request) {
 	req, err := httpx.DecodeJSON[SubcategoryReq](r.Body)
 	if err != nil {
-		httpx.WriteError(w, r, 400, "invalid request", err)
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid request", err)
 		return
 	}
 
 	sd, err := h.service.CreateSubcategory(r.Context(), req)
 	if err != nil {
-		if errors.Is(err, ErrInvalidField) {
-			httpx.WriteError(w, r, 400, "invalid field", err)
-			return
-		}
-		if errors.Is(err, ErrDuplicate) {
-			httpx.WriteError(w, r, 409, "subcategory already exists", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to create subcategory", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, 201, sd)
+	httpx.WriteJSON(w, http.StatusCreated, sd)
 }
 
 func (h *Handler) GetSubcategory(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		httpx.WriteError(w, r, 400, "id required", nil)
+		httpx.WriteError(w, r, http.StatusBadRequest, "id required", nil)
 		return
 	}
 
 	sd, err := h.service.GetSubcategory(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			httpx.WriteError(w, r, 404, "subcategory not found", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to get subcategory", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, 200, sd)
+	httpx.WriteJSON(w, http.StatusOK, sd)
 }
 
 func (h *Handler) ListSubcategories(w http.ResponseWriter, r *http.Request) {
@@ -199,55 +162,43 @@ func (h *Handler) ListSubcategories(w http.ResponseWriter, r *http.Request) {
 	}
 	subcategories, err := h.service.ListSubcategories(r.Context(), filter)
 	if err != nil {
-		httpx.WriteError(w, r, 500, "failed to list subcategories", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, 200, subcategories)
+	httpx.WriteJSON(w, http.StatusOK, subcategories)
 }
 
 func (h *Handler) UpdateSubcategory(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		httpx.WriteError(w, r, 400, "id required", nil)
+		httpx.WriteError(w, r, http.StatusBadRequest, "id required", nil)
 		return
 	}
 
 	req, err := httpx.DecodeJSON[SubcategoryReq](r.Body)
 	if err != nil {
-		httpx.WriteError(w, r, 400, "invalid request", err)
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid request", err)
 		return
 	}
 
 	sd, err := h.service.UpdateSubcategory(r.Context(), id, req)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			httpx.WriteError(w, r, 404, "subcategory not found", err)
-			return
-		}
-		if errors.Is(err, ErrInvalidField) {
-			httpx.WriteError(w, r, 400, "invalid field", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to update subcategory", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, 200, sd)
+	httpx.WriteJSON(w, http.StatusOK, sd)
 }
 
 func (h *Handler) DeleteSubcategory(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		httpx.WriteError(w, r, 400, "id required", nil)
+		httpx.WriteError(w, r, http.StatusBadRequest, "id required", nil)
 		return
 	}
 
 	err := h.service.DeleteSubcategory(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			httpx.WriteError(w, r, 404, "subcategory not found", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to delete subcategory", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -256,45 +207,59 @@ func (h *Handler) DeleteSubcategory(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) RestoreCategory(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		httpx.WriteError(w, r, 400, "id required", nil)
+		httpx.WriteError(w, r, http.StatusBadRequest, "id required", nil)
 		return
 	}
 
 	err := h.service.RestoreCategory(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			httpx.WriteError(w, r, 404, "category not found", err)
-			return
-		}
-		if errors.Is(err, ErrInvalidField) {
-			httpx.WriteError(w, r, 400, "invalid field", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to restore category", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, 200, "ok")
+	httpx.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
 func (h *Handler) RestoreSubcategory(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		httpx.WriteError(w, r, 400, "id required", nil)
+		httpx.WriteError(w, r, http.StatusBadRequest, "id required", nil)
 		return
 	}
 
 	err := h.service.RestoreSubcategory(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			httpx.WriteError(w, r, 404, "subcategory not found", err)
-			return
-		}
-		if errors.Is(err, ErrInvalidField) {
-			httpx.WriteError(w, r, 400, "invalid field", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to restore subcategory", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, 200, "ok")
+	httpx.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func (h *Handler) HardDeleteCategory(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		httpx.WriteError(w, r, http.StatusBadRequest, "id required", nil)
+		return
+	}
+
+	err := h.service.HardDeleteCategory(r.Context(), id)
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) HardDeleteSubcategory(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		httpx.WriteError(w, r, http.StatusBadRequest, "id required", nil)
+		return
+	}
+
+	err := h.service.HardDeleteSubcategory(r.Context(), id)
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

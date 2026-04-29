@@ -1,39 +1,42 @@
 package finance
 
 import (
-	"errors"
+	"bytes"
+	"io"
 	"net/http"
 
+	"github.com/nnavales/summit/api/categories"
+	"github.com/nnavales/summit/api/channels"
 	"github.com/nnavales/summit/api/transport/httpx"
 )
 
 type Handler struct {
-	service *Service
+	service           *Service
+	categoriesService *categories.Service
+	channelsService   *channels.Service
 }
 
-func NewHandler(service *Service) *Handler {
+func NewHandler(service *Service, categoriesService *categories.Service, channelsService *channels.Service) *Handler {
 	return &Handler{
-		service: service,
+		service:           service,
+		categoriesService: categoriesService,
+		channelsService:   channelsService,
 	}
 }
 
 func (h *Handler) CreateTransactionAggregate(w http.ResponseWriter, r *http.Request) {
 	req, err := httpx.DecodeJSON[TransactionAggregateReq](r.Body)
 	if err != nil {
-		httpx.WriteError(w, r, 400, "invalid request", err)
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid request", err)
 		return
 	}
 
-	err = h.service.CreateTransactionAggregate(r.Context(), req)
+	agg, err := h.service.CreateTransactionAggregate(r.Context(), req)
 	if err != nil {
-		if errors.Is(err, ErrInvalidField) {
-			httpx.WriteError(w, r, 400, "invalid field", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to create transaction aggregate", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	httpx.WriteJSON(w, http.StatusCreated, agg)
 }
 
 func (h *Handler) ListTransactionsAggregate(w http.ResponseWriter, r *http.Request) {
@@ -44,76 +47,88 @@ func (h *Handler) ListTransactionsAggregate(w http.ResponseWriter, r *http.Reque
 
 	filter, err := NewFilter(params)
 	if err != nil {
-		httpx.WriteError(w, r, 400, err.Error(), nil)
+		httpx.WriteError(w, r, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
 	rows, err := h.service.ListTransactionsAggregate(r.Context(), filter)
 	if err != nil {
-		httpx.WriteError(w, r, 500, "failed to list transaction aggregates", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, 200, rows)
+	httpx.WriteJSON(w, http.StatusOK, rows)
 }
 
 func (h *Handler) GetTransactionAggregate(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		httpx.WriteError(w, r, 400, "id required", nil)
+		httpx.WriteError(w, r, http.StatusBadRequest, "id required", nil)
 		return
 	}
 
 	row, err := h.service.GetTransactionAggregate(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			httpx.WriteError(w, r, 404, "transaction aggregate not found", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to get transaction aggregate", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, 200, row)
+	httpx.WriteJSON(w, http.StatusOK, row)
+}
+
+func (h *Handler) GetTransactionsByInstallmentGroup(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		httpx.WriteError(w, r, http.StatusBadRequest, "id required", nil)
+		return
+	}
+
+	rows, err := h.service.GetTransactionsByInstallmentGroup(r.Context(), id)
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, rows)
+}
+
+func (h *Handler) ListTransactionsByInstallmentGroup(w http.ResponseWriter, r *http.Request) {
+	rows, err := h.service.ListTransactionsByInstallmentGroups(r.Context())
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, rows)
 }
 
 func (h *Handler) UpdateTransactionAggregate(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		httpx.WriteError(w, r, 400, "id required", nil)
+		httpx.WriteError(w, r, http.StatusBadRequest, "id required", nil)
 		return
 	}
 
 	req, err := httpx.DecodeJSON[TransactionAggregateReq](r.Body)
 	if err != nil {
-		httpx.WriteError(w, r, 400, "invalid request", err)
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid request", err)
 		return
 	}
 
-	err = h.service.UpdateTransactionAggregate(r.Context(), id, req)
+	agg, err := h.service.UpdateTransactionAggregate(r.Context(), id, req)
 	if err != nil {
-		if errors.Is(err, ErrInvalidField) {
-			httpx.WriteError(w, r, 400, "invalid field", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to update transaction aggregate", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	httpx.WriteJSON(w, http.StatusOK, agg)
 }
 
 func (h *Handler) DeleteTransactionAggregate(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		httpx.WriteError(w, r, 400, "id required", nil)
+		httpx.WriteError(w, r, http.StatusBadRequest, "id required", nil)
 		return
 	}
 
 	err := h.service.DeleteTransactionAggregate(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			httpx.WriteError(w, r, 404, "transaction aggregate not found", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to delete transaction aggregate", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -122,21 +137,13 @@ func (h *Handler) DeleteTransactionAggregate(w http.ResponseWriter, r *http.Requ
 func (h *Handler) CancelInstallments(w http.ResponseWriter, r *http.Request) {
 	req, err := httpx.DecodeJSON[CancelInstallmentsReq](r.Body)
 	if err != nil {
-		httpx.WriteError(w, r, 400, "invalid request", err)
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid request", err)
 		return
 	}
 
 	err = h.service.CancelInstallments(r.Context(), req)
 	if err != nil {
-		if errors.Is(err, ErrInvalidField) {
-			httpx.WriteError(w, r, 400, "invalid field", err)
-			return
-		}
-		if errors.Is(err, ErrNotFound) {
-			httpx.WriteError(w, r, 404, "not found", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to cancel installments", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
@@ -150,14 +157,52 @@ func (h *Handler) ListHistoricalEntries(w http.ResponseWriter, r *http.Request) 
 
 	filter, err := NewHistoricalFilter(params)
 	if err != nil {
-		httpx.WriteError(w, r, 400, err.Error(), nil)
+		httpx.WriteError(w, r, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
 	rows, err := h.service.ListHistoricalEntries(r.Context(), filter)
 	if err != nil {
-		httpx.WriteError(w, r, 500, "failed to list historical entries", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, 200, rows)
+	httpx.WriteJSON(w, http.StatusOK, rows)
+}
+
+func (h *Handler) CreateBulkTransactionAggregate(w http.ResponseWriter, r *http.Request) {
+	req, err := httpx.DecodeJSON[BulkTransactionReq](r.Body)
+	if err != nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid request", err)
+		return
+	}
+
+	err = h.service.BulkCreateTransactionAggregate(r.Context(), req)
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *Handler) CreateBulkTransactionAggregateCSV(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, "failed to read request body", err)
+		return
+	}
+
+	resolver := NewCSVResolver(h.categoriesService, h.channelsService)
+	reqs, err := h.ParseTransactionCSV(r.Context(), bytes.NewReader(body), resolver)
+	if err != nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid CSV", err)
+		return
+	}
+
+	req := BulkTransactionReq{Data: reqs}
+	err = h.service.BulkCreateTransactionAggregate(r.Context(), req)
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
 }

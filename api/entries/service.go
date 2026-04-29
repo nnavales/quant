@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nnavales/summit/api/money"
 	"github.com/nnavales/summit/api/timeutils"
 )
 
@@ -54,11 +55,11 @@ func (s *Service) UpdateEntry(ctx context.Context, id string, req EntryReq) (*En
 		e.TransactionID = *req.TransactionID
 	}
 	if req.Amount != nil {
-		amount, err := ParseAmountToCents(*req.Amount)
+		amount, err := money.ParseAmountToCents(*req.Amount)
 		if err != nil {
-			return nil, fmt.Errorf("parsing failed: %w:  %w", err, ErrInvalidField)
+			return nil, fmt.Errorf("parsing failed: %w: %w", err, ErrInvalidField)
 		}
-		e.Amount = amount
+		e.Amount = money.FromCents(amount)
 	}
 
 	if req.Currency != nil {

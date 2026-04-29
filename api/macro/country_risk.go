@@ -3,7 +3,9 @@ package macro
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -42,12 +44,23 @@ func FetchCountryRiskFromAPI() (CountryRiskValue, error) {
 
 	res, err := httpClient.Do(req)
 	if err != nil {
-		return CountryRiskValue{}, err
+		var netErr net.Error
+		if errors.As(err, &netErr) && netErr.Timeout() {
+			return CountryRiskValue{}, fmt.Errorf("country_risk API timeout: %w", ErrTimeout)
+		}
+		if errors.Is(err, context.Canceled) {
+			return CountryRiskValue{}, fmt.Errorf("country_risk API cancelled: %w", err)
+		}
+		return CountryRiskValue{}, fmt.Errorf("country_risk API network: %w", ErrNetworkError)
 	}
+
 	defer res.Body.Close()
 
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return CountryRiskValue{}, fmt.Errorf("status code isnt 200: %d", res.StatusCode)
+		return CountryRiskValue{}, fmt.Errorf("country_risk API HTTP %d: %w", res.StatusCode, &HTTPError{
+			StatusCode: res.StatusCode,
+			URL:        riskURL,
+		})
 	}
 
 	riskRaw := riskRaw{}
@@ -61,9 +74,6 @@ func FetchCountryRiskFromAPI() (CountryRiskValue, error) {
 	}
 
 	date := timeutils.NewDate(dateParsed)
-	if err != nil {
-		return CountryRiskValue{}, fmt.Errorf("parsing error: %w", err)
-	}
 
 	value, err := strconv.Atoi(riskRaw.Value)
 	if err != nil {

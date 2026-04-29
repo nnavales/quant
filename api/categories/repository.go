@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"strings"
 	"time"
+
+	"github.com/nnavales/summit/api/apperrors"
 )
 
 type SQLiteRepo struct {
@@ -23,7 +25,7 @@ func (r *SQLiteRepo) CreateCategory(ctx context.Context, c Category) (*Category,
 	)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-			return nil, ErrDuplicate
+			return nil, apperrors.ErrDuplicate
 		}
 		return nil, err
 	}
@@ -42,7 +44,7 @@ func (r *SQLiteRepo) GetCategoryByID(ctx context.Context, id string) (*Category,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrNotFound
+			return nil, apperrors.ErrNotFound
 		}
 		return nil, err
 	}
@@ -174,7 +176,7 @@ func (r *SQLiteRepo) DeleteCategory(ctx context.Context, id string, now time.Tim
 		return err
 	}
 	if rows == 0 {
-		return ErrNotFound
+		return apperrors.ErrNotFound
 	}
 	return nil
 }
@@ -188,7 +190,7 @@ func (r *SQLiteRepo) CreateSubcategory(ctx context.Context, s Subcategory) (*Sub
 	)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-			return nil, ErrDuplicate
+			return nil, apperrors.ErrDuplicate
 		}
 		return nil, err
 	}
@@ -208,7 +210,7 @@ func (r *SQLiteRepo) GetSubcategoryByID(ctx context.Context, id string) (*Subcat
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrNotFound
+			return nil, apperrors.ErrNotFound
 		}
 		return nil, err
 	}
@@ -279,7 +281,7 @@ func (r *SQLiteRepo) DeleteSubcategory(ctx context.Context, id string, now time.
 		return err
 	}
 	if rows == 0 {
-		return ErrNotFound
+		return apperrors.ErrNotFound
 	}
 	return nil
 }
@@ -294,7 +296,7 @@ func (r *SQLiteRepo) RestoreCategory(ctx context.Context, id string) error {
 		return err
 	}
 	if rows == 0 {
-		return ErrNotFound
+		return apperrors.ErrNotFound
 	}
 	return nil
 }
@@ -309,7 +311,84 @@ func (r *SQLiteRepo) RestoreSubcategory(ctx context.Context, id string) error {
 		return err
 	}
 	if rows == 0 {
+		return apperrors.ErrNotFound
+	}
+	return nil
+}
+
+func (r *SQLiteRepo) GetCategoryByName(ctx context.Context, name string) (*Category, error) {
+	var c Category
+
+	err := r.db.QueryRowContext(ctx, QueryGetCategoryByName, name).Scan(
+		&c.ID,
+		&c.Name,
+		&c.CreatedAt,
+		&c.UpdatedAt,
+		&c.DeletedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	return &c, nil
+}
+
+func (r *SQLiteRepo) GetSubcategoryByName(ctx context.Context, name string) (*Subcategory, error) {
+	var s Subcategory
+
+	err := r.db.QueryRowContext(ctx, QueryGetSubcategoryByName, name).Scan(
+		&s.ID,
+		&s.CategoryID,
+		&s.Name,
+		&s.CreatedAt,
+		&s.UpdatedAt,
+		&s.DeletedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	return &s, nil
+}
+
+func (r *SQLiteRepo) HardDeleteCategory(ctx context.Context, id string) error {
+	res, err := r.db.ExecContext(ctx, QueryHardDeleteCategory, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected < 1 {
 		return ErrNotFound
 	}
+
+	return nil
+}
+
+func (r SQLiteRepo) HardDeleteSubcategory(ctx context.Context, id string) error {
+	res, err := r.db.ExecContext(ctx, QueryHardDeleteSubcategory, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected < 1 {
+		return ErrNotFound
+	}
+
 	return nil
 }

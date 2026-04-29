@@ -15,6 +15,8 @@ import (
 	"github.com/nnavales/summit/api/historical"
 	"github.com/nnavales/summit/api/installments"
 	"github.com/nnavales/summit/api/macro"
+	"github.com/nnavales/summit/api/networth"
+	"github.com/nnavales/summit/api/presets"
 	"github.com/nnavales/summit/api/transactions"
 	"github.com/nnavales/summit/api/transport/middleware"
 	"github.com/nnavales/summit/api/users"
@@ -36,10 +38,12 @@ type Services struct {
 	UsersService        *users.Service
 	HistoricalService   *historical.Service
 	DashboardService    *dashboard.Service
+	NetWorthService     *networth.Service
+	PresetsService      *presets.Service
 }
 
 func NewServer(cfg config.Config, services *Services) *Server {
-	financeHandler := finance.NewHandler(services.FinanceService)
+	financeHandler := finance.NewHandler(services.FinanceService, services.CategoriesService, services.ChannelsService)
 	transactionsHandler := transactions.NewHandler(services.TransactionsService)
 	entriesHandler := entries.NewHandler(services.EntriesService)
 	installmentsHandler := installments.NewHandler(services.InstallmentsService)
@@ -49,6 +53,8 @@ func NewServer(cfg config.Config, services *Services) *Server {
 	usersHandler := users.NewHandler(services.UsersService)
 	historicalHandler := historical.NewHandler(services.HistoricalService)
 	dashboardHandler := dashboard.NewHandler(services.DashboardService)
+	networthHandler := networth.NewHandler(services.NetWorthService)
+	presetsHandler := presets.NewHandler(services.PresetsService)
 
 	api := http.NewServeMux()
 
@@ -56,6 +62,7 @@ func NewServer(cfg config.Config, services *Services) *Server {
 		financeHandler, transactionsHandler, entriesHandler,
 		installmentsHandler, channelsHandler, categoriesHandler,
 		macroHandler, usersHandler, historicalHandler, dashboardHandler,
+		networthHandler, presetsHandler,
 	)
 
 	var handler http.Handler = api

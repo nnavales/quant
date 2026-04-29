@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"strings"
 
+	"github.com/nnavales/summit/api/apperrors"
 	"github.com/nnavales/summit/api/timeutils"
 )
 
@@ -31,7 +32,7 @@ func (r *SQLiteRepo) CreateHistoricalEntry(ctx context.Context, h HistoricalEntr
 	)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-			return nil, ErrDuplicate
+			return nil, apperrors.ErrDuplicate
 		}
 		return nil, err
 	}
@@ -59,7 +60,7 @@ func (r *SQLiteRepo) UpdateHistoricalEntry(ctx context.Context, h HistoricalEntr
 		return nil, err
 	}
 	if rows == 0 {
-		return nil, ErrNotFound
+		return nil, apperrors.ErrNotFound
 	}
 
 	return &h, nil
@@ -116,7 +117,7 @@ func (r *SQLiteRepo) GetHistoricalEntryByDate(ctx context.Context, date timeutil
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrNotFound
+			return nil, apperrors.ErrNotFound
 		}
 		return nil, err
 	}
@@ -136,7 +137,7 @@ func (r *SQLiteRepo) DeleteHistoricalEntry(ctx context.Context, h HistoricalEntr
 		return err
 	}
 	if rows == 0 {
-		return ErrNotFound
+		return apperrors.ErrNotFound
 	}
 
 	return nil

@@ -20,4 +20,10 @@ const (
 	QueryDeleteEntry = `
 		DELETE FROM entries WHERE id = ?
 	`
+
+	QueryGetEntryByTransacctionID = `
+		SELECT id, transaction_id, channel_id, account_id, amount, currency, exchange_rate, category_id, subcategory_id, created_at, updated_at, deleted_at
+		FROM entries
+		WHERE transaction_id = ?;
+	`
 )

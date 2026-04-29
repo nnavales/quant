@@ -145,6 +145,50 @@ const (
 	AND e.deleted_at IS NULL
 	ORDER BY t.installment_number ASC;`
 
+	QueryListTransactionsByInstallmentGroup = `
+	SELECT
+	  t.id,
+	  t.date,
+	  t.description,
+	  t.type,
+	  t.frequency,
+	  t.is_paid,
+
+	  e.id,
+	  e.amount,
+	  e.currency,
+	  e.exchange_rate,
+	  e.category_id,
+	  e.subcategory_id,
+	  e.channel_id,
+	  e.account_id,
+
+	  c.name  AS category_name,
+	  sc.name AS subcategory_name,
+	  a.name  AS account_name,
+	  ch.name AS channel_name,
+
+	  t.installment_number,
+	  ig.total_installments,
+	  ig.start_date AS installment_start_date,
+	  t.installment_group_id,
+	  ig.is_canceled,
+	  ig.original_amount
+
+	FROM transactions t
+	JOIN entries e ON e.transaction_id = t.id
+
+	LEFT JOIN categories c ON c.id = e.category_id
+	LEFT JOIN subcategories sc ON sc.id = e.subcategory_id
+	LEFT JOIN accounts a ON a.id = e.account_id
+	LEFT JOIN channels ch ON ch.id = e.channel_id
+
+	LEFT JOIN installment_groups ig ON ig.id = t.installment_group_id
+
+	WHERE t.deleted_at IS NULL
+	AND e.deleted_at IS NULL
+	ORDER BY t.installment_number ASC;`
+
 	baseListTransactionsDTO = `
 	SELECT
 	  t.id,
@@ -201,18 +245,23 @@ const (
 	`
 )
 
-func BuildListHistoricalEntriesQuery(filter *Filter) (string, []interface{}) {
+func BuildListHistoricalEntriesQuery(filter *Filter) (string, []any) {
 	var whereClauses []string
-	var args []interface{}
+	var args []any
+
+	if filter.Source != nil {
+		whereClauses = append(whereClauses, "source = ?")
+		args = append(args, *filter.Source)
+	}
 
 	if filter.DateFrom != nil {
 		whereClauses = append(whereClauses, "month >= ?")
-		args = append(args, filter.DateFrom.String())
+		args = append(args, filter.DateFrom.String()[0:7])
 	}
 
 	if filter.DateTo != nil {
 		whereClauses = append(whereClauses, "month <= ?")
-		args = append(args, filter.DateTo.String())
+		args = append(args, filter.DateTo.String()[0:7])
 	}
 
 	query := baseListHistoricalDTO
@@ -258,17 +307,18 @@ func BuildListHistoricalEntriesQuery(filter *Filter) (string, []interface{}) {
 	return query, args
 }
 
-func buildHistoricalCountQuery(filter *Filter) string {
+func buildHistoricalCountQuery(filter *Filter) (string, []any) {
 	var whereClauses []string
+	var args []any
 
 	if filter.DateFrom != nil {
-		whereClauses = append(whereClauses,
-			fmt.Sprintf("month >= '%s'", filter.DateFrom.String()))
+		whereClauses = append(whereClauses, "month >= ?")
+		args = append(args, filter.DateFrom.String()[0:7])
 	}
 
 	if filter.DateTo != nil {
-		whereClauses = append(whereClauses,
-			fmt.Sprintf("month <= '%s'", filter.DateTo.String()))
+		whereClauses = append(whereClauses, "month <= ?")
+		args = append(args, filter.DateTo.String()[0:7])
 	}
 
 	query := "SELECT COUNT(*) FROM finance_summary"
@@ -277,12 +327,12 @@ func buildHistoricalCountQuery(filter *Filter) string {
 		query += " WHERE " + strings.Join(whereClauses, " AND ")
 	}
 
-	return query
+	return query, args
 }
 
-func BuildListTransactionsQuery(filter *Filter) (string, []interface{}) {
+func BuildListTransactionsQuery(filter *Filter) (string, []any) {
 	var whereClauses []string
-	var args []interface{}
+	var args []any
 
 	whereClauses = append(whereClauses, "t.deleted_at IS NULL", "e.deleted_at IS NULL")
 
@@ -344,7 +394,12 @@ func BuildListTransactionsQuery(filter *Filter) (string, []interface{}) {
 		args = append(args, filter.DateTo.String())
 	}
 
-	query := baseListHistoricalDTO
+	if filter.IsPaid != nil {
+		whereClauses = append(whereClauses, "t.is_paid = ?")
+		args = append(args, *filter.IsPaid)
+	}
+
+	query := baseListTransactionsDTO
 	if len(whereClauses) > 0 {
 		query = baseListTransactionsDTO + " WHERE " + strings.Join(whereClauses, " AND ")
 	}
@@ -382,25 +437,30 @@ func BuildListTransactionsQuery(filter *Filter) (string, []interface{}) {
 	return query, args
 }
 
-func buildCountQuery(filter *Filter) string {
+func buildCountQuery(filter *Filter) (string, []any) {
 	var whereClauses []string
+	var args []any
 
 	whereClauses = append(whereClauses, "t.deleted_at IS NULL", "e.deleted_at IS NULL")
 
 	if filter.Search != nil && *filter.Search != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("t.description LIKE '%%%s'", *filter.Search))
+		whereClauses = append(whereClauses, "t.description LIKE ?")
+		args = append(args, "%"+*filter.Search+"%")
 	}
 
 	if filter.Type != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("t.type = '%s'", *filter.Type))
+		whereClauses = append(whereClauses, "t.type = ?")
+		args = append(args, *filter.Type)
 	}
 
 	if filter.Frequency != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("t.frequency = '%s'", *filter.Frequency))
+		whereClauses = append(whereClauses, "t.frequency = ?")
+		args = append(args, *filter.Frequency)
 	}
 
 	if filter.Currency != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("e.currency = '%s'", *filter.Currency))
+		whereClauses = append(whereClauses, "e.currency = ?")
+		args = append(args, *filter.Currency)
 	}
 
 	if filter.Installment != nil {
@@ -412,28 +472,45 @@ func buildCountQuery(filter *Filter) string {
 	}
 
 	if filter.Category != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("e.category_id = '%s'", *filter.Category))
+		whereClauses = append(whereClauses, "e.category_id = ?")
+		args = append(args, *filter.Category)
 	}
 
 	if filter.Subcategory != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("e.subcategory_id = '%s'", *filter.Subcategory))
+		whereClauses = append(whereClauses, "e.subcategory_id = ?")
+		args = append(args, *filter.Subcategory)
 	}
 
 	if filter.Channel != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("e.channel_id = '%s'", *filter.Channel))
+		whereClauses = append(whereClauses, "e.channel_id = ?")
+		args = append(args, *filter.Channel)
 	}
 
 	if filter.Account != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("e.account_id = '%s'", *filter.Account))
+		whereClauses = append(whereClauses, "e.account_id = ?")
+		args = append(args, *filter.Account)
 	}
 
 	if filter.DateFrom != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("t.date >= '%s'", filter.DateFrom.String()))
+		whereClauses = append(whereClauses, "t.date >= ?")
+		args = append(args, filter.DateFrom.String())
 	}
 
 	if filter.DateTo != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("t.date <= '%s'", filter.DateTo.String()))
+		whereClauses = append(whereClauses, "t.date <= ?")
+		args = append(args, filter.DateTo.String())
 	}
 
-	return "SELECT COUNT(DISTINCT t.id) FROM transactions t JOIN entries e ON e.transaction_id = t.id WHERE " + strings.Join(whereClauses, " AND ")
+	if filter.IsPaid != nil {
+		whereClauses = append(whereClauses, "t.is_paid = ?")
+		args = append(args, *filter.IsPaid)
+	}
+
+	query := "SELECT COUNT(DISTINCT t.id) FROM transactions t JOIN entries e ON e.transaction_id = t.id"
+
+	if len(whereClauses) > 0 {
+		query += " WHERE " + strings.Join(whereClauses, " AND ")
+	}
+
+	return query, args
 }

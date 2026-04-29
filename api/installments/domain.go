@@ -6,20 +6,25 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/nnavales/summit/api/apperrors"
 	"github.com/nnavales/summit/api/entries"
+	"github.com/nnavales/summit/api/money"
 	"github.com/nnavales/summit/api/timeutils"
 	"github.com/oklog/ulid/v2"
 )
 
 var (
-	ErrNotFound = errors.New("resource not found")
+	ErrNotFound     = apperrors.ErrNotFound
+	ErrInvalidField = apperrors.ErrInvalidInput
 )
+
+var _ = errors.New
 
 type InstallmentGroup struct {
 	ID                string           `json:"id"`
 	TotalInstallments int              `json:"total_installments"`
 	Description       string           `json:"description"`
-	OriginalAmount    int64            `json:"original_amount"`
+	OriginalAmount    money.Money      `json:"original_amount"`
 	Currency          entries.Currency `json:"currency"`
 	StartDate         timeutils.Date   `json:"start_date"`
 	IsCanceled        bool             `json:"is_canceled"`
@@ -46,7 +51,7 @@ type InstallmentGroupReq struct {
 	Currency          *entries.Currency `json:"currency"`
 }
 
-func NewInstallmentGroup(now time.Time, totalInstallments int, desc string, currency entries.Currency, amount int64, startDate timeutils.Date) *InstallmentGroup {
+func NewInstallmentGroup(now time.Time, totalInstallments int, desc string, currency entries.Currency, amount money.Money, startDate timeutils.Date) *InstallmentGroup {
 	id := ulid.Make().String()
 	return &InstallmentGroup{
 		ID:                id,
@@ -76,7 +81,7 @@ func (ig *InstallmentGroup) SetDescription(desc string) {
 	ig.Description = desc
 }
 
-func (ig *InstallmentGroup) SetOriginalAmount(originalAmount int64) {
+func (ig *InstallmentGroup) SetOriginalAmount(originalAmount money.Money) {
 	ig.OriginalAmount = originalAmount
 }
 
@@ -87,8 +92,6 @@ func (ig *InstallmentGroup) SetCurrency(currency entries.Currency) {
 func (ig *InstallmentGroup) SetIsCanceled(isCanceled bool) {
 	ig.IsCanceled = isCanceled
 }
-
-var ErrInvalidField = errors.New("invalid field")
 
 func (ig *InstallmentGroup) Validate() error {
 	if ig.ID == "" {

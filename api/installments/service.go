@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nnavales/summit/api/money"
 	"github.com/nnavales/summit/api/timeutils"
 )
 
@@ -53,7 +54,7 @@ func (s *Service) UpdateInstallmentGroup(ctx context.Context, id string, req Ins
 		ig.Touch(s.clock.Now())
 	}
 	if req.OriginalAmount != nil {
-		ig.SetOriginalAmount(*req.OriginalAmount)
+		ig.SetOriginalAmount(money.Money(*req.OriginalAmount))
 	}
 	if req.Description != nil {
 		ig.SetDescription(*req.Description)

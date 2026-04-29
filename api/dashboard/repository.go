@@ -3,7 +3,8 @@ package dashboard
 import (
 	"context"
 	"database/sql"
-	"strconv"
+
+	"github.com/nnavales/summit/api/money"
 )
 
 type SQLiteRepo struct {
@@ -19,84 +20,93 @@ func (r *SQLiteRepo) GetFinanceSummary(ctx context.Context, filter *Filter) ([]F
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	tbl := make([]FinanceSummaryRow, 0)
 	for rows.Next() {
 		row := FinanceSummaryRow{}
-		var (
-			expenseStr         sql.NullString
-			incomeStr          sql.NullString
-			incomeFixedStr     sql.NullString
-			expenseFixedStr    sql.NullString
-			incomeVariableStr  sql.NullString
-			expenseVariableStr sql.NullString
-			savingsStr         sql.NullString
-		)
+		var income, expense, savings, incomeFixed, expenseFixed, incomeVariable, expenseVariable money.Money
+		var exchangeRate float64
+
 		err := rows.Scan(
 			&row.Month,
-			&incomeStr,
-			&expenseStr,
-			&savingsStr,
-			&incomeFixedStr,
-			&expenseFixedStr,
-			&incomeVariableStr,
-			&expenseVariableStr,
-			&row.ExchangeRate,
+			&income,
+			&expense,
+			&savings,
+			&incomeFixed,
+			&expenseFixed,
+			&incomeVariable,
+			&expenseVariable,
+			&exchangeRate,
 		)
 		if err != nil {
 			return nil, err
 		}
-		if incomeStr.Valid {
-			v, err := strconv.ParseFloat(incomeStr.String, 64)
-			if err != nil {
-				return nil, err
-			}
-			row.Income = v
+
+		row.Income = income
+		row.Expense = expense
+		row.Savings = savings
+		row.IncomeFixed = incomeFixed
+		row.ExpenseFixed = expenseFixed
+		row.IncomeVariable = incomeVariable
+		row.ExpenseVariable = expenseVariable
+		row.ExchangeRate = exchangeRate
+
+		tbl = append(tbl, row)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	for i := range tbl {
+		var capital money.Money
+		for j := 0; j <= i; j++ {
+			capital = capital.Add(tbl[j].Savings)
 		}
-		if expenseStr.Valid {
-			v, err := strconv.ParseFloat(expenseStr.String, 64)
-			if err != nil {
-				return nil, err
-			}
-			row.Expense = v
+		tbl[i].Capital = capital
+	}
+
+	return tbl, nil
+}
+
+func (r *SQLiteRepo) GetDimensionSeries(ctx context.Context, filter DimensionFilter) ([]DimensionRow, error) {
+	query, args := BuildDimensionQuery(filter)
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	tbl := make([]DimensionRow, 0)
+	for rows.Next() {
+		var row DimensionRow
+		var amount money.Money
+		var categoryName, subcategoryName, accountName, channelName sql.NullString
+
+		err := rows.Scan(
+			&row.Month,
+			&row.Type,
+			&amount,
+			&row.CategoryID,
+			&row.SubcategoryID,
+			&row.AccountID,
+			&row.ChannelID,
+			&categoryName,
+			&subcategoryName,
+			&accountName,
+			&channelName,
+		)
+		if err != nil {
+			return nil, err
 		}
-		if savingsStr.Valid {
-			v, err := strconv.ParseFloat(savingsStr.String, 64)
-			if err != nil {
-				return nil, err
-			}
-			row.Savings = v
-		}
-		if incomeFixedStr.Valid {
-			v, err := strconv.ParseFloat(incomeFixedStr.String, 64)
-			if err != nil {
-				return nil, err
-			}
-			row.IncomeFixed = v
-		}
-		if expenseFixedStr.Valid {
-			v, err := strconv.ParseFloat(expenseFixedStr.String, 64)
-			if err != nil {
-				return nil, err
-			}
-			row.ExpenseFixed = v
-		}
-		if incomeVariableStr.Valid {
-			v, err := strconv.ParseFloat(incomeVariableStr.String, 64)
-			if err != nil {
-				return nil, err
-			}
-			row.IncomeVariable = v
-		}
-		if expenseVariableStr.Valid {
-			v, err := strconv.ParseFloat(expenseVariableStr.String, 64)
-			if err != nil {
-				return nil, err
-			}
-			row.ExpenseVariable = v
-		}
+
+		row.Amount = amount
+		row.CategoryName = categoryName.String
+		row.SubcategoryName = subcategoryName.String
+		row.AccountName = accountName.String
+		row.ChannelName = channelName.String
 
 		tbl = append(tbl, row)
 	}

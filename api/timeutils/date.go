@@ -103,3 +103,21 @@ func IsSameOrAfterMonth(a, b time.Time) bool {
 
 	return ay > by || (ay == by && am >= bm)
 }
+
+func ParseYear(s string) (int, error) {
+	d, err := time.Parse("2006-01", s)
+	if err != nil {
+		return 0, err
+	}
+
+	return d.Year(), nil
+}
+
+func ParseYearAndMonth(s string) (int, int, error) {
+	d, err := time.Parse("2006-01", s)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return d.Year(), int(d.Month()), nil
+}

@@ -3,7 +3,9 @@ package macro
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"sort"
 	"strconv"
@@ -76,24 +78,34 @@ func fetchCryptoPoints(c CryptoCurrency) ([]TimeSeriesPoint, error) {
 
 	res, err := httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		var netErr net.Error
+		if errors.As(err, &netErr) && netErr.Timeout() {
+			return nil, fmt.Errorf("crypto API timeout: %w", ErrTimeout)
+		}
+		if errors.Is(err, context.Canceled) {
+			return nil, fmt.Errorf("crypto API cancelled: %w", err)
+		}
+		return nil, fmt.Errorf("crypto API network: %w", ErrNetworkError)
 	}
 
 	defer res.Body.Close()
 
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return nil, fmt.Errorf("status code isnt 200, something went wrong with the dolarAPI: <statuscode: %d>", res.StatusCode)
+		return nil, fmt.Errorf("crypto API HTTP %d: %w", res.StatusCode, &HTTPError{
+			StatusCode: res.StatusCode,
+			URL:        url,
+		})
 	}
 
-	var rawKlines [][]interface{}
+	var rawKlines [][]any
 	if err := json.NewDecoder(res.Body).Decode(&rawKlines); err != nil {
 		return nil, fmt.Errorf("decode error: %w", err)
 	}
 
 	series := make([]TimeSeriesPoint, 0)
 	for _, candle := range rawKlines {
-		openTime := time.UnixMilli(int64(candle[0].(float64)))
-		date := timeutils.NewDate(openTime)
+		closeTime := time.UnixMilli(int64(candle[6].(float64)))
+		date := timeutils.NewDate(closeTime)
 		valueStr := candle[4].(string)
 		value, err := strconv.ParseFloat(valueStr, 64)
 		if err != nil {

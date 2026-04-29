@@ -7,6 +7,8 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+
+	"github.com/nnavales/summit/api/apperrors"
 )
 
 var (
@@ -43,6 +45,29 @@ func WriteError(w http.ResponseWriter, r *http.Request, status int, msg string, 
 
 	if err != nil {
 		*r = *SetError(r, err)
+	}
+}
+
+// WriteServiceError maps known apperrors sentinel errors to HTTP status codes
+// and writes the response. Unknown errors become 500 Internal Server Error.
+func WriteServiceError(w http.ResponseWriter, r *http.Request, err error) {
+	switch {
+	case err == nil:
+		return
+	case errors.Is(err, apperrors.ErrNotFound):
+		WriteError(w, r, http.StatusNotFound, "not found", err)
+	case errors.Is(err, apperrors.ErrInvalidInput):
+		WriteError(w, r, http.StatusBadRequest, "invalid input", err)
+	case errors.Is(err, apperrors.ErrDuplicate):
+		WriteError(w, r, http.StatusConflict, "already exists", err)
+	case errors.Is(err, apperrors.ErrConflict):
+		WriteError(w, r, http.StatusConflict, "conflict", err)
+	case errors.Is(err, apperrors.ErrUnauthorized):
+		WriteError(w, r, http.StatusUnauthorized, "unauthorized", err)
+	case errors.Is(err, apperrors.ErrForbidden):
+		WriteError(w, r, http.StatusForbidden, "forbidden", err)
+	default:
+		WriteError(w, r, http.StatusInternalServerError, "internal error", err)
 	}
 }
 

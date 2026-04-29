@@ -8,9 +8,12 @@ import (
 )
 
 func SeedDefaults(ctx context.Context, repo *SQLiteRepo, clock timeutils.Clock) error {
-	channelNames := []string{"Efectivo", "Mercado Pago", "BBVA", "Santander", "Provincia", "Galicia", "Banco Nación"}
-
 	now := clock.Now()
+
+	channelNames := []string{
+		"Efectivo", "Mercado Pago", "Uala", "BBVA", "Galicia", "Naranja X", "Brubank", "BPRO", "Binance", "Cocos Cap.",
+	}
+
 	channelIDs := make(map[string]string)
 
 	existingChannels, err := repo.ListChannels(ctx, Filter{Deleted: false})
@@ -40,19 +43,30 @@ func SeedDefaults(ctx context.Context, repo *SQLiteRepo, clock timeutils.Clock) 
 		channelName string
 		name        string
 		instrument  string
-		lastFour    string
 	}{
-		{"Efectivo", "Efectivo", "cash", ""},
-		{"Mercado Pago", "Débito", "debit_card", ""},
-		{"Mercado Pago", "Crédito", "credit_card", "0000"},
-		{"BBVA", "Débito", "debit_card", ""},
-		{"BBVA", "Crédito", "credit_card", "1234"},
-		{"Santander", "Débito", "debit_card", ""},
-		{"Santander", "Crédito", "credit_card", "5678"},
-		{"Provincia", "Débito", "debit_card", ""},
-		{"Galicia", "Débito", "debit_card", ""},
-		{"Galicia", "Crédito", "credit_card", "9012"},
-		{"Banco Nación", "Débito", "debit_card", ""},
+		{"Efectivo", "Efectivo", "cash"},
+		{"Mercado Pago", "Transferencia", "transfer"},
+		{"Mercado Pago", "Credito 5662", "credit_card"},
+		{"Uala", "Transferencia", "transfer"},
+		{"Uala", "Debito 8934", "debit_card"},
+		{"Uala", "Credito 3838", "credit_card"},
+		{"BBVA", "Transferencia", "transfer"},
+		{"BBVA", "Credito 5270", "credit_card"},
+		{"BBVA", "Signature 0530", "debit_card"},
+		{"BBVA", "Debito 9996", "debit_card"},
+		{"Galicia", "Transferencia", "transfer"},
+		{"Galicia", "Debito 4294", "debit_card"},
+		{"Galicia", "Credito 7310", "credit_card"},
+		{"Galicia", "Credito 2936", "credit_card"},
+		{"Naranja X", "Transferencia", "transfer"},
+		{"Naranja X", "Debito 7518", "debit_card"},
+		{"Brubank", "Transferencia", "transfer"},
+		{"Brubank", "Debito 2549", "debit_card"},
+		{"BPRO", "Transferencia", "transfer"},
+		{"BPRO", "Debito 5011", "debit_card"},
+		{"Binance", "Transferencia", "transfer"},
+		{"Binance", "P2P", "transfer"},
+		{"Cocos Cap.", "Transferencia", "transfer"},
 	}
 
 	for _, as := range accountSeeds {
@@ -60,11 +74,24 @@ func SeedDefaults(ctx context.Context, repo *SQLiteRepo, clock timeutils.Clock) 
 		if !ok {
 			continue
 		}
-		acc := NewAccount(now, channelID, as.name, as.instrument)
-		if as.lastFour != "" {
-			acc.SetLastFour(as.lastFour)
+
+		existingAccounts, err := repo.ListAccounts(ctx, Filter{Deleted: false})
+		if err == nil {
+			found := false
+			for _, acc := range existingAccounts {
+				if acc.ChannelID == channelID && acc.Name == as.name {
+					found = true
+					break
+				}
+			}
+			if found {
+				slog.Info("account.seed.found", "account", as.name)
+				continue
+			}
 		}
-		_, err := repo.CreateAccount(ctx, *acc)
+
+		acc := NewAccount(now, channelID, as.name, as.instrument)
+		_, err = repo.CreateAccount(ctx, *acc)
 		if err != nil {
 			slog.Warn("account.seed.error", "err", err, "account", as.name)
 		} else {

@@ -21,7 +21,7 @@ func NewService(clock timeutils.Clock, repo Repository) *Service {
 
 func (s *Service) CreateChannel(ctx context.Context, req ChannelReq) (*Channel, error) {
 	if req.Name == nil {
-		return nil, fmt.Errorf("name is required")
+		return nil, fmt.Errorf("name is required: %w", ErrInvalidField)
 	}
 
 	now := s.clock.Now()
@@ -99,15 +99,11 @@ func (s *Service) DeleteChannel(ctx context.Context, id string) error {
 
 func (s *Service) CreateAccount(ctx context.Context, req AccountReq) (*Account, error) {
 	if req.ChannelID == nil || req.Name == nil || req.Instrument == nil {
-		return nil, fmt.Errorf("channel_id, name, and instrument are required")
+		return nil, fmt.Errorf("channel_id, name, and instrument are required: %w", ErrInvalidField)
 	}
 
 	now := s.clock.Now()
 	a := NewAccount(now, *req.ChannelID, *req.Name, *req.Instrument)
-
-	if req.LastFour != nil {
-		a.SetLastFour(*req.LastFour)
-	}
 
 	if err := a.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid account: %w", err)
@@ -154,9 +150,6 @@ func (s *Service) UpdateAccount(ctx context.Context, id string, req AccountReq) 
 	if req.Instrument != nil {
 		a.Instrument = *req.Instrument
 	}
-	if req.LastFour != nil {
-		a.SetLastFour(*req.LastFour)
-	}
 	if req.IsDeleted != nil {
 		a.SetDeleted(now, *req.IsDeleted)
 	}
@@ -192,6 +185,22 @@ func (s *Service) RestoreChannel(ctx context.Context, id string) error {
 	err := s.repo.RestoreChannel(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to restore channel: %w", err)
+	}
+	return nil
+}
+
+func (s *Service) HardDeleteAccount(ctx context.Context, id string) error {
+	err := s.repo.HardDeleteAccount(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete account: %w", err)
+	}
+	return nil
+}
+
+func (s *Service) HardDeleteChannel(ctx context.Context, id string) error {
+	err := s.repo.HardDeleteChannel(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete channel: %w", err)
 	}
 	return nil
 }

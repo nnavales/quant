@@ -2,6 +2,8 @@ package macro
 
 import (
 	"context"
+	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/nnavales/summit/api/cache"
@@ -65,7 +67,7 @@ func NewEconomicProvider(ctx context.Context) (*Provider, error) {
 		btcSeries: cache.New(cache.Options{
 			TTL:             15 * time.Minute,
 			RefreshInterval: 5 * time.Minute,
-			AllowStale:      true,
+			AllowStale:      false,
 		}, func(ctx context.Context) (TimeSeries, error) {
 			return FetchCryptoSeries(CryptoBTC)
 		}),
@@ -73,7 +75,7 @@ func NewEconomicProvider(ctx context.Context) (*Provider, error) {
 		ethSeries: cache.New(cache.Options{
 			TTL:             15 * time.Minute,
 			RefreshInterval: 5 * time.Minute,
-			AllowStale:      true,
+			AllowStale:      false,
 		}, func(ctx context.Context) (TimeSeries, error) {
 			return FetchCryptoSeries(CryptoETH)
 		}),
@@ -81,7 +83,7 @@ func NewEconomicProvider(ctx context.Context) (*Provider, error) {
 		usdtSeries: cache.New(cache.Options{
 			TTL:             15 * time.Minute,
 			RefreshInterval: 5 * time.Minute,
-			AllowStale:      true,
+			AllowStale:      false,
 		}, func(ctx context.Context) (TimeSeries, error) {
 			return FetchCryptoSeries(CryptoUSDT)
 		}),
@@ -123,9 +125,9 @@ func NewEconomicProvider(ctx context.Context) (*Provider, error) {
 		}),
 
 		dollarsBankMap: cache.New(cache.Options{
-			TTL:             15 * time.Minute,
-			RefreshInterval: 5 * time.Minute,
-			AllowStale:      true,
+			TTL:             30 * time.Second,
+			RefreshInterval: 15 * time.Second,
+			AllowStale:      false,
 		}, func(ctx context.Context) (DollarMap, error) {
 			values, err := FetchDollarCotization()
 			if err != nil {
@@ -136,8 +138,9 @@ func NewEconomicProvider(ctx context.Context) (*Provider, error) {
 	}
 
 	if err := p.warmup(ctx); err != nil {
-		return nil, err
+		slog.Error("provider error", "error", err)
 	}
+
 	p.startRefresh(ctx)
 	return p, nil
 }
@@ -175,4 +178,18 @@ func (p *Provider) startRefresh(ctx context.Context) {
 	p.fixedDepositsMap.StartRefresh(ctx)
 	p.yieldsMap.StartRefresh(ctx)
 	p.loansMap.StartRefresh(ctx)
+}
+
+func (p *Provider) LastSell(ctx context.Context) (float64, error) {
+	series, err := p.dollarSeriesSell.Get(ctx)
+	if err != nil {
+		return 0, err
+	}
+	n := len(series.Points)
+	if n == 0 {
+		return 0, fmt.Errorf("no dollar data")
+	}
+
+	return series.Points[n-1].Value, nil
+
 }

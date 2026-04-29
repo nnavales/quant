@@ -3,6 +3,8 @@ package entries
 import (
 	"context"
 	"database/sql"
+
+	"github.com/nnavales/summit/api/apperrors"
 )
 
 type SQLiteRepo struct {
@@ -31,7 +33,7 @@ func (r *SQLiteRepo) GetEntryByID(ctx context.Context, id string) (*Entry, error
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrNotFound
+			return nil, apperrors.ErrNotFound
 		}
 		return nil, err
 	}
@@ -100,7 +102,7 @@ func (r *SQLiteRepo) DeleteEntry(ctx context.Context, id string) error {
 		return err
 	}
 	if rows == 0 {
-		return ErrNotFound
+		return apperrors.ErrNotFound
 	}
 	return nil
 }

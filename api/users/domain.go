@@ -6,16 +6,31 @@ type Config map[string]any
 
 const (
 	KeyDollarSource = "dollar_source"
-	KeyCurrency     = "currency"
 	KeyUsername     = "username"
 	KeyTimezone     = "timezone"
+	KeyDateFormat   = "date_format"
+	KeyDefaultRate  = "default_rate"
+	KeyAccentColor  = "accent_color"
+)
+
+type DateFormat string
+
+const (
+	DateISOSlash DateFormat = "YYYY/MM/DD"
+	DateSASlash  DateFormat = "DD/MM/YYYY"
+	DateNASlash  DateFormat = "MM/DD/YYYY"
+	DateISODash  DateFormat = "YYYY-MM-DD"
+	DateSADash   DateFormat = "DD-MM-YYYY"
+	DateNADash   DateFormat = "MM-DD-YYYY"
 )
 
 var cfg = map[string]any{
-	KeyCurrency:     "ars",
 	KeyDollarSource: "banco-nacion",
 	KeyUsername:     "",
-	KeyTimezone:     "arg",
+	KeyTimezone:     "America/Argentina/Buenos_Aires",
+	KeyDateFormat:   DateSASlash,
+	KeyDefaultRate:  "1400",
+	KeyAccentColor:  "blue",
 }
 
 func NewConfig() Config {

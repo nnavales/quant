@@ -6,17 +6,21 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/nnavales/summit/api/apperrors"
 	"github.com/oklog/ulid/v2"
 )
 
 var (
-	ErrNotFound  = errors.New("resource not found")
-	ErrDuplicate = errors.New("resource already exists")
+	ErrNotFound     = apperrors.ErrNotFound
+	ErrDuplicate    = apperrors.ErrDuplicate
+	ErrInvalidField = apperrors.ErrInvalidInput
 )
+
+var _ = errors.New
 
 type Channel struct {
 	ID        string     `json:"id"`
-	Name      string     `json:"name"` // "BBVA", "Mercado Pago"
+	Name      string     `json:"name"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt *time.Time `json:"updated_at"`
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
@@ -25,9 +29,8 @@ type Channel struct {
 type Account struct {
 	ID         string     `json:"id"`
 	ChannelID  string     `json:"channel_id"`
-	Name       string     `json:"name"`       // "Crédito 5270", "Débito"
-	Instrument string     `json:"instrument"` // "credit_card" | "debit_card" | "transfer" | "cash"
-	LastFour   *string    `json:"last_four"`  // "5270", vacío si no aplica
+	Name       string     `json:"name"`
+	Instrument string     `json:"instrument"`
 	CreatedAt  time.Time  `json:"created_at"`
 	UpdatedAt  *time.Time `json:"updated_at"`
 	DeletedAt  *time.Time `json:"deleted_at,omitempty"`
@@ -41,17 +44,21 @@ type Filter struct {
 type Repository interface {
 	CreateChannel(ctx context.Context, c Channel) (*Channel, error)
 	GetChannelByID(ctx context.Context, id string) (*Channel, error)
+	GetChannelByName(ctx context.Context, name string) (*Channel, error)
 	ListChannels(ctx context.Context, filter Filter) ([]Channel, error)
 	ListChannelsWithAccounts(ctx context.Context, filter Filter) ([]ChannelWithAccounts, error)
 	UpdateChannel(ctx context.Context, c Channel) (*Channel, error)
 	DeleteChannel(ctx context.Context, id string, now time.Time) error
 	CreateAccount(ctx context.Context, a Account) (*Account, error)
 	GetAccountByID(ctx context.Context, id string) (*Account, error)
+	GetAccountByName(ctx context.Context, name string) (*Account, error)
 	ListAccounts(ctx context.Context, filter Filter) ([]Account, error)
 	UpdateAccount(ctx context.Context, a Account) (*Account, error)
 	DeleteAccount(ctx context.Context, id string, now time.Time) error
 	RestoreChannel(ctx context.Context, id string) error
 	RestoreAccount(ctx context.Context, id string) error
+	HardDeleteAccount(ctx context.Context, id string) error
+	HardDeleteChannel(ctx context.Context, id string) error
 }
 
 // CTOs
@@ -66,7 +73,6 @@ type AccountReq struct {
 	ChannelID  *string `json:"channel_id"`
 	Name       *string `json:"name"`
 	Instrument *string `json:"instrument"`
-	LastFour   *string `json:"last_four"`
 	IsDeleted  *bool   `json:"is_deleted"`
 }
 
@@ -109,10 +115,6 @@ func (c *Channel) SetDeleted(now time.Time, isDeleted bool) {
 	}
 }
 
-func (a *Account) SetLastFour(four string) {
-	a.LastFour = &four
-}
-
 func (a *Account) Touch(now time.Time) {
 	a.UpdatedAt = &now
 }
@@ -126,8 +128,6 @@ func (a *Account) SetDeleted(now time.Time, isDeleted bool) {
 }
 
 // Validations
-var ErrInvalidField = errors.New("invalid field")
-
 func (c *Channel) Validate() error {
 	if c.ID == "" {
 		return fmt.Errorf("id is required: %w", ErrInvalidField)
@@ -155,12 +155,14 @@ func (a *Account) Validate() error {
 	if a.Instrument == "" {
 		return fmt.Errorf("instrument is required: %w", ErrInvalidField)
 	}
-	validInstruments := map[string]bool{"credit_card": true, "debit_card": true, "transfer": true, "cash": true}
+	validInstruments := map[string]bool{
+		"credit_card": true,
+		"debit_card":  true,
+		"transfer":    true,
+		"cash":        true,
+	}
 	if !validInstruments[a.Instrument] {
 		return fmt.Errorf("instrument is invalid: %w", ErrInvalidField)
-	}
-	if a.LastFour != nil && len(*a.LastFour) != 4 {
-		return fmt.Errorf("last_four is invalid: %w", ErrInvalidField)
 	}
 
 	return nil

@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"strings"
 	"time"
+
+	"github.com/nnavales/summit/api/apperrors"
 )
 
 type SQLiteRepo struct {
@@ -25,7 +27,7 @@ func (r *SQLiteRepo) RestoreChannel(ctx context.Context, id string) error {
 		return err
 	}
 	if rows == 0 {
-		return ErrNotFound
+		return apperrors.ErrNotFound
 	}
 	return nil
 }
@@ -40,7 +42,7 @@ func (r *SQLiteRepo) RestoreAccount(ctx context.Context, id string) error {
 		return err
 	}
 	if rows == 0 {
-		return ErrNotFound
+		return apperrors.ErrNotFound
 	}
 	return nil
 }
@@ -53,7 +55,7 @@ func (r *SQLiteRepo) CreateChannel(ctx context.Context, c Channel) (*Channel, er
 	)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-			return nil, ErrDuplicate
+			return nil, apperrors.ErrDuplicate
 		}
 		return nil, err
 	}
@@ -72,7 +74,7 @@ func (r *SQLiteRepo) GetChannelByID(ctx context.Context, id string) (*Channel, e
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrNotFound
+			return nil, apperrors.ErrNotFound
 		}
 		return nil, err
 	}
@@ -92,7 +94,7 @@ func (r *SQLiteRepo) GetChannelByName(ctx context.Context, name string) (*Channe
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrNotFound
+			return nil, apperrors.ErrNotFound
 		}
 		return nil, err
 	}
@@ -157,7 +159,7 @@ func (r *SQLiteRepo) ListChannelsWithAccounts(ctx context.Context, filter Filter
 
 	for rows.Next() {
 		var ch Channel
-		var aID, aName, aInstrument, aLastFour *string
+		var aID, aName, aInstrument *string
 		var aCreatedAt, aUpdatedAt, aDeletedAt *time.Time
 
 		err := rows.Scan(
@@ -169,7 +171,6 @@ func (r *SQLiteRepo) ListChannelsWithAccounts(ctx context.Context, filter Filter
 			&aID,
 			&aName,
 			&aInstrument,
-			&aLastFour,
 			&aCreatedAt,
 			&aUpdatedAt,
 			&aDeletedAt,
@@ -191,7 +192,6 @@ func (r *SQLiteRepo) ListChannelsWithAccounts(ctx context.Context, filter Filter
 				ChannelID:  ch.ID,
 				Name:       *aName,
 				Instrument: *aInstrument,
-				LastFour:   aLastFour,
 				CreatedAt:  *aCreatedAt,
 				UpdatedAt:  aUpdatedAt,
 				DeletedAt:  aDeletedAt,
@@ -225,7 +225,7 @@ func (r *SQLiteRepo) DeleteChannel(ctx context.Context, id string, now time.Time
 		return err
 	}
 	if rows == 0 {
-		return ErrNotFound
+		return apperrors.ErrNotFound
 	}
 	return nil
 }
@@ -236,12 +236,11 @@ func (r *SQLiteRepo) CreateAccount(ctx context.Context, a Account) (*Account, er
 		a.ChannelID,
 		a.Name,
 		a.Instrument,
-		a.LastFour,
 		a.CreatedAt,
 	)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-			return nil, ErrDuplicate
+			return nil, apperrors.ErrDuplicate
 		}
 		return nil, err
 	}
@@ -256,14 +255,13 @@ func (r *SQLiteRepo) GetAccountByID(ctx context.Context, id string) (*Account, e
 		&a.ChannelID,
 		&a.Name,
 		&a.Instrument,
-		&a.LastFour,
 		&a.CreatedAt,
 		&a.UpdatedAt,
 		&a.DeletedAt,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrNotFound
+			return nil, apperrors.ErrNotFound
 		}
 		return nil, err
 	}
@@ -296,7 +294,6 @@ func (r *SQLiteRepo) ListAccounts(ctx context.Context, filter Filter) ([]Account
 			&a.ChannelID,
 			&a.Name,
 			&a.Instrument,
-			&a.LastFour,
 			&a.CreatedAt,
 			&a.UpdatedAt,
 			&a.DeletedAt,
@@ -315,7 +312,6 @@ func (r *SQLiteRepo) UpdateAccount(ctx context.Context, a Account) (*Account, er
 		a.ChannelID,
 		a.Name,
 		a.Instrument,
-		a.LastFour,
 		a.UpdatedAt,
 		a.DeletedAt,
 		a.ID,
@@ -336,7 +332,66 @@ func (r *SQLiteRepo) DeleteAccount(ctx context.Context, id string, now time.Time
 		return err
 	}
 	if rows == 0 {
+		return apperrors.ErrNotFound
+	}
+	return nil
+}
+
+func (r *SQLiteRepo) GetAccountByName(ctx context.Context, name string) (*Account, error) {
+	var a Account
+
+	err := r.db.QueryRowContext(ctx, QueryGetAccountByName, name).Scan(
+		&a.ID,
+		&a.ChannelID,
+		&a.Name,
+		&a.Instrument,
+		&a.CreatedAt,
+		&a.UpdatedAt,
+		&a.DeletedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	return &a, nil
+
+}
+
+func (r *SQLiteRepo) HardDeleteAccount(ctx context.Context, id string) error {
+	res, err := r.db.ExecContext(ctx, QueryHardDeleteAccount, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected < 1 {
 		return ErrNotFound
 	}
+
+	return nil
+}
+
+func (r SQLiteRepo) HardDeleteChannel(ctx context.Context, id string) error {
+	res, err := r.db.ExecContext(ctx, QueryHardDeleteChannel, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected < 1 {
+		return ErrNotFound
+	}
+
 	return nil
 }

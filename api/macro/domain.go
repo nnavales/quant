@@ -2,19 +2,38 @@ package macro
 
 import (
 	"errors"
+	"fmt"
+	"net"
 	"net/http"
 	"time"
 
 	"github.com/nnavales/summit/api/timeutils"
 )
 
+type HTTPError struct {
+	StatusCode int
+	URL        string
+}
+
+func (e *HTTPError) Error() string {
+	return fmt.Sprintf("HTTP %d: %s", e.StatusCode, e.URL)
+}
+
 var httpClient = &http.Client{
 	Timeout: 10 * time.Second,
+	Transport: &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout: 1 * time.Second,
+		}).DialContext,
+		ResponseHeaderTimeout: 4 * time.Second,
+	},
 }
 
 var (
-	ErrTimeoutConnection = errors.New("connection timeout")
-	ErrNetworkError      = errors.New("network error")
+	ErrThirdParty   = errors.New("third party error")
+	ErrNetworkError = errors.New("network error")
+	ErrTimeout      = errors.New("timeout")
+	ErrBadRequest   = errors.New("bad request")
 )
 
 // For dashboard

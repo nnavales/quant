@@ -21,7 +21,7 @@ func NewService(clock timeutils.Clock, repo Repository) *Service {
 
 func (s *Service) CreateCategory(ctx context.Context, req CategoryReq) (*Category, error) {
 	if req.Name == nil {
-		return nil, fmt.Errorf("name is required")
+		return nil, fmt.Errorf("name is required: %w", ErrInvalidField)
 	}
 
 	now := s.clock.Now()
@@ -99,7 +99,7 @@ func (s *Service) DeleteCategory(ctx context.Context, id string) error {
 
 func (s *Service) CreateSubcategory(ctx context.Context, req SubcategoryReq) (*Subcategory, error) {
 	if req.CategoryID == nil || req.Name == nil {
-		return nil, fmt.Errorf("category_id and name are required")
+		return nil, fmt.Errorf("category_id and name are required: %w", ErrInvalidField)
 	}
 
 	now := s.clock.Now()
@@ -182,6 +182,22 @@ func (s *Service) RestoreSubcategory(ctx context.Context, id string) error {
 	err := s.repo.RestoreSubcategory(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to restore subcategory: %w", err)
+	}
+	return nil
+}
+
+func (s *Service) HardDeleteCategory(ctx context.Context, id string) error {
+	err := s.repo.HardDeleteCategory(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete category: %w", err)
+	}
+	return nil
+}
+
+func (s *Service) HardDeleteSubcategory(ctx context.Context, id string) error {
+	err := s.repo.HardDeleteSubcategory(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete subcategory: %w", err)
 	}
 	return nil
 }

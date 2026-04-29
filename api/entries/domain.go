@@ -6,12 +6,17 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/nnavales/summit/api/apperrors"
+	"github.com/nnavales/summit/api/money"
 	"github.com/oklog/ulid/v2"
 )
 
 var (
-	ErrNotFound = errors.New("resource not found")
+	ErrNotFound     = apperrors.ErrNotFound
+	ErrInvalidField = apperrors.ErrInvalidInput
 )
+
+var _ = errors.New
 
 type Currency string
 
@@ -19,18 +24,18 @@ const CurrencyARS Currency = "ARS"
 const CurrencyUSD Currency = "USD"
 
 type Entry struct {
-	ID            string     `json:"id"`
-	TransactionID string     `json:"transaction_id"`
-	ChannelID     string     `json:"channel_id"`
-	AccountID     *string    `json:"account_id"`
-	Amount        int64      `json:"amount"`
-	Currency      Currency   `json:"currency"`
-	ExchangeRate  float64    `json:"exchange_rate"`
-	CategoryID    *string    `json:"category_id"`
-	SubcategoryID *string    `json:"subcategory_id"`
-	CreatedAt     time.Time  `json:"created_at"`
-	UpdatedAt     *time.Time `json:"updated_at"`
-	DeletedAt     *time.Time `json:"deleted_at,omitempty"`
+	ID            string      `json:"id"`
+	TransactionID string      `json:"transaction_id"`
+	ChannelID     string      `json:"channel_id"`
+	AccountID     *string     `json:"account_id"`
+	Amount        money.Money `json:"amount"`
+	Currency      Currency    `json:"currency"`
+	ExchangeRate  float64     `json:"exchange_rate"`
+	CategoryID    *string     `json:"category_id"`
+	SubcategoryID *string     `json:"subcategory_id"`
+	CreatedAt     time.Time   `json:"created_at"`
+	UpdatedAt     *time.Time  `json:"updated_at"`
+	DeletedAt     *time.Time  `json:"deleted_at,omitempty"`
 }
 
 // Repository
@@ -56,7 +61,7 @@ type EntryReq struct {
 }
 
 // Constructors
-func NewEntry(now time.Time, transactionID, channelID string, amount int64, currency Currency, exchangeRate float64) *Entry {
+func NewEntry(now time.Time, transactionID, channelID string, amount money.Money, currency Currency, exchangeRate float64) *Entry {
 	id := ulid.Make().String()
 	return &Entry{
 		ID:            id,
@@ -95,8 +100,6 @@ func (e *Entry) SetDeleted(now time.Time, isDeleted bool) {
 }
 
 // Validations
-var ErrInvalidField = errors.New("invalid field")
-
 func (e *Entry) Validate() error {
 	if e.ID == "" {
 		return fmt.Errorf("id is required: %w", ErrInvalidField)

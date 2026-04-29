@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/nnavales/summit/api/apperrors"
 	"github.com/nnavales/summit/api/timeutils"
 )
 
@@ -32,7 +33,7 @@ func (r *SQLiteRepo) GetTransactionByID(ctx context.Context, id string) (*Transa
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrNotFound
+			return nil, apperrors.ErrNotFound
 		}
 		return nil, err
 	}
@@ -99,7 +100,7 @@ func (r *SQLiteRepo) DeleteTransaction(ctx context.Context, id string) error {
 		return err
 	}
 	if rows == 0 {
-		return ErrNotFound
+		return apperrors.ErrNotFound
 	}
 	return nil
 }

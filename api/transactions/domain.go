@@ -6,13 +6,17 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/nnavales/summit/api/apperrors"
 	"github.com/nnavales/summit/api/timeutils"
 	"github.com/oklog/ulid/v2"
 )
 
 var (
-	ErrNotFound = errors.New("resource not found")
+	ErrNotFound     = apperrors.ErrNotFound
+	ErrInvalidField = apperrors.ErrInvalidInput
 )
+
+var _ = errors.New // keep errors import for Validate
 
 type TransactionType string
 
@@ -112,8 +116,6 @@ func (t *Transaction) SetDeleted(now time.Time, isDeleted bool) {
 }
 
 // Validations
-var ErrInvalidField = errors.New("invalid field")
-
 func (t *Transaction) Validate() error {
 	if t.ID == "" {
 		return fmt.Errorf("id is required: %w", ErrInvalidField)

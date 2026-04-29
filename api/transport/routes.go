@@ -11,6 +11,8 @@ import (
 	"github.com/nnavales/summit/api/historical"
 	"github.com/nnavales/summit/api/installments"
 	"github.com/nnavales/summit/api/macro"
+	"github.com/nnavales/summit/api/networth"
+	"github.com/nnavales/summit/api/presets"
 	"github.com/nnavales/summit/api/transactions"
 	"github.com/nnavales/summit/api/transport/httpx"
 	"github.com/nnavales/summit/api/users"
@@ -21,6 +23,8 @@ func addRoutes(mux *http.ServeMux,
 	ih *installments.Handler, ch *channels.Handler, cat *categories.Handler,
 	hm *macro.Handler, uh *users.Handler, hh *historical.Handler,
 	dh *dashboard.Handler,
+	nw *networth.Handler,
+	ph *presets.Handler,
 ) {
 	mux.HandleFunc("GET /healthz", handlerHealthz)
 
@@ -55,6 +59,7 @@ func addRoutes(mux *http.ServeMux,
 	mux.HandleFunc("PATCH /channels/{id}", ch.UpdateChannel)
 	mux.HandleFunc("DELETE /channels/{id}", ch.DeleteChannel)
 	mux.HandleFunc("POST /channels/{id}/restore", ch.RestoreChannel)
+	mux.HandleFunc("DELETE /channels/{id}/hard", ch.HardDeleteChannel)
 
 	mux.HandleFunc("POST /accounts", ch.CreateAccount)
 	mux.HandleFunc("GET /accounts/{id}", ch.GetAccount)
@@ -62,6 +67,7 @@ func addRoutes(mux *http.ServeMux,
 	mux.HandleFunc("PATCH /accounts/{id}", ch.UpdateAccount)
 	mux.HandleFunc("DELETE /accounts/{id}", ch.DeleteAccount)
 	mux.HandleFunc("POST /accounts/{id}/restore", ch.RestoreAccount)
+	mux.HandleFunc("DELETE /accounts/{id}/hard", ch.HardDeleteAccount)
 
 	mux.HandleFunc("POST /categories", cat.CreateCategory)
 	mux.HandleFunc("GET /categories/{id}", cat.GetCategory)
@@ -69,6 +75,7 @@ func addRoutes(mux *http.ServeMux,
 	mux.HandleFunc("PATCH /categories/{id}", cat.UpdateCategory)
 	mux.HandleFunc("DELETE /categories/{id}", cat.DeleteCategory)
 	mux.HandleFunc("POST /categories/{id}/restore", cat.RestoreCategory)
+	mux.HandleFunc("DELETE /categories/{id}/hard", cat.HardDeleteCategory)
 
 	mux.HandleFunc("POST /subcategories", cat.CreateSubcategory)
 	mux.HandleFunc("GET /subcategories/{id}", cat.GetSubcategory)
@@ -76,13 +83,19 @@ func addRoutes(mux *http.ServeMux,
 	mux.HandleFunc("PATCH /subcategories/{id}", cat.UpdateSubcategory)
 	mux.HandleFunc("DELETE /subcategories/{id}", cat.DeleteSubcategory)
 	mux.HandleFunc("POST /subcategories/{id}/restore", cat.RestoreSubcategory)
+	mux.HandleFunc("DELETE /subcategories/{id}/hard", cat.HardDeleteSubcategory)
 
 	mux.HandleFunc("GET /installment-groups/{id}", ih.GetInstallmentGroup)
 	mux.HandleFunc("GET /installment-groups", ih.ListInstallmentGroups)
 	mux.HandleFunc("PATCH /installment-groups/{id}", ih.UpdateInstallmentGroup)
 	mux.HandleFunc("DELETE /installment-groups/{id}", ih.DeleteInstallmentGroup)
 
+	mux.HandleFunc("GET /installment-groups/transactions", h.ListTransactionsByInstallmentGroup)
+
+	mux.HandleFunc("GET /installment-groups/{id}/transactions", h.GetTransactionsByInstallmentGroup)
 	mux.HandleFunc("POST /transaction-aggregates", h.CreateTransactionAggregate)
+	mux.HandleFunc("POST /transaction-aggregates/bulk", h.CreateBulkTransactionAggregate)
+	mux.HandleFunc("POST /transaction-aggregates/bulk/csv", h.CreateBulkTransactionAggregateCSV)
 	mux.HandleFunc("GET /transaction-aggregates", h.ListTransactionsAggregate)
 	mux.HandleFunc("GET /transaction-aggregates/{id}", h.GetTransactionAggregate)
 	mux.HandleFunc("PATCH /transaction-aggregates/{id}", h.UpdateTransactionAggregate)
@@ -90,7 +103,9 @@ func addRoutes(mux *http.ServeMux,
 	mux.HandleFunc("POST /transaction-aggregates/cancel-installments", h.CancelInstallments)
 	mux.HandleFunc("GET /historical-entries", h.ListHistoricalEntries)
 
-	mux.HandleFunc("GET /dashboard/kpis", dh.GetKPIs)
+	mux.HandleFunc("GET /dashboard", dh.GetKPIs)
+	mux.HandleFunc("GET /dashboard/kpi/{kpi}/evolution", dh.GetKPIEvolution)
+	mux.HandleFunc("GET /dashboard/dimension/{dimension}", dh.GetDimensionSeries)
 
 	mux.HandleFunc("POST /historical", hh.CreateHistoricalEntry)
 	mux.HandleFunc("GET /historical", hh.ListHistoricalEntries)
@@ -98,6 +113,21 @@ func addRoutes(mux *http.ServeMux,
 	mux.HandleFunc("PATCH /historical/{date}", hh.UpdateHistoricalEntry)
 	mux.HandleFunc("DELETE /historical/{date}", hh.DeleteHistoricalEntry)
 	mux.HandleFunc("POST /historical/bulk", hh.BulkCreateHistoricalEntries)
+	mux.HandleFunc("POST /historical/bulk/csv", hh.BulkCreateHistoricalEntriesCSV)
+
+	mux.HandleFunc("POST /assets", nw.CreateAsset)
+	mux.HandleFunc("GET /assets/{id}", nw.GetAsset)
+	mux.HandleFunc("GET /assets", nw.ListAssets)
+	mux.HandleFunc("PATCH /assets/{id}", nw.UpdateAsset)
+	mux.HandleFunc("DELETE /assets/{id}", nw.DeleteAsset)
+	mux.HandleFunc("GET /networth", nw.GetNetWorth)
+
+	mux.HandleFunc("POST /presets", ph.CreatePreset)
+	mux.HandleFunc("GET /presets/{id}", ph.GetPreset)
+	mux.HandleFunc("GET /presets", ph.ListPresets)
+	mux.HandleFunc("PATCH /presets/{id}", ph.UpdatePreset)
+	mux.HandleFunc("DELETE /presets/{id}", ph.DeletePreset)
+	mux.HandleFunc("POST /presets/{id}/restore", ph.RestorePreset)
 }
 
 func handlerHealthz(w http.ResponseWriter, r *http.Request) {

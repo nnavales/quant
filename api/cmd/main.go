@@ -18,6 +18,8 @@ import (
 	"github.com/nnavales/summit/api/installments"
 	"github.com/nnavales/summit/api/logger"
 	"github.com/nnavales/summit/api/macro"
+	"github.com/nnavales/summit/api/networth"
+	"github.com/nnavales/summit/api/presets"
 	"github.com/nnavales/summit/api/timeutils"
 	"github.com/nnavales/summit/api/transactions"
 	"github.com/nnavales/summit/api/transport"
@@ -56,6 +58,7 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("macro.provider.error: %w", err)
 	}
+
 	macroService := macro.NewService(macroProvider)
 
 	dashboardRepo := dashboard.NewSQLiteRepo(dbConn.DB)
@@ -64,13 +67,16 @@ func run() error {
 	transactionsRepo := transactions.NewSQLiteRepo(dbConn.DB)
 	transactionsService := transactions.NewService(clock, transactionsRepo)
 
-	financeRepo := finance.NewSQLiteRepo(dbConn.DB)
-	historicalRepo := historical.NewSQLiteRepo(dbConn.DB)
-	historicalService := historical.NewService(clock, historicalRepo, transactionsRepo)
-	financeService := finance.NewService(clock, financeRepo, historicalRepo)
+	installmentsRepo := installments.NewSQLiteRepo(dbConn.DB)
+	installmentsService := installments.NewService(clock, installmentsRepo)
 
 	entriesRepo := entries.NewSQLiteRepo(dbConn.DB)
 	entriesService := entries.NewService(clock, entriesRepo)
+
+	financeRepo := finance.NewSQLiteRepo(dbConn.DB)
+	historicalRepo := historical.NewSQLiteRepo(dbConn.DB)
+	historicalService := historical.NewService(clock, historicalRepo, transactionsRepo)
+	financeService := finance.NewService(clock, financeRepo, historicalRepo, installmentsRepo)
 
 	channelsRepo := channels.NewSQLiteRepo(dbConn.DB)
 	channelsService := channels.NewService(clock, channelsRepo)
@@ -78,11 +84,14 @@ func run() error {
 	categoriesRepo := categories.NewSQLiteRepo(dbConn.DB)
 	categoriesService := categories.NewService(clock, categoriesRepo)
 
-	installmentsRepo := installments.NewSQLiteRepo(dbConn.DB)
-	installmentsService := installments.NewService(clock, installmentsRepo)
-
 	usersRepo := users.NewRepo(dbConn.DB)
 	usersService := users.NewService(clock, usersRepo)
+
+	networthRepo := networth.NewRepo(dbConn.DB)
+	networthService := networth.NewService(networthRepo, clock, *macroProvider, *usersRepo)
+
+	presetsRepo := presets.NewSQLiteRepo(dbConn.DB)
+	presetsService := presets.NewService(clock, presetsRepo)
 
 	if err := users.SeedDefaults(context.Background(), usersRepo, clock); err != nil {
 		slog.Warn("user.config.seed.error", "err", err)
@@ -107,6 +116,8 @@ func run() error {
 		UsersService:        usersService,
 		HistoricalService:   historicalService,
 		DashboardService:    dashboardService,
+		NetWorthService:     networthService,
+		PresetsService:      presetsService,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)

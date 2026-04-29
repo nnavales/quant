@@ -1,7 +1,8 @@
 package historical
 
 import (
-	"errors"
+	"bytes"
+	"io"
 	"net/http"
 
 	"github.com/nnavales/summit/api/timeutils"
@@ -21,119 +22,95 @@ func NewHandler(service *Service) *Handler {
 func (h *Handler) CreateHistoricalEntry(w http.ResponseWriter, r *http.Request) {
 	req, err := httpx.DecodeJSON[HistoricalFinanceReq](r.Body)
 	if err != nil {
-		httpx.WriteError(w, r, 400, "invalid request", err)
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid request", err)
 		return
 	}
 
 	entry, err := h.service.CreateHistoricalEntry(r.Context(), req)
 	if err != nil {
-		if errors.Is(err, ErrDuplicate) {
-			httpx.WriteError(w, r, 409, "historical entry already exists", err)
-			return
-		}
-		if errors.Is(err, ErrInvalidField) {
-			httpx.WriteError(w, r, 400, "invalid field", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to create historical entry", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
 
-	httpx.WriteJSON(w, 201, entry)
+	httpx.WriteJSON(w, http.StatusCreated, entry)
 }
 
 func (h *Handler) UpdateHistoricalEntry(w http.ResponseWriter, r *http.Request) {
 	dateStr := r.PathValue("date")
 	if dateStr == "" {
-		httpx.WriteError(w, r, 400, "date required", nil)
+		httpx.WriteError(w, r, http.StatusBadRequest, "date required", nil)
 		return
 	}
 
 	date, err := timeutils.ParseDate(dateStr)
 	if err != nil {
-		httpx.WriteError(w, r, 400, "invalid date format", err)
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid date format", err)
 		return
 	}
 
 	req, err := httpx.DecodeJSON[HistoricalFinanceReq](r.Body)
 	if err != nil {
-		httpx.WriteError(w, r, 400, "invalid request", err)
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid request", err)
 		return
 	}
 
 	entry, err := h.service.UpdateHistoricalEntry(r.Context(), date, req)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			httpx.WriteError(w, r, 404, "historical entry not found", err)
-			return
-		}
-		if errors.Is(err, ErrInvalidField) {
-			httpx.WriteError(w, r, 400, "invalid field", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to update historical entry", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
 
-	httpx.WriteJSON(w, 200, entry)
+	httpx.WriteJSON(w, http.StatusOK, entry)
 }
 
 func (h *Handler) ListHistoricalEntries(w http.ResponseWriter, r *http.Request) {
 	entries, err := h.service.ListHistoricalEntries(r.Context())
 	if err != nil {
-		httpx.WriteError(w, r, 500, "failed to list historical entries", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
 
-	httpx.WriteJSON(w, 200, entries)
+	httpx.WriteJSON(w, http.StatusOK, entries)
 }
 
 func (h *Handler) GetHistoricalEntryByDate(w http.ResponseWriter, r *http.Request) {
 	dateStr := r.PathValue("date")
 	if dateStr == "" {
-		httpx.WriteError(w, r, 400, "date required", nil)
+		httpx.WriteError(w, r, http.StatusBadRequest, "date required", nil)
 		return
 	}
 
 	date, err := timeutils.ParseDate(dateStr)
 	if err != nil {
-		httpx.WriteError(w, r, 400, "invalid date format", err)
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid date format", err)
 		return
 	}
 
 	entry, err := h.service.GetHistoricalEntryByDate(r.Context(), date)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			httpx.WriteError(w, r, 404, "historical entry not found", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to get historical entry", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
 
-	httpx.WriteJSON(w, 200, entry)
+	httpx.WriteJSON(w, http.StatusOK, entry)
 }
 
 func (h *Handler) DeleteHistoricalEntry(w http.ResponseWriter, r *http.Request) {
 	dateStr := r.PathValue("date")
 	if dateStr == "" {
-		httpx.WriteError(w, r, 400, "date required", nil)
+		httpx.WriteError(w, r, http.StatusBadRequest, "date required", nil)
 		return
 	}
 
 	date, err := timeutils.ParseDate(dateStr)
 	if err != nil {
-		httpx.WriteError(w, r, 400, "invalid date format", err)
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid date format", err)
 		return
 	}
 
 	err = h.service.DeleteHistoricalEntry(r.Context(), date)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			httpx.WriteError(w, r, 404, "historical entry not found", err)
-			return
-		}
-		httpx.WriteError(w, r, 500, "failed to delete historical entry", err)
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
 
@@ -143,13 +120,36 @@ func (h *Handler) DeleteHistoricalEntry(w http.ResponseWriter, r *http.Request) 
 func (h *Handler) BulkCreateHistoricalEntries(w http.ResponseWriter, r *http.Request) {
 	req, err := httpx.DecodeJSON[BulkCreateReq](r.Body)
 	if err != nil {
-		httpx.WriteError(w, r, 400, "invalid request", err)
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid request", err)
 		return
 	}
 
 	err = h.service.BulkCreateHistoricalEntries(r.Context(), req)
 	if err != nil {
-		httpx.WriteError(w, r, 500, "failed to bulk create historical entries", err)
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *Handler) BulkCreateHistoricalEntriesCSV(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, "failed to read request body", err)
+		return
+	}
+
+	reqs, err := h.ParseHistoricalCSV(bytes.NewReader(body))
+	if err != nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid CSV", err)
+		return
+	}
+
+	req := BulkCreateReq{Data: reqs}
+	err = h.service.BulkCreateHistoricalEntries(r.Context(), req)
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
 		return
 	}
 

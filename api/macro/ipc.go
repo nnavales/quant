@@ -3,7 +3,9 @@ package macro
 import (
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"sort"
 	"strconv"
@@ -26,11 +28,12 @@ func FetchIPCFromAPI() (TimeSeries, error) {
 
 func fetchIPCPoints() ([]TimeSeriesPoint, error) {
 	ctx := context.Background()
+	ipcURL := "https://infra.datos.gob.ar/catalog/sspm/dataset/145/distribution/145.3/download/indice-precios-al-consumidor-nivel-general-base-diciembre-2016-mensual.csv"
 
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
-		"https://infra.datos.gob.ar/catalog/sspm/dataset/145/distribution/145.3/download/indice-precios-al-consumidor-nivel-general-base-diciembre-2016-mensual.csv",
+		ipcURL,
 		nil,
 	)
 	if err != nil {
@@ -41,12 +44,22 @@ func fetchIPCPoints() ([]TimeSeriesPoint, error) {
 
 	res, err := httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		var netErr net.Error
+		if errors.As(err, &netErr) && netErr.Timeout() {
+			return nil, fmt.Errorf("IPC API timeout: %w", ErrTimeout)
+		}
+		if errors.Is(err, context.Canceled) {
+			return nil, fmt.Errorf("IPC API cancelled: %w", err)
+		}
+		return nil, fmt.Errorf("IPC API network: %w", ErrNetworkError)
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return nil, fmt.Errorf("status code isnt 200: %d", res.StatusCode)
+		return nil, fmt.Errorf("IPC API HTTP %d: %w", res.StatusCode, &HTTPError{
+			StatusCode: res.StatusCode,
+			URL:        ipcURL,
+		})
 	}
 
 	records, err := csv.NewReader(res.Body).ReadAll()

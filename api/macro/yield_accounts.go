@@ -18,7 +18,9 @@ package macro
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -73,13 +75,23 @@ func FetchYieldAccounts() ([]YieldValue, error) {
 
 	res, err := httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		var netErr net.Error
+		if errors.As(err, &netErr) && netErr.Timeout() {
+			return nil, fmt.Errorf("yield accounts API timeout: %w", ErrTimeout)
+		}
+		if errors.Is(err, context.Canceled) {
+			return nil, fmt.Errorf("yield accounts API cancelled: %w", err)
+		}
+		return nil, fmt.Errorf("yield accounts API network: %w", ErrNetworkError)
 	}
 
 	defer res.Body.Close()
 
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return nil, fmt.Errorf("status code isnt 200, something went wrong with the dolarAPI: <statuscode: %d>", res.StatusCode)
+		return nil, fmt.Errorf("yield accounts API HTTP %d: %w", res.StatusCode, &HTTPError{
+			StatusCode: res.StatusCode,
+			URL:        yieldAccountsURL,
+		})
 	}
 
 	yieldRaw := make([]yieldRaw, 0)
