@@ -6,8 +6,25 @@ import App from "./App";
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            staleTime: 1000 * 60 * 5,
-            retry: 1,
+            staleTime: 1000 * 60 * 2,
+            retry: (failureCount, error) => {
+                const msg = (error as Error)?.message?.toLowerCase() || "";
+                const isNetworkError =
+                    msg.includes("network error") ||
+                    msg.includes("timeout") ||
+                    msg.includes("service unavailable") ||
+                    msg.includes("upstream error") ||
+                    msg.includes("upstream timeout") ||
+                    msg.includes("request failed with status code 50");
+                if (isNetworkError) return false;
+                return failureCount < 1;
+            },
+            networkMode: "always",
+            refetchOnWindowFocus: false,
+        },
+        mutations: {
+            networkMode: "always",
+            retry: false,
         },
     },
 });

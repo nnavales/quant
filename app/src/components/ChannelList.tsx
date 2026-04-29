@@ -1,14 +1,35 @@
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { channels } from "@/api_client";
 import type { Channel, ChannelReq } from "@/api_client/types";
+import { toast } from "@/components/ui/Toast";
+import { getApiErrorMessage } from "@/utils/apiErrors";
+import { colors } from "@/styles/colors";
+import { spacing, radius } from "@/styles/theme";
+import { fonts } from "@/styles/fonts";
+import { cardStyle, rowStyle } from "@/styles/layout";
+import { ConfirmDialog } from "./ui/ConfirmDialog";
+import { Button } from "@/components/ui/Button";
+
+const inputStyle: React.CSSProperties = {
+    height: "28px",
+    padding: `0 ${spacing[3]}`,
+    backgroundColor: colors.bg.surface,
+    border: `1px solid ${colors.fill}`,
+    borderRadius: radius.md,
+    color: colors.fg.base,
+    fontSize: fonts.size.sm,
+    outline: "none",
+    boxSizing: "border-box",
+    flex: 1,
+};
 
 export function ChannelList() {
     const [items, setItems] = useState<Channel[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState<ChannelReq>({ name: "" });
+    const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
     useEffect(() => {
         loadData();
@@ -18,7 +39,7 @@ export function ChannelList() {
         channels
             .list()
             .then(setItems)
-            .catch((err: unknown) => setError(err instanceof Error ? err.message : "Error"))
+            .catch((err: unknown) => toast(getApiErrorMessage(err)))
             .finally(() => setLoading(false));
     };
 
@@ -30,120 +51,82 @@ export function ChannelList() {
             setShowForm(false);
             loadData();
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "Error");
+            toast(getApiErrorMessage(err));
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("¿Eliminar canal?")) return;
+    const handleDelete = (id: string) => {
+        setDeleteConfirm(id);
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteConfirm) return;
         try {
-            await channels.delete(id);
+            await channels.delete(deleteConfirm);
+            setDeleteConfirm(null);
             loadData();
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "Error");
+            toast(getApiErrorMessage(err));
         }
     };
 
-    if (loading) return <div>Cargando...</div>;
-    if (error) return <div style={{ color: "var(--semantic-error)" }}>Error: {error}</div>;
+    if (loading) return <div style={{ color: colors.fg.dim, textAlign: "center", padding: spacing[8] }}>Cargando...</div>;
 
     return (
         <div>
-            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "var(--spacing-4)" }}>
-                <button
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: spacing[4] }}>
+                <Button
+                    variant="secondary"
+                    iconLeft={<Plus size={16} />}
                     onClick={() => setShowForm(!showForm)}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "var(--spacing-2)",
-                        padding: "var(--spacing-2) var(--spacing-3)",
-                        backgroundColor: "var(--accent-teal)",
-                        color: "var(--bg-default)",
-                        border: "none",
-                        borderRadius: "var(--radius-md)",
-                        cursor: "pointer",
-                        fontWeight: 500,
-                    }}
                 >
-                    <Plus size={16} />
                     Nuevo Canal
-                </button>
+                </Button>
             </div>
 
             {showForm && (
-                <form
-                    onSubmit={handleSubmit}
-                    style={{
-                        display: "flex",
-                        gap: "var(--spacing-2)",
-                        marginBottom: "var(--spacing-4)",
-                        padding: "var(--spacing-4)",
-                        backgroundColor: "var(--bg-surface)",
-                        borderRadius: "var(--radius-lg)",
-                    }}
-                >
+                <form onSubmit={handleSubmit} style={{ ...cardStyle, marginBottom: spacing[4], display: "flex", gap: spacing[2] }}>
                     <input
                         type="text"
                         placeholder="Nombre del canal"
                         value={formData.name || ""}
                         onChange={(e) => setFormData({ name: e.target.value })}
-                        style={{
-                            flex: 1,
-                            padding: "var(--spacing-2) var(--spacing-3)",
-                            backgroundColor: "var(--bg-default)",
-                            border: "1px solid var(--highlight-medium)",
-                            borderRadius: "var(--radius-md)",
-                            color: "var(--fg-default)",
-                        }}
+                        style={inputStyle}
                     />
-                    <button
-                        type="submit"
-                        style={{
-                            padding: "var(--spacing-2) var(--spacing-4)",
-                            backgroundColor: "var(--accent-teal)",
-                            color: "var(--bg-default)",
-                            border: "none",
-                            borderRadius: "var(--radius-md)",
-                            cursor: "pointer",
-                        }}
-                    >
+                    <Button type="submit" variant="primary">
                         Guardar
-                    </button>
+                    </Button>
                 </form>
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--spacing-2)" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
                 {items.map((channel) => (
                     <div
                         key={channel.id}
-                        style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            padding: "var(--spacing-3) var(--spacing-4)",
-                            backgroundColor: "var(--bg-surface)",
-                            borderRadius: "var(--radius-md)",
-                        }}
+                        style={rowStyle}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.bg.base; }}
                     >
-                        <span>{channel.name}</span>
-                        <button
+                        <span style={{ fontSize: fonts.size.sm, color: colors.fg.base }}>{channel.name}</span>
+                        <Button
+                            variant="icon"
+                            title="Eliminar"
                             onClick={() => handleDelete(channel.id)}
-                            style={{
-                                padding: "var(--spacing-1) var(--spacing-2)",
-                                backgroundColor: "transparent",
-                                color: "var(--semantic-error)",
-                                border: "1px solid var(--semantic-error)",
-                                borderRadius: "var(--radius-sm)",
-                                cursor: "pointer",
-                                fontSize: "var(--font-size-xs)",
-                            }}
                         >
-                            Eliminar
-                        </button>
+                            <Trash2 size={14} />
+                        </Button>
                     </div>
                 ))}
-                {items.length === 0 && <div style={{ color: "var(--fg-muted)" }}>No hay canales</div>}
+                {items.length === 0 && <div style={{ color: colors.fg.dim, textAlign: "center", padding: spacing[4] }}>No hay canales</div>}
             </div>
+
+            <ConfirmDialog
+                isOpen={!!deleteConfirm}
+                onClose={() => setDeleteConfirm(null)}
+                onConfirm={confirmDelete}
+                title="Confirmar eliminación"
+                description="¿Eliminar este canal?"
+            />
         </div>
     );
 }

@@ -1,14 +1,36 @@
 import { useEffect, useState } from "react";
-import { Plus, X, RotateCcw } from "lucide-react";
+import { Plus, X, RotateCcw, Trash2 } from "lucide-react";
 import { categories, subcategories } from "@/api_client";
 import type { CategoryWithSubcategories } from "@/api_client/types";
+import { toast } from "@/components/ui/Toast";
+import { getApiErrorMessage } from "@/utils/apiErrors";
+import { colors } from "@/styles/colors";
+import { spacing, radius } from "@/styles/theme";
+import { fonts } from "@/styles/fonts";
+import { cardStyle } from "@/styles/layout";
+import { ConfirmDialog } from "./ui/ConfirmDialog";
+import { Button } from "@/components/ui/Button";
+
+const inputStyle: React.CSSProperties = {
+    height: "28px",
+    padding: `0 ${spacing[3]}`,
+    backgroundColor: colors.bg.surface,
+    border: `1px solid ${colors.fill}`,
+    borderRadius: radius.md,
+    color: colors.fg.base,
+    fontSize: fonts.size.sm,
+    outline: "none",
+    boxSizing: "border-box",
+    flex: 1,
+};
 
 export function CategoryList() {
     const [items, setItems] = useState<CategoryWithSubcategories[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState({ name: "" });
+    const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; type: "category" | "subcategory" } | null>(null);
+    const [hardDeleteConfirm, setHardDeleteConfirm] = useState<{ id: string; type: "category" | "subcategory" } | null>(null);
 
     useEffect(() => {
         loadData();
@@ -18,7 +40,7 @@ export function CategoryList() {
         categories
             .listWithSubcategories()
             .then(setItems)
-            .catch((err: unknown) => setError(err instanceof Error ? err.message : "Error"))
+            .catch((err: unknown) => toast(getApiErrorMessage(err)))
             .finally(() => setLoading(false));
     };
 
@@ -30,17 +52,30 @@ export function CategoryList() {
             setShowForm(false);
             loadData();
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "Error");
+            toast(getApiErrorMessage(err));
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("¿Eliminar categoría?")) return;
+    const handleDeleteCategory = (id: string) => {
+        setDeleteConfirm({ id, type: "category" });
+    };
+
+    const handleDeleteSubcategory = (id: string) => {
+        setDeleteConfirm({ id, type: "subcategory" });
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteConfirm) return;
         try {
-            await categories.delete(id);
+            if (deleteConfirm.type === "category") {
+                await categories.delete(deleteConfirm.id);
+            } else {
+                await subcategories.delete(deleteConfirm.id);
+            }
+            setDeleteConfirm(null);
             loadData();
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "Error");
+            toast(getApiErrorMessage(err));
         }
     };
 
@@ -49,17 +84,7 @@ export function CategoryList() {
             await categories.restore(id);
             loadData();
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "Error");
-        }
-    };
-
-    const handleDeleteSubcategory = async (id: string) => {
-        if (!confirm("¿Eliminar subcategoría?")) return;
-        try {
-            await subcategories.delete(id);
-            loadData();
-        } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "Error");
+            toast(getApiErrorMessage(err));
         }
     };
 
@@ -68,82 +93,58 @@ export function CategoryList() {
             await subcategories.restore(id);
             loadData();
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "Error");
+            toast(getApiErrorMessage(err));
         }
     };
 
-    if (loading) return <div>Cargando...</div>;
-    if (error) return <div style={{ color: "var(--semantic-error)" }}>Error: {error}</div>;
+    const confirmHardDelete = async () => {
+        if (!hardDeleteConfirm) return;
+        try {
+            if (hardDeleteConfirm.type === "category") {
+                await categories.hardDelete(hardDeleteConfirm.id);
+            } else {
+                await subcategories.hardDelete(hardDeleteConfirm.id);
+            }
+            setHardDeleteConfirm(null);
+            loadData();
+        } catch (err: unknown) {
+            toast(getApiErrorMessage(err));
+        }
+    };
+
+    if (loading) return <div style={{ color: colors.fg.dim, textAlign: "center", padding: spacing[8] }}>Cargando...</div>;
 
     const activeCategories = items.filter((item) => !item.category.deleted_at);
     const deletedCategories = items.filter((item) => item.category.deleted_at);
 
     return (
         <div>
-            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "var(--spacing-4)" }}>
-                <button
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: spacing[4] }}>
+                <Button
+                    variant="secondary"
+                    iconLeft={<Plus size={16} />}
                     onClick={() => setShowForm(!showForm)}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "var(--spacing-2)",
-                        padding: "var(--spacing-2) var(--spacing-3)",
-                        backgroundColor: "var(--accent-teal)",
-                        color: "var(--bg-default)",
-                        border: "none",
-                        borderRadius: "var(--radius-md)",
-                        cursor: "pointer",
-                        fontWeight: 500,
-                    }}
                 >
-                    <Plus size={16} />
                     Nueva Categoría
-                </button>
+                </Button>
             </div>
 
             {showForm && (
-                <form
-                    onSubmit={handleSubmit}
-                    style={{
-                        display: "flex",
-                        gap: "var(--spacing-2)",
-                        marginBottom: "var(--spacing-4)",
-                        padding: "var(--spacing-4)",
-                        backgroundColor: "var(--bg-surface)",
-                        borderRadius: "var(--radius-lg)",
-                    }}
-                >
+                <form onSubmit={handleSubmit} style={{ ...cardStyle, marginBottom: spacing[4], display: "flex", gap: spacing[2] }}>
                     <input
                         type="text"
                         placeholder="Nombre de la categoría"
                         value={formData.name}
                         onChange={(e) => setFormData({ name: e.target.value })}
-                        style={{
-                            flex: 1,
-                            padding: "var(--spacing-2) var(--spacing-3)",
-                            backgroundColor: "var(--bg-default)",
-                            border: "1px solid var(--highlight-medium)",
-                            borderRadius: "var(--radius-md)",
-                            color: "var(--fg-default)",
-                        }}
+                        style={inputStyle}
                     />
-                    <button
-                        type="submit"
-                        style={{
-                            padding: "var(--spacing-2) var(--spacing-4)",
-                            backgroundColor: "var(--accent-teal)",
-                            color: "var(--bg-default)",
-                            border: "none",
-                            borderRadius: "var(--radius-md)",
-                            cursor: "pointer",
-                        }}
-                    >
+                    <Button type="submit" variant="primary">
                         Guardar
-                    </button>
+                    </Button>
                 </form>
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--spacing-3)" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: spacing[3] }}>
                 {activeCategories.map((item) => {
                     const activeSubs = item.subcategories.filter((s) => !s.deleted_at);
                     const deletedSubs = item.subcategories.filter((s) => s.deleted_at);
@@ -151,31 +152,19 @@ export function CategoryList() {
                     return (
                         <div
                             key={item.category.id}
-                            style={{
-                                padding: "var(--spacing-3) var(--spacing-4)",
-                                backgroundColor: "var(--bg-surface)",
-                                borderRadius: "var(--radius-md)",
-                            }}
+                            style={cardStyle}
                         >
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--spacing-2)" }}>
-                                <span style={{ fontWeight: 600 }}>{item.category.name}</span>
-                                <button
-                                    onClick={() => handleDelete(item.category.id)}
-                                    style={{
-                                        padding: "var(--spacing-1) var(--spacing-2)",
-                                        backgroundColor: "transparent",
-                                        color: "var(--semantic-error)",
-                                        border: "1px solid var(--semantic-error)",
-                                        borderRadius: "var(--radius-sm)",
-                                        cursor: "pointer",
-                                        fontSize: "var(--font-size-xs)",
-                                    }}
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing[2] }}>
+                                <span style={{ fontWeight: 600, fontSize: fonts.size.sm, color: colors.fg.base }}>{item.category.name}</span>
+                                <Button
+                                    variant="icon"
+                                    onClick={() => handleDeleteCategory(item.category.id)}
                                 >
-                                    Eliminar
-                                </button>
+                                    <X size={14} />
+                                </Button>
                             </div>
 
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--spacing-1)" }}>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: spacing[1] }}>
                                 {activeSubs.map((sub) => (
                                     <span
                                         key={sub.id}
@@ -184,25 +173,18 @@ export function CategoryList() {
                                             alignItems: "center",
                                             gap: "4px",
                                             padding: "2px 8px",
-                                            backgroundColor: "var(--highlight-medium)",
-                                            borderRadius: "var(--radius-full)",
-                                            fontSize: "var(--font-size-sm)",
+                                            backgroundColor: colors.fill,
+                                            borderRadius: radius.full,
+                                            fontSize: fonts.size.sm,
                                         }}
                                     >
                                         {sub.name}
-                                        <button
+                                        <Button
+                                            variant="icon"
                                             onClick={() => handleDeleteSubcategory(sub.id)}
-                                            style={{
-                                                background: "none",
-                                                border: "none",
-                                                color: "var(--fg-muted)",
-                                                cursor: "pointer",
-                                                padding: 0,
-                                                display: "flex",
-                                            }}
                                         >
                                             <X size={12} />
-                                        </button>
+                                        </Button>
                                     </span>
                                 ))}
                                 {deletedSubs.map((sub) => (
@@ -213,27 +195,28 @@ export function CategoryList() {
                                             alignItems: "center",
                                             gap: "4px",
                                             padding: "2px 8px",
-                                            backgroundColor: "var(--bg-dim)",
-                                            border: "1px dashed var(--fg-muted)",
-                                            borderRadius: "var(--radius-full)",
-                                            fontSize: "var(--font-size-sm)",
+                                            backgroundColor: colors.bg.surface,
+                                            border: `1px dashed ${colors.fill}`,
+                                            borderRadius: radius.full,
+                                            fontSize: fonts.size.sm,
                                             opacity: 0.6,
                                         }}
                                     >
                                         {sub.name}
-                                        <button
+                                        <Button
+                                            variant="icon"
                                             onClick={() => handleRestoreSubcategory(sub.id)}
-                                            style={{
-                                                background: "none",
-                                                border: "none",
-                                                color: "var(--fg-muted)",
-                                                cursor: "pointer",
-                                                padding: 0,
-                                                display: "flex",
-                                            }}
+                                            title="Restaurar"
                                         >
                                             <RotateCcw size={12} />
-                                        </button>
+                                        </Button>
+                                        <Button
+                                            variant="icon"
+                                            onClick={() => setHardDeleteConfirm({ id: sub.id, type: "subcategory" })}
+                                            title="Eliminar permanentemente"
+                                        >
+                                            <Trash2 size={12} style={{ color: colors.accent.red }} />
+                                        </Button>
                                     </span>
                                 ))}
                             </div>
@@ -243,11 +226,11 @@ export function CategoryList() {
             </div>
 
             {deletedCategories.length > 0 && (
-                <div style={{ marginTop: "var(--spacing-6)" }}>
-                    <h4 style={{ color: "var(--fg-muted)", fontSize: "var(--font-size-sm)", marginBottom: "var(--spacing-3)" }}>
+                <div style={{ marginTop: spacing[6] }}>
+                    <h4 style={{ color: colors.fg.dim, fontSize: fonts.size.sm, marginBottom: spacing[3], fontWeight: 500 }}>
                         Categorías borradas
                     </h4>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--spacing-2)" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
                         {deletedCategories.map((item) => (
                             <div
                                 key={item.category.id}
@@ -255,37 +238,60 @@ export function CategoryList() {
                                     display: "flex",
                                     justifyContent: "space-between",
                                     alignItems: "center",
-                                    padding: "var(--spacing-3) var(--spacing-4)",
-                                    backgroundColor: "var(--bg-dim)",
-                                    border: "1px dashed var(--fg-muted)",
-                                    borderRadius: "var(--radius-md)",
+                                    padding: `${spacing[3]} ${spacing[4]}`,
+                                    backgroundColor: colors.bg.surface,
+                                    border: `1px dashed ${colors.fill}`,
+                                    borderRadius: radius.md,
                                     opacity: 0.6,
                                 }}
                             >
-                                <span>{item.category.name}</span>
-                                <button
-                                    onClick={() => handleRestore(item.category.id)}
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "var(--spacing-1)",
-                                        padding: "var(--spacing-1) var(--spacing-2)",
-                                        backgroundColor: "transparent",
-                                        color: "var(--fg-muted)",
-                                        border: "none",
-                                        borderRadius: "var(--radius-sm)",
-                                        cursor: "pointer",
-                                        fontSize: "var(--font-size-xs)",
-                                    }}
-                                >
-                                    <RotateCcw size={12} />
-                                    Restaurar
-                                </button>
+                                <span style={{ fontSize: fonts.size.sm }}>{item.category.name}</span>
+                                <span style={{ display: "flex", gap: spacing[1] }}>
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        iconLeft={<RotateCcw size={12} />}
+                                        onClick={() => handleRestore(item.category.id)}
+                                    >
+                                        Restaurar
+                                    </Button>
+                                    <Button
+                                        variant="icon"
+                                        size="sm"
+                                        onClick={() => setHardDeleteConfirm({ id: item.category.id, type: "category" })}
+                                        title="Eliminar permanentemente"
+                                    >
+                                        <Trash2 size={14} style={{ color: colors.accent.red }} />
+                                    </Button>
+                                </span>
                             </div>
                         ))}
                     </div>
                 </div>
             )}
+
+            <ConfirmDialog
+                isOpen={!!deleteConfirm}
+                onClose={() => setDeleteConfirm(null)}
+                onConfirm={confirmDelete}
+                title="Confirmar eliminación"
+                description={deleteConfirm?.type === "category" ? "¿Eliminar esta categoría?" : "¿Eliminar esta subcategoría?"}
+            />
+
+            <ConfirmDialog
+                isOpen={!!hardDeleteConfirm}
+                onClose={() => setHardDeleteConfirm(null)}
+                onConfirm={confirmHardDelete}
+                title="Eliminar permanentemente"
+                description={
+                    hardDeleteConfirm?.type === "category"
+                        ? "¿Eliminar permanentemente esta categoría y todas sus transacciones asociadas? No se puede deshacer."
+                        : "¿Eliminar permanentemente esta subcategoría y todas sus transacciones asociadas? No se puede deshacer."
+                }
+                confirmLabel="Eliminar permanentemente"
+                destructive
+                requireHold
+            />
         </div>
     );
 }

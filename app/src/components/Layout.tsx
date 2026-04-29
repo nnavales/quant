@@ -19,8 +19,8 @@ export function Layout({ children, activeTab, onTabChange, showSettings, onOpenS
             style={{
                 display: "flex",
                 minHeight: "100vh",
-                backgroundColor: colors.bg.default,
-                color: colors.fg.default,
+                backgroundColor: colors.bg.base,
+                color: colors.fg.base,
                 fontFamily: "var(--font-sans)",
             }}
         >
@@ -29,7 +29,7 @@ export function Layout({ children, activeTab, onTabChange, showSettings, onOpenS
                 <header
                     style={{
                         padding: `${spacing[4]} ${spacing[6]}`,
-                        borderBottom: `1px solid ${colors.highlight.medium}`,
+                        borderBottom: `1px solid ${colors.fill}`,
                     }}
                 >
                     <h1

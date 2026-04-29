@@ -17,7 +17,19 @@ export class ApiClient {
         this.client.interceptors.response.use(
             (response) => response,
             (error: AxiosError<ApiError>) => {
-                const message = error.response?.data?.error || error.message || "Unknown error";
+                let message: string;
+                if (!error.response) {
+                    message = error.code === "ECONNABORTED" ? "timeout" : "network error";
+                } else {
+                    const data = error.response.data as unknown;
+                    if (typeof data === "string" && data.length > 0) {
+                        message = data;
+                    } else if (data && typeof data === "object" && "error" in data) {
+                        message = (data as ApiError).error;
+                    } else {
+                        message = error.message || `HTTP ${error.response.status}`;
+                    }
+                }
                 return Promise.reject(new Error(message));
             }
         );
@@ -45,6 +57,15 @@ export class ApiClient {
 
     setBaseURL(url: string) {
         this.client.defaults.baseURL = url;
+    }
+
+    async healthCheck(timeoutMs = 3000): Promise<boolean> {
+        try {
+            await this.client.get("/healthz", { timeout: timeoutMs });
+            return true;
+        } catch {
+            return false;
+        }
     }
 }
 

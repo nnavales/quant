@@ -15,10 +15,13 @@
     "@tauri-apps/plugin-opener": "^2",
     "axios": "^1.14.0",
     "date-fns": "^4.1.0",
+    "echarts": "^6.0.0",
+    "echarts-for-react": "^3.0.6",
     "lucide-react": "^1.7.0",
     "react": "^19.1.0",
     "react-day-picker": "^9.14.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "recharts": "^3.8.1"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",

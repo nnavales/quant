@@ -1,5 +1,8 @@
 import { api } from "./client";
 import type {
+    NetWorth,
+    Asset,
+    AssetReq,
     Channel,
     ChannelReq,
     Account,
@@ -27,6 +30,13 @@ import type {
     HistoricalEntryCreate,
     HistoricalFinanceReq,
     BulkCreateHistoricalReq,
+    DashboardResponse,
+    KPIEvolutionResponse,
+    KPI,
+    Dimension,
+    DimensionSeriesResponse,
+    Preset,
+    PresetReq,
 } from "./types";
 
 export const channels = {
@@ -37,6 +47,7 @@ export const channels = {
     update: (id: string, data: Partial<ChannelReq>) => api.patch<Channel>(`/channels/${id}`, data),
     delete: (id: string) => api.delete<void>(`/channels/${id}`),
     restore: (id: string) => api.post<void>(`/channels/${id}/restore`),
+    hardDelete: (id: string) => api.delete<void>(`/channels/${id}/hard`),
 };
 
 export const accounts = {
@@ -46,6 +57,7 @@ export const accounts = {
     update: (id: string, data: Partial<AccountReq>) => api.patch<Account>(`/accounts/${id}`, data),
     delete: (id: string) => api.delete<void>(`/accounts/${id}`),
     restore: (id: string) => api.post<void>(`/accounts/${id}/restore`),
+    hardDelete: (id: string) => api.delete<void>(`/accounts/${id}/hard`),
 };
 
 export const categories = {
@@ -57,6 +69,7 @@ export const categories = {
         api.patch<Category>(`/categories/${id}`, data),
     delete: (id: string) => api.delete<void>(`/categories/${id}`),
     restore: (id: string) => api.post<void>(`/categories/${id}/restore`),
+    hardDelete: (id: string) => api.delete<void>(`/categories/${id}/hard`),
 };
 
 export const subcategories = {
@@ -67,6 +80,7 @@ export const subcategories = {
         api.patch<Subcategory>(`/subcategories/${id}`, data),
     delete: (id: string) => api.delete<void>(`/subcategories/${id}`),
     restore: (id: string) => api.post<void>(`/subcategories/${id}/restore`),
+    hardDelete: (id: string) => api.delete<void>(`/subcategories/${id}/hard`),
 };
 
 export interface TransactionFilters {
@@ -85,6 +99,7 @@ export interface TransactionFilters {
     account?: string;
     date_from?: string;
     date_to?: string;
+    is_paid?: boolean;
 }
 
 interface TransactionListResponse {
@@ -104,13 +119,14 @@ export const transactionAggregates = {
             if (filters.type) params.set("type", filters.type);
             if (filters.currency) params.set("currency", filters.currency);
             if (filters.frequency) params.set("frequency", filters.frequency);
-            if (filters.installments !== undefined) params.set("installments", String(filters.installments));
+            if (filters.installments !== undefined) params.set("installment", String(filters.installments));
             if (filters.category) params.set("category", filters.category);
             if (filters.subcategory) params.set("subcategory", filters.subcategory);
             if (filters.channel) params.set("channel", filters.channel);
             if (filters.account) params.set("account", filters.account);
             if (filters.date_from) params.set("date_from", filters.date_from);
             if (filters.date_to) params.set("date_to", filters.date_to);
+            if (filters.is_paid !== undefined) params.set("is_paid", String(filters.is_paid));
         }
         const query = params.toString();
         return api.get<TransactionListResponse>(`/transaction-aggregates${query ? `?${query}` : ""}`).then((response) => ({
@@ -200,8 +216,20 @@ export const config = {
 };
 
 export const transactions = {
-    updatePaid: (id: string, isPaid: boolean) => 
+    updatePaid: (id: string, isPaid: boolean) =>
         api.patch(`/transaction/${id}/paid`, { is_paid: isPaid }),
+};
+
+export const dashboard = {
+    getKPIs: () => api.get<DashboardResponse>("/dashboard"),
+    getKPIEvolution: (kpi: KPI) => api.get<KPIEvolutionResponse>(`/dashboard/kpi/${kpi}/evolution`),
+    getDimensionSeries: (dimension: Dimension, params?: Record<string, string>) => {
+        const searchParams = new URLSearchParams(params);
+        const query = searchParams.toString();
+        return api.get<DimensionSeriesResponse>(
+            `/dashboard/dimension/${dimension}${query ? `?${query}` : ""}`
+        );
+    },
 };
 
 // ============================================
@@ -215,6 +243,13 @@ export interface HistoricalFilters {
     order?: "asc" | "desc";
     date_from?: string;
     date_to?: string;
+    source?: "historical" | "transactions";
+}
+
+function normalizeMonth(month: string): string {
+    // Backend expects YYYY-MM-DD but list returns YYYY-MM
+    if (/^\d{4}-\d{2}$/.test(month)) return `${month}-01`;
+    return month;
 }
 
 export const historical = {
@@ -227,6 +262,7 @@ export const historical = {
             if (filters.order) params.set("order", filters.order);
             if (filters.date_from) params.set("date_from", filters.date_from);
             if (filters.date_to) params.set("date_to", filters.date_to);
+            if (filters.source) params.set("source", filters.source);
         }
         const query = params.toString();
         return api.get<HistoricalEntryResponse>(`/historical-entries${query ? `?${query}` : ""}`).then((response) => ({
@@ -236,11 +272,40 @@ export const historical = {
             limit: filters?.limit || 20,
         }));
     },
-    get: (month: string) => api.get<HistoricalEntry>(`/historical/${month}`),
+    get: (month: string) => api.get<HistoricalEntry>(`/historical/${normalizeMonth(month)}`),
     create: (data: HistoricalEntryCreate) => api.post<HistoricalEntry>("/historical", data),
-    update: (month: string, data: Partial<HistoricalEntryCreate>) => 
-        api.patch<HistoricalEntry>(`/historical/${month}`, data),
-    delete: (month: string) => api.delete<void>(`/historical/${month}`),
-    bulkCreate: (data: HistoricalFinanceReq[]) => 
+    update: (month: string, data: Partial<HistoricalFinanceReq>) =>
+        api.patch<HistoricalEntry>(`/historical/${normalizeMonth(month)}`, data),
+    delete: (month: string) => api.delete<void>(`/historical/${normalizeMonth(month)}`),
+    bulkCreate: (data: HistoricalFinanceReq[]) =>
         api.post<void>("/historical/bulk", { data } as BulkCreateHistoricalReq),
+};
+
+// ============================================
+// Networth Endpoints
+// ============================================
+
+export const networth = {
+    get: () => api.get<NetWorth>("/networth"),
+};
+
+export const assets = {
+    list: () => api.get<Asset[]>("/assets"),
+    get: (id: string) => api.get<Asset>(`/assets/${id}`),
+    create: (data: AssetReq) => api.post<Asset>("/assets", data),
+    update: (id: string, data: Partial<AssetReq>) => api.patch<Asset>(`/assets/${id}`, data),
+    delete: (id: string) => api.delete<void>(`/assets/${id}`),
+};
+
+// ============================================
+// Presets Endpoints
+// ============================================
+
+export const presets = {
+    list: () => api.get<Preset[]>("/presets"),
+    get: (id: string) => api.get<Preset>(`/presets/${id}`),
+    create: (data: PresetReq) => api.post<Preset>("/presets", data),
+    update: (id: string, data: Partial<PresetReq>) => api.patch<Preset>(`/presets/${id}`, data),
+    delete: (id: string) => api.delete<void>(`/presets/${id}`),
+    restore: (id: string) => api.post<void>(`/presets/${id}/restore`),
 };

@@ -1,174 +1,208 @@
 import { useState, useEffect } from "react";
-import { useUserConfig, useUpdateUserConfig } from "@/hooks";
+import { useUserConfig, useUpdateUserConfig, useDollarBanks } from "@/hooks";
 import { toast } from "@/components/ui/Toast";
+import { getApiErrorMessage } from "@/utils/apiErrors";
+import { Dropdown, type DropdownOption } from "@/components/ui/Dropdown";
+import { Check, X } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { colors } from "@/styles/colors";
+import { spacing, radius } from "@/styles/theme";
+import { fonts } from "@/styles/fonts";
+import { cardStyle } from "@/styles/layout";
 
-const timezoneOptions = [
-    { value: "arg", label: "Argentina (UTC-3)" },
-    { value: "utc", label: "UTC" },
-    { value: "us_eastern", label: "US Eastern (UTC-5)" },
-    { value: "us_pacific", label: "US Pacific (UTC-8)" },
-    { value: "europe_london", label: "Europe/London (UTC+0)" },
-];
-
-const dollarSourceOptions = [
-    { value: "banco-nacion", label: "Banco Nación" },
-    { value: "banco-macro", label: "Banco Macro" },
-    { value: "banco-santander", label: "Banco Santander" },
-    { value: "banco-provinci", label: "Banco Provincia" },
-    { value: "banco-ciudad", label: "Banco Ciudad" },
-    { value: "buenbit", label: "Buenbit" },
-    { value: "uala", label: "Uala" },
-];
-
-const currencyOptions = [
-    { value: "ars", label: "ARS" },
-    { value: "usd", label: "USD" },
-];
-
-const labelStyle: React.CSSProperties = {
-    display: "block",
-    fontSize: "var(--font-size-sm)",
-    fontWeight: 500,
-    color: "var(--fg-dim)",
-    marginBottom: "var(--spacing-1)",
+const sectionHeaderStyle: React.CSSProperties = {
+    fontSize: fonts.size.xs,
+    fontWeight: 600,
+    color: colors.fg.dim,
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+    marginBottom: spacing[3],
 };
 
 const inputStyle: React.CSSProperties = {
     width: "100%",
-    padding: "6px 10px",
-    fontSize: "var(--font-size-sm)",
-    color: "var(--fg-default)",
-    backgroundColor: "var(--bg-dim)",
-    border: "1px solid var(--highlight-medium)",
-    borderRadius: "var(--radius-md)",
+    height: "32px",
+    padding: `0 ${spacing[3]}`,
+    backgroundColor: colors.bg.surface,
+    border: `1px solid ${colors.fill}`,
+    borderRadius: radius.md,
+    color: colors.fg.base,
+    fontSize: fonts.size.sm,
     outline: "none",
     boxSizing: "border-box",
+    transition: "border-color 0.15s",
 };
 
-const selectStyle: React.CSSProperties = {
-    ...inputStyle,
-    cursor: "pointer",
-};
+const timezoneOptions: DropdownOption[] = [
+    { id: "America/Argentina/Buenos_Aires", label: "Argentina (UTC-3)" },
+    { id: "UTC", label: "UTC" },
+    { id: "America/New_York", label: "US Eastern (UTC-5)" },
+    { id: "America/Los_Angeles", label: "US Pacific (UTC-8)" },
+    { id: "Europe/London", label: "Europe/London (UTC+0)" },
+];
 
-const sectionStyle: React.CSSProperties = {
-    marginBottom: "var(--spacing-5)",
-};
-
-const buttonStyle: React.CSSProperties = {
-    padding: "6px 14px",
-    fontSize: "var(--font-size-sm)",
-    fontWeight: 500,
-    color: "var(--bg-default)",
-    backgroundColor: "var(--accent-teal)",
-    border: "none",
-    borderRadius: "var(--radius-md)",
-    cursor: "pointer",
-};
+const dateFormatOptions: DropdownOption[] = [
+    { id: "YYYY/MM/DD", label: "YYYY/MM/DD (2024/01/15)" },
+    { id: "DD/MM/YYYY", label: "DD/MM/YYYY (15/01/2024)" },
+    { id: "MM/DD/YYYY", label: "MM/DD/YYYY (01/15/2024)" },
+    { id: "YYYY-MM-DD", label: "YYYY-MM-DD (2024-01-15)" },
+    { id: "DD-MM-YYYY", label: "DD-MM-YYYY (15-01-2024)" },
+    { id: "MM-DD-YYYY", label: "MM-DD-YYYY (01-15-2024)" },
+];
 
 export function UserSettings() {
     const { data: config, isLoading, isError } = useUserConfig();
+    const { data: dollarBanks } = useDollarBanks();
     const updateMutation = useUpdateUserConfig();
 
     const [username, setUsername] = useState("");
-    const [currency, setCurrency] = useState("ars");
-    const [dollarSource, setDollarSource] = useState("bna");
-    const [timezone, setTimezone] = useState("arg");
+    const [dollarSource, setDollarSource] = useState("");
+    const [timezone, setTimezone] = useState("America/Argentina/Buenos_Aires");
+    const [dateFormat, setDateFormat] = useState("DD/MM/YYYY");
+    const [defaultRate, setDefaultRate] = useState("");
 
     useEffect(() => {
         if (config) {
             setUsername(config.username ?? "");
-            setCurrency(config.currency ?? "ars");
-            setDollarSource(config.dollar_source ?? "bna");
-            setTimezone(config.timezone ?? "arg");
+            setDollarSource(config.dollar_source ?? "");
+            setTimezone(config.timezone ?? "America/Argentina/Buenos_Aires");
+            setDateFormat(config.date_format ?? "DD/MM/YYYY");
+            setDefaultRate(config.default_rate ?? "");
         }
     }, [config]);
 
-    function handleSave() {
-        updateMutation.mutate(
-            { username, currency, dollar_source: dollarSource, timezone },
-            {
-                onSuccess: () => {
-                    toast("Configuracion guardada", "success");
-                },
-                onError: (err: unknown) => {
-                    toast(err instanceof Error ? err.message : "Error al guardar");
-                },
-            }
-        );
+    const dollarSourceOptions: DropdownOption[] = dollarBanks
+        ? [
+              { id: "", label: `Default (${defaultRate || "sin tasa"})` },
+              ...Object.entries(dollarBanks).map(([slug, bank]) => ({
+                  id: slug,
+                  label: bank.entity,
+              })),
+          ]
+        : [{ id: "", label: `Default (${defaultRate || "sin tasa"})` }];
+
+    function autoSave(data: Record<string, string>) {
+        updateMutation.mutate(data, {
+            onSuccess: () => toast("Configuración guardada", "success"),
+            onError: (err: unknown) => {
+                toast(getApiErrorMessage(err));
+            },
+        });
     }
 
-    if (isLoading) return <div style={{ color: "var(--fg-muted)", textAlign: "center", padding: "var(--spacing-8)" }}>Cargando...</div>;
-    if (isError) return <div style={{ color: "var(--semantic-error)", textAlign: "center", padding: "var(--spacing-8)" }}>Error al cargar configuracion</div>;
+    const isUsernameDirty = username !== (config?.username ?? "");
+    const isDefaultRateDirty = defaultRate !== (config?.default_rate ?? "");
+
+    const saveUsername = () => {
+        autoSave({ username, dollar_source: dollarSource, timezone, date_format: dateFormat, default_rate: defaultRate });
+    };
+
+    const cancelUsername = () => {
+        setUsername(config?.username ?? "");
+    };
+
+    const saveDefaultRate = () => {
+        autoSave({ username, dollar_source: dollarSource, timezone, date_format: dateFormat, default_rate: defaultRate });
+    };
+
+    const cancelDefaultRate = () => {
+        setDefaultRate(config?.default_rate ?? "");
+    };
+
+    if (isLoading) return <div style={{ color: colors.fg.dim, textAlign: "center", padding: spacing[8] }}>Cargando...</div>;
+    if (isError) return <div style={{ color: colors.accent.red, textAlign: "center", padding: spacing[8] }}>Error al cargar configuracion</div>;
 
     return (
-        <div style={{ maxWidth: "400px" }}>
-            <div style={sectionStyle}>
-                <label style={labelStyle}>Usuario</label>
-                <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    style={inputStyle}
-                    placeholder="Tu nombre"
+        <div style={{ display: "flex", flexDirection: "column", gap: spacing[4] }}>
+            <div style={cardStyle}>
+                <h3 style={sectionHeaderStyle}>Usuario</h3>
+                <div style={{ display: "flex", gap: spacing[2], alignItems: "center" }}>
+                    <input
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") saveUsername(); if (e.key === "Escape") cancelUsername(); }}
+                        style={{ ...inputStyle, flex: 1 }}
+                        placeholder="Tu nombre"
+                    />
+                    {isUsernameDirty && (
+                        <div style={{ display: "flex", gap: spacing[1] }}>
+                            <Button variant="icon" onClick={saveUsername}>
+                                <Check size={14} />
+                            </Button>
+                            <Button variant="icon" onClick={cancelUsername}>
+                                <X size={14} />
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div style={cardStyle}>
+                <h3 style={sectionHeaderStyle}>Fuente del dolar</h3>
+                <Dropdown
+                    value={dollarSource}
+                    onChange={(id) => {
+                        setDollarSource(id);
+                        autoSave({ username, dollar_source: id, timezone, date_format: dateFormat, default_rate: defaultRate });
+                    }}
+                    options={dollarSourceOptions}
+                    placeholder="Seleccionar..."
+                    triggerStyle={{ height: "32px", fontSize: fonts.size.sm }}
                 />
             </div>
 
-            <div style={sectionStyle}>
-                <label style={labelStyle}>Moneda</label>
-                <select
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                    style={selectStyle}
-                >
-                    {currencyOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                        </option>
-                    ))}
-                </select>
+            <div style={cardStyle}>
+                <h3 style={sectionHeaderStyle}>Tipo de cambio default</h3>
+                <div style={{ display: "flex", gap: spacing[2], alignItems: "center" }}>
+                    <input
+                        type="number"
+                        value={defaultRate}
+                        onChange={(e) => setDefaultRate(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") saveDefaultRate(); if (e.key === "Escape") cancelDefaultRate(); }}
+                        style={{ ...inputStyle, flex: 1 }}
+                        placeholder="1400"
+                    />
+                    {isDefaultRateDirty && (
+                        <div style={{ display: "flex", gap: spacing[1] }}>
+                            <Button variant="icon" onClick={saveDefaultRate}>
+                                <Check size={14} />
+                            </Button>
+                            <Button variant="icon" onClick={cancelDefaultRate}>
+                                <X size={14} />
+                            </Button>
+                        </div>
+                    )}
+                </div>
             </div>
 
-            <div style={sectionStyle}>
-                <label style={labelStyle}>Fuente del dolar</label>
-                <select
-                    value={dollarSource}
-                    onChange={(e) => setDollarSource(e.target.value)}
-                    style={selectStyle}
-                >
-                    {dollarSourceOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                        </option>
-                    ))}
-                </select>
-            </div>
-
-            <div style={sectionStyle}>
-                <label style={labelStyle}>Zona horaria</label>
-                <select
+            <div style={cardStyle}>
+                <h3 style={sectionHeaderStyle}>Zona horaria</h3>
+                <Dropdown
                     value={timezone}
-                    onChange={(e) => setTimezone(e.target.value)}
-                    style={selectStyle}
-                >
-                    {timezoneOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                        </option>
-                    ))}
-                </select>
+                    onChange={(id) => {
+                        setTimezone(id);
+                        autoSave({ username, dollar_source: dollarSource, timezone: id, date_format: dateFormat, default_rate: defaultRate });
+                    }}
+                    options={timezoneOptions}
+                    placeholder="Seleccionar..."
+                    triggerStyle={{ height: "32px", fontSize: fonts.size.sm }}
+                />
             </div>
 
-            <button
-                onClick={handleSave}
-                disabled={updateMutation.isPending}
-                style={{
-                    ...buttonStyle,
-                    opacity: updateMutation.isPending ? 0.6 : 1,
-                    cursor: updateMutation.isPending ? "not-allowed" : "pointer",
-                }}
-            >
-                {updateMutation.isPending ? "Guardando..." : "Guardar"}
-            </button>
+            <div style={cardStyle}>
+                <h3 style={sectionHeaderStyle}>Formato de fecha</h3>
+                <Dropdown
+                    value={dateFormat}
+                    onChange={(id) => {
+                        setDateFormat(id);
+                        autoSave({ username, dollar_source: dollarSource, timezone, date_format: id, default_rate: defaultRate });
+                    }}
+                    options={dateFormatOptions}
+                    placeholder="Seleccionar..."
+                    triggerStyle={{ height: "32px", fontSize: fonts.size.sm }}
+                />
+            </div>
         </div>
     );
 }

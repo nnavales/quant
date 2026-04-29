@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Settings, TrendingUp } from "lucide-react";
+import { ArrowLeftRight, Settings, TrendingUp, LayoutDashboard, PieChart } from "lucide-react";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 
@@ -9,6 +9,8 @@ interface SidebarProps {
 }
 
 const navItems = [
+    { id: "dashboard", icon: LayoutDashboard, label: "Inicio" },
+    { id: "analysis", icon: PieChart, label: "Análisis" },
     { id: "transactions", icon: ArrowLeftRight, label: "Transacciones" },
     { id: "economic", icon: TrendingUp, label: "Económico" },
 ];
@@ -19,8 +21,8 @@ const sidebarStyle: React.CSSProperties = {
     position: "sticky",
     top: 0,
     flexShrink: 0,
-    backgroundColor: colors.bg.dim,
-    borderRight: `1px solid ${colors.highlight.medium}`,
+    backgroundColor: colors.bg.surface,
+    borderRight: `1px solid ${colors.fill}`,
     display: "flex",
     flexDirection: "column",
     padding: `${spacing[3]} ${spacing[2]}`,
@@ -33,7 +35,7 @@ const iconButtonStyle: React.CSSProperties = {
     borderRadius: radius.lg,
     border: "none",
     backgroundColor: "transparent",
-    color: colors.fg.muted,
+    color: colors.fg.dim,
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
@@ -43,8 +45,8 @@ const iconButtonStyle: React.CSSProperties = {
 
 const iconButtonActiveStyle: React.CSSProperties = {
     ...iconButtonStyle,
-    backgroundColor: colors.highlight.medium,
-    color: colors.fg.default,
+    backgroundColor: colors.fill,
+    color: colors.fg.base,
 };
 
 export function Sidebar({ activeTab, onTabChange, onOpenSettings }: SidebarProps) {
@@ -58,14 +60,14 @@ export function Sidebar({ activeTab, onTabChange, onOpenSettings }: SidebarProps
                     style={activeTab === item.id ? iconButtonActiveStyle : iconButtonStyle}
                     onMouseEnter={(e) => {
                         if (activeTab !== item.id) {
-                            e.currentTarget.style.backgroundColor = colors.highlight.low;
-                            e.currentTarget.style.color = colors.fg.default;
+                            e.currentTarget.style.backgroundColor = colors.fill;
+                            e.currentTarget.style.color = colors.fg.base;
                         }
                     }}
                     onMouseLeave={(e) => {
                         if (activeTab !== item.id) {
                             e.currentTarget.style.backgroundColor = "transparent";
-                            e.currentTarget.style.color = colors.fg.muted;
+                            e.currentTarget.style.color = colors.fg.dim;
                         }
                     }}
                 >
@@ -78,12 +80,12 @@ export function Sidebar({ activeTab, onTabChange, onOpenSettings }: SidebarProps
                 title="Configuración"
                 style={iconButtonStyle}
                 onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = colors.highlight.low;
-                    e.currentTarget.style.color = colors.fg.default;
+                    e.currentTarget.style.backgroundColor = colors.fill;
+                    e.currentTarget.style.color = colors.fg.base;
                 }}
                 onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "transparent";
-                    e.currentTarget.style.color = colors.fg.muted;
+                    e.currentTarget.style.color = colors.fg.dim;
                 }}
             >
                 <Settings size={20} />

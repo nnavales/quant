@@ -3,9 +3,13 @@ import type { TransactionFilters, HistoricalFilters } from "@/api_client";
 import type { TransactionRowDTO } from "@/api_client/types";
 import { TransactionList } from "@/components/TransactionList";
 import { TransactionFilters as TransactionFiltersComponent } from "@/components/TransactionFilters";
-import { TransactionForm } from "@/components/TransactionForm";
+import { TransactionModal } from "@/components/TransactionModal";
 import { HistoricalTab } from "@/components/HistoricalTab";
+import { Plus, Upload } from "lucide-react";
 import { toast } from "@/components/ui/Toast";
+import { getApiErrorMessage } from "@/utils/apiErrors";
+import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
     useTransactionAggregates,
     useDeleteTransaction,
@@ -13,6 +17,7 @@ import {
     useHistoricalEntries,
 } from "@/hooks";
 import { spacing, colors } from "@/styles";
+import { fonts } from "@/styles/fonts";
 
 const ROW_HEIGHT = 52;
 
@@ -25,6 +30,11 @@ export function TransactionsPage() {
     const [deleteConfirm, setDeleteConfirm] = useState<TransactionRowDTO | null>(null);
     const [cancelConfirm, setCancelConfirm] = useState<TransactionRowDTO | null>(null);
     const [activeTab, setActiveTab] = useState<Tab>("transacciones");
+    const [transactionModal, setTransactionModal] = useState<{
+        open: boolean;
+        type: "income" | "expense";
+    }>({ open: false, type: "expense" });
+    const [showBulkImport, setShowBulkImport] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const [historicalFilters] = useState<HistoricalFilters>({ page: 1, limit: 20 });
 
@@ -38,7 +48,7 @@ export function TransactionsPage() {
     const historicalTotal = historicalData?.total ?? 0;
 
     const calculateLimit = useCallback(() => {
-        if (!containerRef.current) return 15;
+        if (!containerRef.current) return 16;
         const rect = containerRef.current.getBoundingClientRect();
         const containerHeight = rect.height;
         const filtersHeight = 50;
@@ -105,10 +115,10 @@ export function TransactionsPage() {
         deleteMutation.mutate(deleteConfirm.id, {
             onSuccess: () => {
                 setDeleteConfirm(null);
-                toast("Transacción eliminada");
+                toast("Transacción eliminada", "success");
             },
             onError: (err) => {
-                toast(err instanceof Error ? err.message : "Error al eliminar");
+                toast(getApiErrorMessage(err));
                 setDeleteConfirm(null);
             },
         });
@@ -128,10 +138,10 @@ export function TransactionsPage() {
             {
                 onSuccess: () => {
                     setCancelConfirm(null);
-                    toast("Cuotas canceladas");
+                    toast("Cuotas canceladas", "success");
                 },
                 onError: (err) => {
-                    toast(err instanceof Error ? err.message : "Error al cancelar cuotas");
+                    toast(getApiErrorMessage(err));
                     setCancelConfirm(null);
                 },
             }
@@ -150,49 +160,63 @@ export function TransactionsPage() {
 
     return (
         <div
-            ref={containerRef}
-            style={{ height: "100%", display: "flex", flexDirection: "column" }}
+            style={{
+                padding: spacing[3],
+                display: "flex",
+                flexDirection: "column",
+                gap: spacing[2],
+            }}
         >
             <div
                 style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: spacing[4],
+                    alignItems: "flex-start",
                     flexShrink: 0,
                 }}
             >
-                <h2
-                    onClick={() =>
-                        setActiveTab(activeTab === "transacciones" ? "historico" : "transacciones")
-                    }
-                    style={{
-                        fontFamily: "var(--font-display)",
-                        fontSize: "var(--font-size-lg)",
-                        fontWeight: 600,
-                        margin: 0,
-                        cursor: "pointer",
-                        userSelect: "none",
-                    }}
-                >
-                    {activeTab === "transacciones" ? "Transacciones" : "Histórico"}
-                    <span
+                <div>
+                    <h1
+                        onClick={() =>
+                            setActiveTab(activeTab === "transacciones" ? "historico" : "transacciones")
+                        }
                         style={{
-                            fontWeight: 400,
-                            color: colors.fg.muted,
-                            fontSize: "var(--font-size-sm)",
-                            marginLeft: spacing[2],
+                            fontFamily: fonts.family.display,
+                            fontSize: fonts.size.xl,
+                            fontWeight: fonts.weight.semibold,
+                            color: colors.fg.base,
+                            margin: 0,
+                            marginBottom: spacing[1],
+                            cursor: "pointer",
+                            userSelect: "none",
                         }}
                     >
-                        ({activeTab === "transacciones" ? total : historicalTotal})
-                    </span>
-                </h2>
+                        {activeTab === "transacciones" ? "Transacciones" : "Histórico"}
+                        <span
+                            style={{
+                                fontWeight: fonts.weight.regular,
+                                color: colors.fg.dim,
+                                fontSize: fonts.size.sm,
+                                marginLeft: spacing[2],
+                            }}
+                        >
+                            ({activeTab === "transacciones" ? total : historicalTotal})
+                        </span>
+                    </h1>
+                </div>
+                {activeTab === "transacciones" ? (
+                    <Button variant="secondary" iconLeft={<Plus size={18} />} onClick={() => setTransactionModal({ open: true, type: "expense" })}>
+                        Nueva Transacción
+                    </Button>
+                ) : (
+                    <Button variant="secondary" iconLeft={<Upload size={18} />} onClick={() => setShowBulkImport(true)}>
+                        Importar CSV
+                    </Button>
+                )}
             </div>
 
             {activeTab === "transacciones" ? (
                 <>
-                    <TransactionForm />
-
                     <TransactionFiltersComponent
                         filters={filters}
                         onChange={handleFiltersChange}
@@ -208,7 +232,7 @@ export function TransactionsPage() {
                                 style={{
                                     padding: spacing[8],
                                     textAlign: "center",
-                                    color: colors.fg.muted,
+                                    color: colors.fg.dim,
                                 }}
                             >
                                 Cargando...
@@ -218,10 +242,10 @@ export function TransactionsPage() {
                                 style={{
                                     padding: spacing[8],
                                     textAlign: "center",
-                                    color: colors.semantic.error,
+                                    color: colors.accent.red,
                                 }}
                             >
-                                {error?.message || "Error"}
+                                {getApiErrorMessage(error) || "Error"}
                             </div>
                         ) : (
                             <TransactionList
@@ -236,164 +260,44 @@ export function TransactionsPage() {
                     </div>
                 </>
             ) : (
-                <HistoricalTab externalLimit={filters.limit} />
+                <HistoricalTab
+                    externalLimit={filters.limit}
+                    showBulkImport={showBulkImport}
+                    onCloseBulkImport={() => setShowBulkImport(false)}
+                />
             )}
 
-            {deleteConfirm && (
-                <div
-                    style={{
-                        position: "fixed",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        zIndex: 100,
-                    }}
-                    onClick={() => setDeleteConfirm(null)}
-                >
-                    <div
-                        style={{
-                            backgroundColor: colors.bg.surface,
-                            borderRadius: "var(--radius-lg)",
-                            padding: spacing[6],
-                            maxWidth: "400px",
-                            border: `1px solid ${colors.highlight.medium}`,
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <h3
-                            style={{
-                                margin: `0 0 ${spacing[4]}`,
-                                fontSize: "var(--font-size-base)",
-                            }}
-                        >
-                            Confirmar eliminación
-                        </h3>
-                        <p style={{ color: colors.fg.muted, margin: `0 0 ${spacing[4]}` }}>
-                            {deleteConfirm.installment_number
-                                ? `¿Eliminar esta cuota (${deleteConfirm.installment_number}/${deleteConfirm.total_installments})? Se eliminarán todas las cuotas relacionadas.`
-                                : "¿Eliminar esta transacción?"}
-                        </p>
-                        <div
-                            style={{
-                                display: "flex",
-                                gap: spacing[2],
-                                justifyContent: "flex-end",
-                            }}
-                        >
-                            <button
-                                onClick={() => setDeleteConfirm(null)}
-                                style={{
-                                    padding: `${spacing[2]} ${spacing[4]}`,
-                                    backgroundColor: "transparent",
-                                    border: `1px solid ${colors.highlight.medium}`,
-                                    borderRadius: "var(--radius-md)",
-                                    color: colors.fg.default,
-                                    cursor: "pointer",
-                                }}
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={confirmDelete}
-                                style={{
-                                    padding: `${spacing[2]} ${spacing[4]}`,
-                                    backgroundColor: colors.semantic.error,
-                                    border: "none",
-                                    borderRadius: "var(--radius-md)",
-                                    color: "white",
-                                    cursor: "pointer",
-                                }}
-                            >
-                                Eliminar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmDialog
+                isOpen={!!deleteConfirm}
+                onClose={() => setDeleteConfirm(null)}
+                onConfirm={confirmDelete}
+                title="Confirmar eliminación"
+                description={
+                    deleteConfirm?.installment_number
+                        ? `¿Eliminar esta cuota (${deleteConfirm.installment_number}/${deleteConfirm.total_installments})? Se eliminarán todas las cuotas relacionadas.`
+                        : "¿Eliminar esta transacción?"
+                }
+            />
 
-            {cancelConfirm && (
-                <div
-                    style={{
-                        position: "fixed",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        zIndex: 100,
-                    }}
-                    onClick={() => setCancelConfirm(null)}
-                >
-                    <div
-                        style={{
-                            backgroundColor: colors.bg.surface,
-                            borderRadius: "var(--radius-lg)",
-                            padding: spacing[6],
-                            maxWidth: "400px",
-                            border: `1px solid ${colors.highlight.medium}`,
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <h3
-                            style={{
-                                margin: `0 0 ${spacing[4]}`,
-                                fontSize: "var(--font-size-base)",
-                            }}
-                        >
-                            Cancelar cuotas
-                        </h3>
-                        <p style={{ color: colors.fg.muted, margin: `0 0 ${spacing[4]}` }}>
-                            {cancelConfirm.installment_number
-                                ? `¿Cancelar cuotas desde la ${cancelConfirm.installment_number}/${cancelConfirm.total_installments}? Se marcarán como pagadas.`
-                                : "¿Cancelar las cuotas restantes?"}
-                        </p>
-                        <div
-                            style={{
-                                display: "flex",
-                                gap: spacing[2],
-                                justifyContent: "flex-end",
-                            }}
-                        >
-                            <button
-                                onClick={() => setCancelConfirm(null)}
-                                style={{
-                                    padding: `${spacing[2]} ${spacing[4]}`,
-                                    backgroundColor: "transparent",
-                                    border: `1px solid ${colors.highlight.medium}`,
-                                    borderRadius: "var(--radius-md)",
-                                    color: colors.fg.default,
-                                    cursor: "pointer",
-                                }}
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={confirmCancelInstallments}
-                                disabled={cancelMutation.isPending}
-                                style={{
-                                    padding: `${spacing[2]} ${spacing[4]}`,
-                                    backgroundColor: colors.accent.cyan,
-                                    border: "none",
-                                    borderRadius: "var(--radius-md)",
-                                    color: "white",
-                                    cursor: "pointer",
-                                    opacity: cancelMutation.isPending ? 0.6 : 1,
-                                }}
-                            >
-                                {cancelMutation.isPending ? "Cancelando..." : "Confirmar"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmDialog
+                isOpen={!!cancelConfirm}
+                onClose={() => setCancelConfirm(null)}
+                onConfirm={confirmCancelInstallments}
+                title="Cancelar cuotas"
+                description={
+                    cancelConfirm?.installment_number
+                        ? `¿Cancelar cuotas desde la ${cancelConfirm.installment_number}/${cancelConfirm.total_installments}? Se marcarán como pagadas.`
+                        : "¿Cancelar las cuotas restantes?"
+                }
+                confirmLabel="Confirmar"
+                isLoading={cancelMutation.isPending}
+            />
+
+            <TransactionModal
+                isOpen={transactionModal.open}
+                onClose={() => setTransactionModal({ open: false, type: transactionModal.type })}
+                type={transactionModal.type}
+            />
         </div>
     );
 }

@@ -123,6 +123,7 @@ export interface TransactionAggregateReq {
     subcategory_id: string;
     channel_id: string;
     account_id: string;
+    is_paid?: boolean;
 }
 
 export interface CancelInstallmentsReq {
@@ -226,6 +227,8 @@ export interface UserConfig {
     currency?: string;
     username?: string;
     timezone?: string;
+    date_format?: string;
+    default_rate?: string;
 }
 
 export type UserConfigUpdate = Partial<UserConfig>;
@@ -272,4 +275,161 @@ export interface HistoricalFinanceReq {
     expense_fixed_usd?: string;
     expense_variable_usd?: string;
     savings_usd?: string;
+}
+
+export type KPI =
+    | "income_ytd"
+    | "expenses_ytd"
+    | "net_savings_ytd"
+    | "savings_margin"
+    | "avg_monthly_savings"
+    | "fixed_cost_ratio"
+    | "fixed_expense_mix"
+    | "fixed_income_mix"
+    | "stable_income_coverage"
+    | "financial_flexibility"
+    | "core_burn_rate"
+    | "savings_volatility"
+    | "savings_volatility_ratio"
+    | "projected_yearly_savings"
+    | "projected_yearly_capital"
+    | "capital_growth_rate_ytd"
+    | "capital_total"
+    | "total_capital"
+    | "expense_coverage_months";
+
+export type Dimension = "category" | "subcategory" | "account" | "channel";
+
+export interface KPIDataPoint {
+    year: number;
+    value: number;
+}
+
+export interface KPIEvolutionResponse {
+    kpi: KPI;
+    data: KPIDataPoint[];
+}
+
+export interface MonthlyData {
+    month: string;
+    income: number;
+    expense: number;
+    savings: number;
+    capital: number;
+    incomeFixed: number;
+    incomeVariable: number;
+    expenseFixed: number;
+    expenseVariable: number;
+    exchangeRate: number;
+}
+
+export interface KPIResponse {
+    IncomeYTD: number;
+    ExpensesYTD: number;
+    NetSavingsYTD: number;
+    SavingsMargin: number;
+    AvgMonthlySavings: number;
+    FixedCostRatio: number;
+    FixedExpenseMix: number;
+    FixedIncomeMix: number;
+    StableIncomeCoverage: number;
+    FinancialFlexibility: number;
+    CoreBurnRate: number;
+    SavingsVolatility: number;
+    SavingsVolatilityRatio: number;
+    ProjectedYearlySavings: number;
+    ProjectedYearlyCapital: number;
+    CapitalGrowthRateYTD: number;
+    CapitalTotal: number;
+    ExpenseCoverageMonths: number;
+}
+
+export interface DashboardResponse {
+    currentYtd: KPIResponse;
+    previousYtd: KPIResponse;
+    monthlySeries: MonthlyData[];
+}
+
+export interface TimeSeriesPoint {
+    month: string;
+    value: number;
+    composition?: Array<{ key: string; value: number }>;
+}
+
+export interface DimensionSeries {
+    key: string;
+    data: TimeSeriesPoint[];
+}
+
+export interface DimensionSeriesResponse {
+    dimension: Dimension;
+    type: "income" | "expense";
+    data: DimensionSeries[];
+}
+
+// ============================================
+// Networth Types
+// ============================================
+
+export type AssetType = "liquid" | "physical";
+
+export interface Asset {
+    id: string;
+    name: string;
+    amount: string;
+    currency: Currency;
+    type: AssetType;
+    created_at: string;
+    updated_at: string | null;
+}
+
+export interface NetWorth {
+    total_usd: string;
+    liquid_usd: string;
+    physical_usd: string;
+    assets: Asset[];
+    updated_at: string;
+}
+
+export interface AssetReq {
+    name: string;
+    amount: string;
+    currency: Currency;
+    type: AssetType;
+}
+
+// ============================================
+// Preset Types
+// ============================================
+
+export interface Preset {
+    id: string;
+    name: string;
+    description: string | null;
+    type: TransactionType;
+    frequency: TransactionFrequency | null;
+    category_id: string | null;
+    subcategory_id: string | null;
+    channel_id: string | null;
+    account_id: string | null;
+    is_paid: boolean | null;
+    currency: Currency | null;
+    created_at: string;
+    updated_at: string | null;
+    deleted_at: string | null;
+}
+
+export interface PresetReq {
+    id?: string;
+    name?: string;
+    description?: string;
+    type?: TransactionType;
+    frequency?: TransactionFrequency;
+    category_id?: string;
+    subcategory_id?: string;
+    channel_id?: string;
+    account_id?: string;
+    is_paid?: boolean;
+    currency?: Currency;
+    is_deleted?: boolean;
 }

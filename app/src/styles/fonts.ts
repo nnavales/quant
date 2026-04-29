@@ -1,32 +1,48 @@
 export const fonts = {
     family: {
-        sans: '"IBM Plex Sans", system-ui, sans-serif',
-        display: '"Lexend", system-ui, sans-serif',
-        mono: '"JetBrains Mono", monospace',
+        text: '"Inter", system-ui, sans-serif',
+        display: '"Inter", system-ui, sans-serif',
     },
     size: {
-        xs: "0.75rem",
-        sm: "0.875rem",
-        base: "1rem",
-        lg: "1.125rem",
-        xl: "1.25rem",
-        "2xl": "1.5rem",
-        "3xl": "1.875rem",
-        "4xl": "2.25rem",
-        "5xl": "3rem",
+        "2xs": "9px",
+        xs: "11px",
+        sm: "13px",
+        base: "15px",
+        lg: "17px",
+        xl: "20px",
+        "2xl": "24px",
+        "3xl": "28px",
+        "4xl": "34px",
+        "5xl": "48px",
     },
     weight: {
-        normal: 400,
+        regular: 400,
         medium: 500,
         semibold: 600,
-        bold: 700,
     },
     lineHeight: {
         tighter: 1.1,
         tight: 1.25,
-        normal: 1.5,
-        relaxed: 1.75,
+        normal: 1.4,
+        relaxed: 1.6,
+    },
+    table: {
+        // Column headers
+        header: "12px",
+        // Main text in rows (names, descriptions)
+        body: "13.5px",
+        // Money amounts in transaction rows
+        amount: "13.5px",
+        // Badges (EGRESO/INGRESO, ARS/USD)
+        badge: "12px",
+        // Secondary metadata (dates, categories, subcategories)
+        meta: "11.5px",
+        // Prominent amounts (Net Worth list)
+        lg: "14px",
+        // Large KPI values
+        xl: "20px",
     },
 } as const;
 
 export type Fonts = typeof fonts;
+

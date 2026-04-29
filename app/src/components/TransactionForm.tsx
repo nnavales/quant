@@ -1,18 +1,22 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, X, ChevronDown, RefreshCw } from "lucide-react";
+import { Plus, X, RefreshCw } from "lucide-react";
 import type { TransactionAggregateReq, TransactionType } from "@/api_client/types";
 import { useCreateTransaction, useCategories, useSubcategories, useChannels, useAccounts, useUserConfig, useDollarBanks } from "@/hooks";
 import { economic } from "@/api_client";
-import { spacing, radius, shadows } from "@/styles/theme";
+import { toast } from "@/components/ui/Toast";
+import { getApiErrorMessage } from "@/utils/apiErrors";
+import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { Dropdown } from "@/components/ui/Dropdown";
+import { Button } from "@/components/ui/Button";
 
 const inputStyle: React.CSSProperties = {
     padding: "6px 12px",
-    backgroundColor: colors.bg.dim,
-    border: `1px solid ${colors.highlight.medium}`,
+    backgroundColor: colors.bg.surface,
+    border: `1px solid ${colors.fill}`,
     borderRadius: radius.md,
-    color: colors.fg.default,
+    color: colors.fg.base,
     fontSize: "var(--font-size-sm)",
     width: "100%",
     height: "36px",
@@ -20,136 +24,16 @@ const inputStyle: React.CSSProperties = {
     outline: "none",
 };
 
-const dropdownStyle: React.CSSProperties = {
-    position: "absolute",
-    top: "100%",
-    left: 0,
-    marginTop: "2px",
-    backgroundColor: colors.bg.surface,
-    border: `1px solid ${colors.highlight.medium}`,
-    borderRadius: radius.md,
-    padding: spacing[2],
-    minWidth: "250px",
-    maxHeight: "400px",
-    overflowY: "auto",
-    overscrollBehavior: "contain",
-    zIndex: 50,
-    boxShadow: shadows.lg,
-};
-
-const dropdownItemStyle: React.CSSProperties = {
-    padding: "6px 10px",
-    cursor: "pointer",
-    borderRadius: radius.sm,
-    fontSize: "var(--font-size-sm)",
-    color: colors.fg.default,
-    whiteSpace: "normal",
-    wordBreak: "break-word",
-};
-
 const labelStyle: React.CSSProperties = {
     fontSize: "11px",
-    color: colors.fg.muted,
+    color: colors.fg.dim,
     fontWeight: 500,
     marginBottom: "3px",
     display: "block",
 };
 
-interface OptGroupDropdownProps {
-    value: string;
-    label: string;
-    groups: { label: string; items: { id: string; name: string; lastFour?: string }[] }[];
-    onChange: (id: string) => void;
-    open: boolean;
-    onToggle: (open: boolean) => void;
-}
-
-function OptGroupDropdown({
-    value,
-    label,
-    groups,
-    onChange,
-    open,
-    onToggle,
-}: OptGroupDropdownProps) {
-    const panelRef = useRef<HTMLDivElement>(null);
-
-    const handleWheel = (e: React.WheelEvent) => {
-        e.stopPropagation();
-    };
-
-    return (
-        <div style={{ flex: 1, position: "relative", minWidth: 0 }}>
-            <label style={labelStyle}>{label}</label>
-            <button
-                type="button"
-                data-dropdown-btn
-                onMouseDown={(e) => {
-                    e.stopPropagation();
-                    onToggle(!open);
-                }}
-                style={{
-                    ...inputStyle,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    cursor: "pointer",
-                }}
-            >
-                <span>{value || "-"}</span>
-                <ChevronDown size={14} style={{ color: colors.fg.muted }} />
-            </button>
-            {open && (
-                <div
-                    ref={panelRef}
-                    style={{ ...dropdownStyle, width: "100%", minWidth: "200px" }}
-                    data-dropdown-panel
-                    onWheel={handleWheel}
-                >
-                    {groups.map((group) => (
-                        <div key={group.label}>
-                            <div
-                                style={{
-                                    ...dropdownItemStyle,
-                                    fontWeight: 600,
-                                    color: colors.fg.muted,
-                                    cursor: "default",
-                                }}
-                            >
-                                {group.label}
-                            </div>
-                            {group.items.map((item) => (
-                                <div
-                                    key={item.id}
-                                    style={{
-                                        ...dropdownItemStyle,
-                                        paddingLeft: "20px",
-                                        backgroundColor:
-                                            value === item.id
-                                                ? colors.highlight.low
-                                                : "transparent",
-                                    }}
-                                    onMouseDown={(e) => {
-                                        e.stopPropagation();
-                                        onChange(item.id);
-                                    }}
-                                >
-                                    {item.name}
-                                    {item.lastFour && ` ${item.lastFour}`}
-                                </div>
-                            ))}
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-}
-
 export function TransactionForm() {
     const [expanded, setExpanded] = useState(false);
-    const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-
     const descRef = useRef<HTMLInputElement>(null);
 
     const [formData, setFormData] = useState<TransactionAggregateReq>({
@@ -188,23 +72,6 @@ export function TransactionForm() {
     }, [expanded]);
 
     useEffect(() => {
-        if (!openDropdown) return;
-
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as HTMLElement;
-            const isDropdownButton = target.closest("[data-dropdown-btn]");
-            const isDropdownPanel = target.closest("[data-dropdown-panel]");
-
-            if (!isDropdownButton && !isDropdownPanel) {
-                setOpenDropdown(null);
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [openDropdown]);
-
-    useEffect(() => {
         if (userConfig?.dollar_source && dollarBanks) {
             const bankValue = dollarBanks[userConfig.dollar_source];
             if (bankValue) {
@@ -213,17 +80,12 @@ export function TransactionForm() {
         }
     }, [expanded, userConfig?.dollar_source, dollarBanks]);
 
-    const toggleDropdown = (name: string, e?: React.MouseEvent) => {
-        e?.stopPropagation();
-        setOpenDropdown((prev) => (prev === name ? null : name));
-    };
-
     const categoryGroups = categoriesList
         .map((cat) => ({
             label: cat.name,
             items: subcategoriesList
                 .filter((s) => s.category_id === cat.id)
-                .map((s) => ({ id: s.id, name: s.name })),
+                .map((s) => ({ id: s.id, label: s.name })),
         }))
         .filter((g) => g.items.length > 0);
 
@@ -232,7 +94,7 @@ export function TransactionForm() {
             label: ch.name,
             items: accountsList
                 .filter((a) => a.channel_id === ch.id)
-                .map((a) => ({ id: a.id, name: a.name, lastFour: a.last_four || undefined })),
+                .map((a) => ({ id: a.id, label: a.name + (a.last_four ? ` ${a.last_four}` : "") })),
         }))
         .filter((g) => g.items.length > 0);
 
@@ -265,7 +127,6 @@ export function TransactionForm() {
             subcategory_id: subId,
             category_id: sub?.category_id || "",
         });
-        setOpenDropdown(null);
     };
 
     const handleAccountSelect = (accId: string) => {
@@ -275,7 +136,6 @@ export function TransactionForm() {
             account_id: accId,
             channel_id: acc?.channel_id || "",
         });
-        setOpenDropdown(null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -288,10 +148,11 @@ export function TransactionForm() {
         };
         createMutation.mutate(dataToSend, {
             onSuccess: () => {
+                toast("Transacción creada", "success");
                 resetForm();
             },
             onError: (err) => {
-                console.error(err);
+                toast(getApiErrorMessage(err));
             },
         });
     };
@@ -306,30 +167,18 @@ export function TransactionForm() {
                 marginBottom: spacing[3],
                 backgroundColor: colors.bg.surface,
                 borderRadius: radius.lg,
-                border: `3px solid ${colors.highlight.medium}`,
+                border: `3px solid ${colors.fill}`,
             }}
         >
             {!expanded ? (
-                <button
+                <Button
+                    variant="secondary"
+                    fullWidth
+                    iconLeft={<Plus size={16} />}
                     onClick={() => setExpanded(true)}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: spacing[2],
-                        padding: spacing[3],
-                        backgroundColor: "transparent",
-                        border: "none",
-                        color: colors.fg.muted,
-                        cursor: "pointer",
-                        width: "100%",
-                    }}
                 >
-                    <Plus size={16} />
-                    <span style={{ fontWeight: 500, fontSize: "var(--font-size-sm)" }}>
-                        Nueva Transacción
-                    </span>
-                </button>
+                    Nueva Transacción
+                </Button>
             ) : (
                 <form onSubmit={handleSubmit}>
                     <div
@@ -338,27 +187,20 @@ export function TransactionForm() {
                             justifyContent: "space-between",
                             alignItems: "center",
                             padding: "6px 12px",
-                            borderBottom: `1px solid ${colors.highlight.medium}`,
-                            backgroundColor: colors.bg.dim,
+                            borderBottom: `1px solid ${colors.fill}`,
+                            backgroundColor: colors.bg.surface,
                         }}
                     >
-                        <span style={{ fontWeight: 600, fontSize: "var(--font-size-sm)", color: colors.fg.default }}>
+                        <span style={{ fontWeight: 600, fontSize: "var(--font-size-sm)", color: colors.fg.base }}>
                             Nueva Transacción
                         </span>
-                        <button
+                        <Button
                             type="button"
+                            variant="plain"
                             onClick={handleClose}
-                            style={{
-                                display: "flex",
-                                padding: "4px",
-                                backgroundColor: colors.bg.default,
-                                border: "none",
-                                color: colors.fg.muted,
-                                cursor: "pointer",
-                            }}
                         >
                             <X size={16} />
-                        </button>
+                        </Button>
                     </div>
 
                     <div
@@ -368,48 +210,24 @@ export function TransactionForm() {
                         }}
                     >
                         <div style={{ display: "flex", gap: "4px", marginBottom: "8px" }}>
-                            <button
+                            <Button
                                 type="button"
+                                variant="tab"
+                                active={formData.type === "expense"}
                                 onClick={() => toggleType("expense")}
-                                style={{
-                                    flex: 1,
-                                    padding: "8px",
-                                    backgroundColor:
-                                        formData.type === "expense"
-                                            ? colors.semantic.error
-                                            : colors.bg.default,
-                                    color:
-                                        formData.type === "expense" ? "white" : colors.fg.default,
-                                    border: `1px solid ${colors.highlight.medium}`,
-                                    borderRadius: radius.md,
-                                    cursor: "pointer",
-                                    fontWeight: 600,
-                                    fontSize: "var(--font-size-sm)",
-                                }}
+                                style={{ flex: 1 }}
                             >
                                 Egreso
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 type="button"
+                                variant="tab"
+                                active={formData.type === "income"}
                                 onClick={() => toggleType("income")}
-                                style={{
-                                    flex: 1,
-                                    padding: "8px",
-                                    backgroundColor:
-                                        formData.type === "income"
-                                            ? colors.accent.teal
-                                            : colors.bg.default,
-                                    color:
-                                        formData.type === "income" ? "white" : colors.fg.default,
-                                    border: `1px solid ${colors.highlight.medium}`,
-                                    borderRadius: radius.md,
-                                    cursor: "pointer",
-                                    fontWeight: 600,
-                                    fontSize: "var(--font-size-sm)",
-                                }}
+                                style={{ flex: 1 }}
                             >
                                 Ingreso
-                            </button>
+                            </Button>
                         </div>
 
                         <div
@@ -455,57 +273,17 @@ export function TransactionForm() {
                                     required
                                 />
                             </div>
-                            <div style={{ width: "70px", flexShrink: 0, position: "relative" }}>
+                            <div style={{ width: "70px", flexShrink: 0 }}>
                                 <label style={labelStyle}>Moneda</label>
-                                <button
-                                    type="button"
-                                    data-dropdown-btn
-                                    onMouseDown={(e) => toggleDropdown("currency", e)}
-                                    style={{
-                                        ...inputStyle,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                        cursor: "pointer",
-                                    }}
-                                >
-                                    <span>{formData.currency}</span>
-                                    <ChevronDown size={14} style={{ color: colors.fg.muted }} />
-                                </button>
-                                {openDropdown === "currency" && (
-                                    <div style={dropdownStyle} data-dropdown-panel>
-                                        <div
-                                            style={{
-                                                ...dropdownItemStyle,
-                                                backgroundColor:
-                                                    formData.currency === "ARS"
-                                                        ? colors.highlight.low
-                                                        : "transparent",
-                                            }}
-                                            onClick={() => {
-                                                setFormData({ ...formData, currency: "ARS" });
-                                                setOpenDropdown(null);
-                                            }}
-                                        >
-                                            ARS
-                                        </div>
-                                        <div
-                                            style={{
-                                                ...dropdownItemStyle,
-                                                backgroundColor:
-                                                    formData.currency === "USD"
-                                                        ? colors.highlight.low
-                                                        : "transparent",
-                                            }}
-                                            onClick={() => {
-                                                setFormData({ ...formData, currency: "USD" });
-                                                setOpenDropdown(null);
-                                            }}
-                                        >
-                                            USD
-                                        </div>
-                                    </div>
-                                )}
+                                <Dropdown
+                                    value={formData.currency}
+                                    onChange={(id) => setFormData({ ...formData, currency: id as "ARS" | "USD" })}
+                                    options={[
+                                        { id: "ARS", label: "ARS" },
+                                        { id: "USD", label: "USD" },
+                                    ]}
+                                    placeholder="-"
+                                />
                             </div>
                             <div style={{ width: "110px", flexShrink: 0 }}>
                                 <label style={labelStyle}>TC</label>
@@ -521,8 +299,10 @@ export function TransactionForm() {
                                         }
                                         style={{ ...inputStyle, paddingRight: "32px" }}
                                     />
-                                    <button
+                                    <Button
                                         type="button"
+                                        variant="icon"
+                                        title="Actualizar TC"
                                         onClick={async () => {
                                             const banks = await economic.getDollarBanks(undefined, true);
                                             if (userConfig?.dollar_source && banks) {
@@ -532,80 +312,23 @@ export function TransactionForm() {
                                                 }
                                             }
                                         }}
-                                        title="Actualizar TC"
-                                        style={{
-                                            position: "absolute",
-                                            right: "4px",
-                                            top: "50%",
-                                            transform: "translateY(-50%)",
-                                            width: "28px",
-                                            height: "28px",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            backgroundColor: "transparent",
-                                            border: "none",
-                                            color: colors.fg.muted,
-                                            cursor: "pointer",
-                                        }}
+                                        style={{ position: "absolute", right: "4px", top: "50%", transform: "translateY(-50%)" }}
                                     >
                                         <RefreshCw size={14} />
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
-                            <div style={{ width: "95px", flexShrink: 0, position: "relative" }}>
+                            <div style={{ width: "95px", flexShrink: 0 }}>
                                 <label style={labelStyle}>Frecuencia</label>
-                                <button
-                                    type="button"
-                                    data-dropdown-btn
-                                    onMouseDown={(e) => toggleDropdown("frequency", e)}
-                                    style={{
-                                        ...inputStyle,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                        cursor: "pointer",
-                                    }}
-                                >
-                                    <span>
-                                        {formData.frequency === "variable" ? "Var" : "Fijo"}
-                                    </span>
-                                    <ChevronDown size={14} style={{ color: colors.fg.muted }} />
-                                </button>
-                                {openDropdown === "frequency" && (
-                                    <div style={{ ...dropdownStyle, left: "auto", right: 0 }} data-dropdown-panel>
-                                        <div
-                                            style={{
-                                                ...dropdownItemStyle,
-                                                backgroundColor:
-                                                    formData.frequency === "variable"
-                                                        ? colors.highlight.low
-                                                        : "transparent",
-                                            }}
-                                            onClick={() => {
-                                                setFormData({ ...formData, frequency: "variable" });
-                                                setOpenDropdown(null);
-                                            }}
-                                        >
-                                            Var
-                                        </div>
-                                        <div
-                                            style={{
-                                                ...dropdownItemStyle,
-                                                backgroundColor:
-                                                    formData.frequency === "fixed"
-                                                        ? colors.highlight.low
-                                                        : "transparent",
-                                            }}
-                                            onClick={() => {
-                                                setFormData({ ...formData, frequency: "fixed" });
-                                                setOpenDropdown(null);
-                                            }}
-                                        >
-                                            Fijo
-                                        </div>
-                                    </div>
-                                )}
+                                <Dropdown
+                                    value={formData.frequency}
+                                    onChange={(id) => setFormData({ ...formData, frequency: id as "variable" | "fixed" })}
+                                    options={[
+                                        { id: "variable", label: "Var" },
+                                        { id: "fixed", label: "Fijo" },
+                                    ]}
+                                    placeholder="-"
+                                />
                             </div>
                             <div style={{ width: "85px", flexShrink: 0 }}>
                                 <label style={labelStyle}>Cuotas</label>
@@ -635,33 +358,24 @@ export function TransactionForm() {
                                 marginBottom: "6px",
                             }}
                         >
-                            <OptGroupDropdown
-                                value={
-                                    formData.subcategory_id
-                                        ? subcategoriesList.find(
-                                              (s) => s.id === formData.subcategory_id
-                                          )?.name || ""
-                                        : ""
-                                }
-                                label="Categoría"
-                                groups={categoryGroups}
-                                onChange={handleCategorySelect}
-                                open={openDropdown === "category"}
-                                onToggle={(open) => setOpenDropdown(open ? "category" : null)}
-                            />
-                            <OptGroupDropdown
-                                value={
-                                    formData.account_id
-                                        ? accountsList.find((a) => a.id === formData.account_id)
-                                              ?.name || ""
-                                        : ""
-                                }
-                                label="Método de Pago"
-                                groups={accountGroups}
-                                onChange={handleAccountSelect}
-                                open={openDropdown === "account"}
-                                onToggle={(open) => setOpenDropdown(open ? "account" : null)}
-                            />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <label style={labelStyle}>Categoría</label>
+                                <Dropdown
+                                    groups={categoryGroups}
+                                    value={formData.subcategory_id || ""}
+                                    onChange={handleCategorySelect}
+                                    placeholder="-"
+                                />
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <label style={labelStyle}>Método de Pago</label>
+                                <Dropdown
+                                    groups={accountGroups}
+                                    value={formData.account_id || ""}
+                                    onChange={handleAccountSelect}
+                                    placeholder="-"
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -671,41 +385,23 @@ export function TransactionForm() {
                             gap: "8px",
                             padding: "6px 12px",
                             justifyContent: "flex-end",
-                            backgroundColor: colors.bg.dim,
+                            backgroundColor: colors.bg.surface,
                         }}
                     >
-                        <button
+                        <Button
                             type="button"
+                            variant="secondary"
                             onClick={handleClose}
-                            style={{
-                                padding: "6px 12px",
-                                backgroundColor: colors.bg.default,
-                                border: `1px solid ${colors.highlight.medium}`,
-                                borderRadius: radius.md,
-                                color: colors.fg.default,
-                                cursor: "pointer",
-                                fontSize: "var(--font-size-sm)",
-                            }}
                         >
                             Cancelar
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="submit"
-                            disabled={createMutation.isPending}
-                            style={{
-                                padding: "6px 12px",
-                                backgroundColor: colors.accent.teal,
-                                color: colors.bg.default,
-                                border: "none",
-                                borderRadius: radius.md,
-                                cursor: createMutation.isPending ? "not-allowed" : "pointer",
-                                opacity: createMutation.isPending ? 0.7 : 1,
-                                fontSize: "var(--font-size-sm)",
-                                fontWeight: 600,
-                            }}
+                            variant="primary"
+                            loading={createMutation.isPending}
                         >
-                            {createMutation.isPending ? "Guardando..." : "Guardar"}
-                        </button>
+                            Guardar
+                        </Button>
                     </div>
                 </form>
             )}

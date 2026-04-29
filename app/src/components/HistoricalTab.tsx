@@ -1,26 +1,33 @@
 import { useState, useEffect } from "react";
-import { Upload } from "lucide-react";
-import type { HistoricalEntry, HistoricalEntryCreate, HistoricalFinanceReq } from "@/api_client";
+import type { HistoricalEntry, HistoricalFinanceReq } from "@/api_client";
 import { type HistoricalFilters } from "@/api_client/endpoints";
 import { useHistoricalEntries, useUpdateHistoricalEntry, useBulkCreateHistoricalEntries, useDeleteHistoricalEntry } from "@/hooks";
-import { spacing, colors } from "@/styles";
+import { spacing, colors, radius, fonts } from "@/styles";
 import { toast } from "@/components/ui/Toast";
+import { getApiErrorMessage } from "@/utils/apiErrors";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Button } from "@/components/ui/Button";
+import { Modal, ModalContent } from "@/components/ui/Modal";
 import { HistoricalList } from "./HistoricalList";
 import { HistoricalFiltersComponent } from "./HistoricalFilters";
 
 interface HistoricalTabProps {
     externalLimit?: number;
+    showBulkImport?: boolean;
+    onCloseBulkImport?: () => void;
 }
 
-export function HistoricalTab({ externalLimit }: HistoricalTabProps) {
+export function HistoricalTab({ externalLimit, showBulkImport: externalShowBulkImport, onCloseBulkImport }: HistoricalTabProps) {
     const [filters, setFilters] = useState<HistoricalFilters>({ page: 1, limit: externalLimit ?? 20 });
     const [sort, setSort] = useState<"month" | "income" | "expense" | undefined>(undefined);
     const [order, setOrder] = useState<"asc" | "desc">("desc");
     const [editingMonth, setEditingMonth] = useState<string | null>(null);
-    const [editForm, setEditForm] = useState<HistoricalEntryCreate>({});
-    const [showBulkImport, setShowBulkImport] = useState(false);
+    const [editForm, setEditForm] = useState<Partial<HistoricalFinanceReq>>({});
     const [bulkText, setBulkText] = useState("");
     const [deleteConfirm, setDeleteConfirm] = useState<HistoricalEntry | null>(null);
+
+    const showBulkImport = externalShowBulkImport ?? false;
+    const closeBulkImport = onCloseBulkImport ?? (() => {});
 
     const { data, isLoading, isError, error } = useHistoricalEntries(filters);
     const updateMutation = useUpdateHistoricalEntry();
@@ -66,12 +73,12 @@ export function HistoricalTab({ externalLimit }: HistoricalTabProps) {
         setEditingMonth(entry.month);
         setEditForm({
             exchange_rate: entry.exchange_rate,
-            income: entry.income,
-            income_fixed: entry.income_fixed,
-            income_variable: entry.income_variable,
-            expense: entry.expense,
-            expense_fixed: entry.expense_fixed,
-            expense_variable: entry.expense_variable,
+            income_usd: entry.income,
+            income_fixed_usd: entry.income_fixed,
+            income_variable_usd: entry.income_variable,
+            expense_usd: entry.expense,
+            expense_fixed_usd: entry.expense_fixed,
+            expense_variable_usd: entry.expense_variable,
         });
     };
 
@@ -84,10 +91,10 @@ export function HistoricalTab({ externalLimit }: HistoricalTabProps) {
         deleteMutation.mutate(deleteConfirm.month, {
             onSuccess: () => {
                 setDeleteConfirm(null);
-                toast("Registro histórico eliminado");
+                toast("Registro histórico eliminado", "success");
             },
             onError: (err) => {
-                toast(err instanceof Error ? err.message : "Error al eliminar");
+                toast(getApiErrorMessage(err));
                 setDeleteConfirm(null);
             },
         });
@@ -101,10 +108,10 @@ export function HistoricalTab({ externalLimit }: HistoricalTabProps) {
                 onSuccess: () => {
                     setEditingMonth(null);
                     setEditForm({});
-                    toast("Entrada actualizada");
+                    toast("Entrada actualizada", "success");
                 },
                 onError: (err) => {
-                    toast(err instanceof Error ? err.message : "Error al actualizar");
+                    toast(getApiErrorMessage(err));
                 },
             }
         );
@@ -162,12 +169,12 @@ export function HistoricalTab({ externalLimit }: HistoricalTabProps) {
 
             bulkMutation.mutate(parsed, {
                 onSuccess: () => {
-                    setShowBulkImport(false);
+                    closeBulkImport();
                     setBulkText("");
-                    toast(`${parsed.length} entradas importadas`);
+                    toast(`${parsed.length} entradas importadas`, "success");
                 },
                 onError: (err) => {
-                    toast(err instanceof Error ? err.message : "Error al importar");
+                    toast(getApiErrorMessage(err));
                 },
             });
         } catch {
@@ -176,37 +183,7 @@ export function HistoricalTab({ externalLimit }: HistoricalTabProps) {
     };
 
     return (
-        <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-            <div
-                style={{
-                    marginBottom: spacing[3],
-                    backgroundColor: colors.bg.surface,
-                    borderRadius: "var(--radius-lg)",
-                    border: `3px solid ${colors.highlight.medium}`,
-                }}
-            >
-                <button
-                    onClick={() => setShowBulkImport(true)}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: spacing[2],
-                        padding: spacing[3],
-                        backgroundColor: "transparent",
-                        border: "none",
-                        color: colors.fg.muted,
-                        cursor: "pointer",
-                        width: "100%",
-                    }}
-                >
-                    <Upload size={16} />
-                    <span style={{ fontWeight: 500, fontSize: "var(--font-size-sm)" }}>
-                        Importar CSV
-                    </span>
-                </button>
-            </div>
-
+        <div style={{ height: "100%", display: "flex", flexDirection: "column", gap: spacing[2] }}>
             <HistoricalFiltersComponent
                 filters={filters}
                 onChange={handleFiltersChange}
@@ -218,12 +195,12 @@ export function HistoricalTab({ externalLimit }: HistoricalTabProps) {
 
             <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
                 {isLoading ? (
-                    <div style={{ padding: spacing[8], textAlign: "center", color: colors.fg.muted }}>
+                    <div style={{ padding: spacing[8], textAlign: "center", color: colors.fg.dim }}>
                         Cargando...
                     </div>
                 ) : isError ? (
-                    <div style={{ padding: spacing[8], textAlign: "center", color: colors.semantic.error }}>
-                        {error?.message || "Error"}
+                    <div style={{ padding: spacing[8], textAlign: "center", color: colors.accent.red }}>
+                        {getApiErrorMessage(error) || "Error"}
                     </div>
                 ) : (
                     <HistoricalList
@@ -237,37 +214,22 @@ export function HistoricalTab({ externalLimit }: HistoricalTabProps) {
                 )}
             </div>
 
-            {editingMonth && (
-                <div
+            <Modal isOpen={!!editingMonth} onClose={handleCancelEdit}>
+                <ModalContent
                     style={{
-                        position: "fixed",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        zIndex: 100,
+                        backgroundColor: colors.bg.surface,
+                        borderRadius: radius.lg,
+                        padding: spacing[6],
+                        maxWidth: "500px",
+                        width: "100%",
+                        border: `1px solid ${colors.fill}`,
                     }}
-                    onClick={handleCancelEdit}
+                    onClick={(e) => e.stopPropagation()}
                 >
-                    <div
-                        style={{
-                            backgroundColor: colors.bg.surface,
-                            borderRadius: "var(--radius-lg)",
-                            padding: spacing[6],
-                            maxWidth: "500px",
-                            width: "100%",
-                            border: `1px solid ${colors.highlight.medium}`,
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <h3 style={{ margin: `0 0 ${spacing[4]}` }}>Editar: {editingMonth}</h3>
+                    <h3 style={{ margin: `0 0 ${spacing[4]}`, fontSize: fonts.size.lg, fontWeight: 600, color: colors.fg.base }}>Editar: {editingMonth}</h3>
                         <div style={{ display: "flex", flexDirection: "column", gap: spacing[3] }}>
                             <div style={{ display: "flex", gap: spacing[2], alignItems: "center" }}>
-                                <label style={{ width: "120px", color: colors.fg.muted }}>TC (ARS/USD)</label>
+                                <label style={{ width: "120px", color: colors.fg.dim }}>TC (ARS/USD)</label>
                                 <input
                                     type="number"
                                     step="0.01"
@@ -278,253 +240,147 @@ export function HistoricalTab({ externalLimit }: HistoricalTabProps) {
                                     style={{
                                         flex: 1,
                                         padding: spacing[2],
-                                        backgroundColor: colors.bg.default,
-                                        border: `1px solid ${colors.highlight.medium}`,
+                                        backgroundColor: colors.bg.base,
+                                        border: `1px solid ${colors.fill}`,
                                         borderRadius: "var(--radius-md)",
-                                        color: colors.fg.default,
+                                        color: colors.fg.base,
                                     }}
                                 />
                             </div>
                             <div style={{ display: "flex", gap: spacing[2], alignItems: "center" }}>
-                                <label style={{ width: "120px", color: colors.fg.muted }}>Ingreso USD</label>
+                                <label style={{ width: "120px", color: colors.fg.dim }}>Ingreso USD</label>
                                 <input
                                     type="text"
-                                    value={editForm.income ?? ""}
-                                    onChange={(e) => setEditForm((p) => ({ ...p, income: e.target.value }))}
+                                    value={editForm.income_usd ?? ""}
+                                    onChange={(e) => setEditForm((p) => ({ ...p, income_usd: e.target.value }))}
                                     style={{
                                         flex: 1,
                                         padding: spacing[2],
-                                        backgroundColor: colors.bg.default,
-                                        border: `1px solid ${colors.highlight.medium}`,
+                                        backgroundColor: colors.bg.base,
+                                        border: `1px solid ${colors.fill}`,
                                         borderRadius: "var(--radius-md)",
-                                        color: colors.fg.default,
+                                        color: colors.fg.base,
                                     }}
                                 />
                             </div>
                             <div style={{ display: "flex", gap: spacing[2], alignItems: "center" }}>
-                                <label style={{ width: "120px", color: colors.fg.muted }}>Fijo USD</label>
+                                <label style={{ width: "120px", color: colors.fg.dim }}>Fijo USD</label>
                                 <input
                                     type="text"
-                                    value={editForm.income_fixed ?? ""}
-                                    onChange={(e) => setEditForm((p) => ({ ...p, income_fixed: e.target.value }))}
+                                    value={editForm.income_fixed_usd ?? ""}
+                                    onChange={(e) => setEditForm((p) => ({ ...p, income_fixed_usd: e.target.value }))}
                                     style={{
                                         flex: 1,
                                         padding: spacing[2],
-                                        backgroundColor: colors.bg.default,
-                                        border: `1px solid ${colors.highlight.medium}`,
+                                        backgroundColor: colors.bg.base,
+                                        border: `1px solid ${colors.fill}`,
                                         borderRadius: "var(--radius-md)",
-                                        color: colors.fg.default,
+                                        color: colors.fg.base,
                                     }}
                                 />
                             </div>
                             <div style={{ display: "flex", gap: spacing[2], alignItems: "center" }}>
-                                <label style={{ width: "120px", color: colors.fg.muted }}>Variable USD</label>
+                                <label style={{ width: "120px", color: colors.fg.dim }}>Variable USD</label>
                                 <input
                                     type="text"
-                                    value={editForm.income_variable ?? ""}
-                                    onChange={(e) => setEditForm((p) => ({ ...p, income_variable: e.target.value }))}
+                                    value={editForm.income_variable_usd ?? ""}
+                                    onChange={(e) => setEditForm((p) => ({ ...p, income_variable_usd: e.target.value }))}
                                     style={{
                                         flex: 1,
                                         padding: spacing[2],
-                                        backgroundColor: colors.bg.default,
-                                        border: `1px solid ${colors.highlight.medium}`,
+                                        backgroundColor: colors.bg.base,
+                                        border: `1px solid ${colors.fill}`,
                                         borderRadius: "var(--radius-md)",
-                                        color: colors.fg.default,
+                                        color: colors.fg.base,
                                     }}
                                 />
                             </div>
                             <div style={{ display: "flex", gap: spacing[2], alignItems: "center" }}>
-                                <label style={{ width: "120px", color: colors.fg.muted }}>Gasto USD</label>
+                                <label style={{ width: "120px", color: colors.fg.dim }}>Gasto USD</label>
                                 <input
                                     type="text"
-                                    value={editForm.expense ?? ""}
-                                    onChange={(e) => setEditForm((p) => ({ ...p, expense: e.target.value }))}
+                                    value={editForm.expense_usd ?? ""}
+                                    onChange={(e) => setEditForm((p) => ({ ...p, expense_usd: e.target.value }))}
                                     style={{
                                         flex: 1,
                                         padding: spacing[2],
-                                        backgroundColor: colors.bg.default,
-                                        border: `1px solid ${colors.highlight.medium}`,
+                                        backgroundColor: colors.bg.base,
+                                        border: `1px solid ${colors.fill}`,
                                         borderRadius: "var(--radius-md)",
-                                        color: colors.fg.default,
+                                        color: colors.fg.base,
                                     }}
                                 />
                             </div>
                             <div style={{ display: "flex", gap: spacing[2], alignItems: "center" }}>
-                                <label style={{ width: "120px", color: colors.fg.muted }}>Fijo USD</label>
+                                <label style={{ width: "120px", color: colors.fg.dim }}>Fijo USD</label>
                                 <input
                                     type="text"
-                                    value={editForm.expense_fixed ?? ""}
-                                    onChange={(e) => setEditForm((p) => ({ ...p, expense_fixed: e.target.value }))}
+                                    value={editForm.expense_fixed_usd ?? ""}
+                                    onChange={(e) => setEditForm((p) => ({ ...p, expense_fixed_usd: e.target.value }))}
                                     style={{
                                         flex: 1,
                                         padding: spacing[2],
-                                        backgroundColor: colors.bg.default,
-                                        border: `1px solid ${colors.highlight.medium}`,
+                                        backgroundColor: colors.bg.base,
+                                        border: `1px solid ${colors.fill}`,
                                         borderRadius: "var(--radius-md)",
-                                        color: colors.fg.default,
+                                        color: colors.fg.base,
                                     }}
                                 />
                             </div>
                             <div style={{ display: "flex", gap: spacing[2], alignItems: "center" }}>
-                                <label style={{ width: "120px", color: colors.fg.muted }}>Variable USD</label>
+                                <label style={{ width: "120px", color: colors.fg.dim }}>Variable USD</label>
                                 <input
                                     type="text"
-                                    value={editForm.expense_variable ?? ""}
-                                    onChange={(e) => setEditForm((p) => ({ ...p, expense_variable: e.target.value }))}
+                                    value={editForm.expense_variable_usd ?? ""}
+                                    onChange={(e) => setEditForm((p) => ({ ...p, expense_variable_usd: e.target.value }))}
                                     style={{
                                         flex: 1,
                                         padding: spacing[2],
-                                        backgroundColor: colors.bg.default,
-                                        border: `1px solid ${colors.highlight.medium}`,
+                                        backgroundColor: colors.bg.base,
+                                        border: `1px solid ${colors.fill}`,
                                         borderRadius: "var(--radius-md)",
-                                        color: colors.fg.default,
+                                        color: colors.fg.base,
                                     }}
                                 />
                             </div>
                         </div>
                         <div style={{ display: "flex", gap: spacing[2], justifyContent: "flex-end", marginTop: spacing[4] }}>
-                            <button
-                                onClick={handleCancelEdit}
-                                style={{
-                                    padding: `${spacing[2]} ${spacing[4]}`,
-                                    backgroundColor: "transparent",
-                                    border: `1px solid ${colors.highlight.medium}`,
-                                    borderRadius: "var(--radius-md)",
-                                    color: colors.fg.default,
-                                    cursor: "pointer",
-                                }}
-                            >
+                            <Button variant="secondary" onClick={handleCancelEdit}>
                                 Cancelar
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                disabled={updateMutation.isPending}
-                                style={{
-                                    padding: `${spacing[2]} ${spacing[4]}`,
-                                    backgroundColor: colors.accent.teal,
-                                    border: "none",
-                                    borderRadius: "var(--radius-md)",
-                                    color: "white",
-                                    cursor: "pointer",
-                                    opacity: updateMutation.isPending ? 0.6 : 1,
-                                }}
-                            >
-                                {updateMutation.isPending ? "Guardando..." : "Guardar"}
-                            </button>
+                            </Button>
+                            <Button variant="primary" onClick={handleSave} loading={updateMutation.isPending}>
+                                Guardar
+                            </Button>
                         </div>
-                    </div>
-                </div>
-            )}
+                    </ModalContent>
+                </Modal>
 
-            {deleteConfirm && (
-                <div
-                    style={{
-                        position: "fixed",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        zIndex: 100,
-                    }}
-                    onClick={() => setDeleteConfirm(null)}
-                >
-                    <div
-                        style={{
-                            backgroundColor: colors.bg.surface,
-                            borderRadius: "var(--radius-lg)",
-                            padding: spacing[6],
-                            maxWidth: "400px",
-                            border: `1px solid ${colors.highlight.medium}`,
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <h3
-                            style={{
-                                margin: `0 0 ${spacing[4]}`,
-                                fontSize: "var(--font-size-base)",
-                            }}
-                        >
-                            Confirmar eliminación
-                        </h3>
-                        <p style={{ color: colors.fg.muted, margin: `0 0 ${spacing[4]}` }}>
-                            ¿Eliminar el registro de {deleteConfirm.month}?
-                        </p>
-                        <div
-                            style={{
-                                display: "flex",
-                                gap: spacing[2],
-                                justifyContent: "flex-end",
-                            }}
-                        >
-                            <button
-                                onClick={() => setDeleteConfirm(null)}
-                                style={{
-                                    padding: `${spacing[2]} ${spacing[4]}`,
-                                    backgroundColor: "transparent",
-                                    border: `1px solid ${colors.highlight.medium}`,
-                                    borderRadius: "var(--radius-md)",
-                                    color: colors.fg.default,
-                                    cursor: "pointer",
-                                }}
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={confirmDelete}
-                                disabled={deleteMutation.isPending}
-                                style={{
-                                    padding: `${spacing[2]} ${spacing[4]}`,
-                                    backgroundColor: colors.semantic.error,
-                                    border: "none",
-                                    borderRadius: "var(--radius-md)",
-                                    color: "white",
-                                    cursor: "pointer",
-                                    opacity: deleteMutation.isPending ? 0.6 : 1,
-                                }}
-                            >
-                                {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmDialog
+                isOpen={!!deleteConfirm}
+                onClose={() => setDeleteConfirm(null)}
+                onConfirm={confirmDelete}
+                title="Confirmar eliminación"
+                description={`¿Eliminar el registro de ${deleteConfirm?.month}?`}
+                isLoading={deleteMutation.isPending}
+            />
 
-            {showBulkImport && (
-                <div
+            <Modal isOpen={showBulkImport} onClose={closeBulkImport}>
+                <ModalContent
                     style={{
-                        position: "fixed",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        zIndex: 100,
+                        backgroundColor: colors.bg.surface,
+                        borderRadius: radius.lg,
+                        padding: spacing[6],
+                        maxWidth: "600px",
+                        width: "100%",
+                        border: `1px solid ${colors.fill}`,
                     }}
-                    onClick={() => setShowBulkImport(false)}
+                    onClick={(e) => e.stopPropagation()}
                 >
-                    <div
-                        style={{
-                            backgroundColor: colors.bg.surface,
-                            borderRadius: "var(--radius-lg)",
-                            padding: spacing[6],
-                            maxWidth: "600px",
-                            width: "100%",
-                            border: `1px solid ${colors.highlight.medium}`,
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <h3 style={{ margin: `0 0 ${spacing[4]}` }}>Importar desde CSV</h3>
-                        <p style={{ color: colors.fg.muted, margin: `0 0 ${spacing[2]}`, fontSize: "var(--font-size-sm)" }}>
+                    <h3 style={{ margin: `0 0 ${spacing[4]}`, fontSize: fonts.size.lg, fontWeight: 600, color: colors.fg.base }}>Importar desde CSV</h3>
+                        <p style={{ color: colors.fg.dim, margin: `0 0 ${spacing[2]}`, fontSize: "var(--font-size-sm)" }}>
                             Formato: YYYY-MM,tc,ingreso,fijo,variable,gasto,fijo,variable,ahorro
                         </p>
-                        <p style={{ color: colors.fg.muted, margin: `0 0 ${spacing[4]}`, fontSize: "var(--font-size-sm)" }}>
+                        <p style={{ color: colors.fg.dim, margin: `0 0 ${spacing[4]}`, fontSize: "var(--font-size-sm)" }}>
                             Ejemplo: 2025-01,1165,1116,964,153,1316,481,835,-200
                         </p>
                         <textarea
@@ -535,48 +391,30 @@ export function HistoricalTab({ externalLimit }: HistoricalTabProps) {
                                 width: "100%",
                                 height: "200px",
                                 padding: spacing[2],
-                                backgroundColor: colors.bg.default,
-                                border: `1px solid ${colors.highlight.medium}`,
+                                backgroundColor: colors.bg.base,
+                                border: `1px solid ${colors.fill}`,
                                 borderRadius: "var(--radius-md)",
-                                color: colors.fg.default,
+                                color: colors.fg.base,
                                 fontFamily: "monospace",
                                 fontSize: "var(--font-size-sm)",
                                 resize: "none",
                             }}
                         />
                         <div style={{ display: "flex", gap: spacing[2], justifyContent: "flex-end", marginTop: spacing[4] }}>
-                            <button
-                                onClick={() => setShowBulkImport(false)}
-                                style={{
-                                    padding: `${spacing[2]} ${spacing[4]}`,
-                                    backgroundColor: "transparent",
-                                    border: `1px solid ${colors.highlight.medium}`,
-                                    borderRadius: "var(--radius-md)",
-                                    color: colors.fg.default,
-                                    cursor: "pointer",
-                                }}
-                            >
+                            <Button variant="secondary" onClick={closeBulkImport}>
                                 Cancelar
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant="primary"
                                 onClick={handleBulkImport}
                                 disabled={bulkMutation.isPending || !bulkText.trim()}
-                                style={{
-                                    padding: `${spacing[2]} ${spacing[4]}`,
-                                    backgroundColor: colors.accent.teal,
-                                    border: "none",
-                                    borderRadius: "var(--radius-md)",
-                                    color: "white",
-                                    cursor: bulkText.trim() ? "pointer" : "not-allowed",
-                                    opacity: bulkMutation.isPending ? 0.6 : 1,
-                                }}
+                                loading={bulkMutation.isPending}
                             >
-                                {bulkMutation.isPending ? "Importando..." : "Importar"}
-                            </button>
+                                Importar
+                            </Button>
                         </div>
-                    </div>
-                </div>
-            )}
+                    </ModalContent>
+                </Modal>
         </div>
     );
 }

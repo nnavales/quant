@@ -1,15 +1,37 @@
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { subcategories, categories } from "@/api_client";
 import type { Subcategory, SubcategoryReq, Category } from "@/api_client/types";
+import { toast } from "@/components/ui/Toast";
+import { getApiErrorMessage } from "@/utils/apiErrors";
+import { colors } from "@/styles/colors";
+import { spacing, radius } from "@/styles/theme";
+import { fonts } from "@/styles/fonts";
+import { cardStyle, rowStyle } from "@/styles/layout";
+import { ConfirmDialog } from "./ui/ConfirmDialog";
+import { Dropdown } from "./ui/Dropdown";
+import { Button } from "@/components/ui/Button";
+
+const inputStyle: React.CSSProperties = {
+    height: "28px",
+    padding: `0 ${spacing[3]}`,
+    backgroundColor: colors.bg.surface,
+    border: `1px solid ${colors.fill}`,
+    borderRadius: radius.md,
+    color: colors.fg.base,
+    fontSize: fonts.size.sm,
+    outline: "none",
+    boxSizing: "border-box",
+    flex: 1,
+};
 
 export function SubcategoryList() {
     const [items, setItems] = useState<Subcategory[]>([]);
     const [categoriesList, setCategoriesList] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState<SubcategoryReq>({ name: "", category_id: "" });
+    const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
     useEffect(() => {
         loadData();
@@ -21,7 +43,7 @@ export function SubcategoryList() {
                 setItems(subcategoriesData);
                 setCategoriesList(categoriesData);
             })
-            .catch((err: unknown) => setError(err instanceof Error ? err.message : "Error"))
+            .catch((err: unknown) => toast(getApiErrorMessage(err)))
             .finally(() => setLoading(false));
     };
 
@@ -33,147 +55,94 @@ export function SubcategoryList() {
             setShowForm(false);
             loadData();
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "Error");
+            toast(getApiErrorMessage(err));
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("¿Eliminar subcategoría?")) return;
+    const handleDelete = (id: string) => {
+        setDeleteConfirm(id);
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteConfirm) return;
         try {
-            await subcategories.delete(id);
+            await subcategories.delete(deleteConfirm);
+            setDeleteConfirm(null);
             loadData();
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "Error");
+            toast(getApiErrorMessage(err));
         }
     };
 
-    if (loading) return <div>Cargando...</div>;
-    if (error) return <div style={{ color: "var(--semantic-error)" }}>Error: {error}</div>;
+    if (loading) return <div style={{ color: colors.fg.dim, textAlign: "center", padding: spacing[8] }}>Cargando...</div>;
 
     const getCategoryName = (categoryId: string) => categoriesList.find((c) => c.id === categoryId)?.name || "-";
 
     return (
         <div>
-            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "var(--spacing-4)" }}>
-                <button
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: spacing[4] }}>
+                <Button
+                    variant="secondary"
+                    iconLeft={<Plus size={16} />}
                     onClick={() => setShowForm(!showForm)}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "var(--spacing-2)",
-                        padding: "var(--spacing-2) var(--spacing-3)",
-                        backgroundColor: "var(--accent-teal)",
-                        color: "var(--bg-default)",
-                        border: "none",
-                        borderRadius: "var(--radius-md)",
-                        cursor: "pointer",
-                        fontWeight: 500,
-                    }}
                 >
-                    <Plus size={16} />
                     Nueva Subcategoría
-                </button>
+                </Button>
             </div>
 
             {showForm && (
-                <form
-                    onSubmit={handleSubmit}
-                    style={{
-                        display: "flex",
-                        gap: "var(--spacing-2)",
-                        marginBottom: "var(--spacing-4)",
-                        padding: "var(--spacing-4)",
-                        backgroundColor: "var(--bg-surface)",
-                        borderRadius: "var(--radius-lg)",
-                        flexWrap: "wrap",
-                    }}
-                >
+                <form onSubmit={handleSubmit} style={{ ...cardStyle, marginBottom: spacing[4], display: "flex", gap: spacing[2], flexWrap: "wrap" }}>
                     <input
                         type="text"
                         placeholder="Nombre"
                         value={formData.name || ""}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        style={{
-                            flex: 1,
-                            minWidth: "150px",
-                            padding: "var(--spacing-2) var(--spacing-3)",
-                            backgroundColor: "var(--bg-default)",
-                            border: "1px solid var(--highlight-medium)",
-                            borderRadius: "var(--radius-md)",
-                            color: "var(--fg-default)",
-                        }}
+                        style={{ ...inputStyle, minWidth: "150px" }}
                     />
-                    <select
+                    <Dropdown
+                        options={categoriesList.map((c) => ({ id: c.id, label: c.name }))}
                         value={formData.category_id || ""}
-                        onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                        style={{
-                            padding: "var(--spacing-2) var(--spacing-3)",
-                            backgroundColor: "var(--bg-default)",
-                            border: "1px solid var(--highlight-medium)",
-                            borderRadius: "var(--radius-md)",
-                            color: "var(--fg-default)",
-                        }}
-                    >
-                        <option value="">Seleccionar categoría</option>
-                        {categoriesList.map((c) => (
-                            <option key={c.id} value={c.id}>
-                                {c.name}
-                            </option>
-                        ))}
-                    </select>
-                    <button
-                        type="submit"
-                        style={{
-                            padding: "var(--spacing-2) var(--spacing-4)",
-                            backgroundColor: "var(--accent-teal)",
-                            color: "var(--bg-default)",
-                            border: "none",
-                            borderRadius: "var(--radius-md)",
-                            cursor: "pointer",
-                        }}
-                    >
+                        onChange={(id) => setFormData({ ...formData, category_id: id })}
+                        placeholder="Categoría"
+                        triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
+                    />
+                    <Button type="submit" variant="primary">
                         Guardar
-                    </button>
+                    </Button>
                 </form>
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--spacing-2)" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
                 {items.map((subcategory) => (
                     <div
                         key={subcategory.id}
-                        style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            padding: "var(--spacing-3) var(--spacing-4)",
-                            backgroundColor: "var(--bg-surface)",
-                            borderRadius: "var(--radius-md)",
-                        }}
+                        style={rowStyle}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.bg.base; }}
                     >
                         <div>
-                            <div style={{ fontWeight: 500 }}>{subcategory.name}</div>
-                            <div style={{ fontSize: "var(--font-size-xs)", color: "var(--fg-muted)" }}>
-                                {getCategoryName(subcategory.category_id)}
-                            </div>
+                            <div style={{ fontSize: fonts.size.sm, fontWeight: 500, color: colors.fg.base }}>{subcategory.name}</div>
+                            <div style={{ fontSize: fonts.size.xs, color: colors.fg.dim }}>{getCategoryName(subcategory.category_id)}</div>
                         </div>
-                        <button
+                        <Button
+                            variant="icon"
+                            title="Eliminar"
                             onClick={() => handleDelete(subcategory.id)}
-                            style={{
-                                padding: "var(--spacing-1) var(--spacing-2)",
-                                backgroundColor: "transparent",
-                                color: "var(--semantic-error)",
-                                border: "1px solid var(--semantic-error)",
-                                borderRadius: "var(--radius-sm)",
-                                cursor: "pointer",
-                                fontSize: "var(--font-size-xs)",
-                            }}
                         >
-                            Eliminar
-                        </button>
+                            <Trash2 size={14} />
+                        </Button>
                     </div>
                 ))}
-                {items.length === 0 && <div style={{ color: "var(--fg-muted)" }}>No hay subcategorías</div>}
+                {items.length === 0 && <div style={{ color: colors.fg.dim, textAlign: "center", padding: spacing[4] }}>No hay subcategorías</div>}
             </div>
+
+            <ConfirmDialog
+                isOpen={!!deleteConfirm}
+                onClose={() => setDeleteConfirm(null)}
+                onConfirm={confirmDelete}
+                title="Confirmar eliminación"
+                description="¿Eliminar esta subcategoría?"
+            />
         </div>
     );
 }

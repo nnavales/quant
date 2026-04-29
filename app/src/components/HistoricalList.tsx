@@ -1,49 +1,14 @@
-import React, { useState, useRef } from "react";
-import { Pencil, X } from "lucide-react";
-import { spacing, radius, shadows } from "@/styles/theme";
+import { useState } from "react";
+import { Pencil, Trash2 } from "lucide-react";
+import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
+import { formatMonthStr, getDateFormat } from "@/utils/date";
+import { Tooltip } from "@/components/ui/Tooltip";
+import { Button } from "@/components/ui/Button";
+import { useUserConfig } from "@/hooks";
 import type { HistoricalEntry } from "@/api_client";
-
-interface TooltipProps {
-    content: string;
-    children: React.ReactNode;
-}
-
-function Tooltip({ content, children }: TooltipProps) {
-    const [show, setShow] = useState(false);
-    const [pos, setPos] = useState({ x: 0, y: 0 });
-    const checkedRef = useRef(false);
-    const textRef = useRef<HTMLSpanElement>(null);
-
-    const handleMouseMove = (e: React.MouseEvent) => {
-        setPos({ x: e.clientX + 10, y: e.clientY + 10 });
-    };
-
-    const handleMouseEnter = () => {
-        if (!checkedRef.current && textRef.current) {
-            const el = textRef.current;
-            checkedRef.current = el.scrollWidth > el.clientWidth;
-        }
-        if (checkedRef.current) {
-            setShow(true);
-        }
-    };
-
-    return (
-        <span onMouseEnter={handleMouseEnter} onMouseLeave={() => setShow(false)} onMouseMove={handleMouseMove}>
-            {React.isValidElement(children) 
-                ? React.cloneElement(children as React.ReactElement<{ref?: React.Ref<HTMLSpanElement>}>, { ref: textRef })
-                : children
-            }
-            {show && content && (
-                <div style={{ position: "fixed", left: pos.x, top: pos.y, backgroundColor: colors.bg.surface, border: `1px solid ${colors.highlight.medium}`, borderRadius: radius.md, padding: `${spacing[1]} ${spacing[2]}`, fontSize: fonts.size.xs, color: colors.fg.default, boxShadow: shadows.base, zIndex: 1000, whiteSpace: "nowrap", pointerEvents: "none" }}>
-                    {content}
-                </div>
-            )}
-        </span>
-    );
-}
+import { tableStyle, theadStyle, thStyle, sortableThStyle, iconStyle, fixedWidthStyle } from "@/styles/table";
 
 interface HistoricalListProps {
     entries: HistoricalEntry[];
@@ -54,53 +19,17 @@ interface HistoricalListProps {
     onDelete?: (entry: HistoricalEntry) => void;
 }
 
-const tableStyle: React.CSSProperties = {
-    width: "100%",
-    borderCollapse: "collapse",
-    fontSize: fonts.size.sm,
-};
-
-const theadStyle: React.CSSProperties = {
-    backgroundColor: colors.bg.dim,
-    borderBottom: `1px solid ${colors.highlight.medium}`,
-};
-
-const thStyle = (sortable: boolean, active: boolean, align: "left" | "right" = "left"): React.CSSProperties => ({
-    padding: `${spacing[2]} ${spacing[3]}`,
-    textAlign: align,
-    fontWeight: 600,
-    color: active ? colors.accent.teal : colors.fg.muted,
-    textTransform: "uppercase",
-    fontSize: fonts.size.xs,
-    letterSpacing: "0.05em",
-    whiteSpace: "nowrap",
-    cursor: sortable ? "pointer" : "default",
-    userSelect: sortable ? "none" : "auto",
-    transition: "color 0.15s",
-});
-
-const iconStyle: React.CSSProperties = {
-    fontSize: "11px",
-    marginLeft: spacing[1],
-    lineHeight: 1,
-};
-
-const sortableThStyle: React.CSSProperties = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: spacing[1],
-};
-
-const formatMonth = (monthStr: string, useFullFormat: boolean): string => {
+const formatMonth = (monthStr: string, useFullFormat: boolean, dateFormat: import("@/utils/date").DateFormat): string => {
     const [year, month] = monthStr.split("-");
     const date = new Date(parseInt(year), parseInt(month) - 1, 1);
     if (useFullFormat) {
-        return new Intl.DateTimeFormat("es-AR", {
+        const formatted = new Intl.DateTimeFormat("es-AR", {
             month: "long",
             year: "numeric",
         }).format(date);
+        return formatted.charAt(0).toUpperCase() + formatted.slice(1);
     }
-    return monthStr;
+    return formatMonthStr(monthStr, dateFormat);
 };
 
 const formatAmount = (amount: string | undefined): string => {
@@ -122,7 +51,8 @@ const getStoredFormat = (): boolean => {
 
 export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete }: HistoricalListProps) {
     const [useFullMonthFormat, setUseFullMonthFormat] = useState<boolean>(getStoredFormat);
-    const [hoverDelete, setHoverDelete] = useState(false);
+    const { data: userConfig } = useUserConfig();
+    const userDateFormat = getDateFormat(userConfig?.date_format);
 
     const handleSortClick = (column: "month" | "income" | "expense") => {
         if (onSort) onSort(column);
@@ -136,36 +66,14 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
         } catch {}
     };
 
-    const getActionBtnStyle = (isDelete: boolean = false, isHover: boolean = false): React.CSSProperties => {
-        const base: React.CSSProperties = {
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "28px",
-            height: "28px",
-            borderRadius: radius.md,
-            cursor: "pointer",
-            fontSize: fonts.size.sm,
-            backgroundColor: "transparent",
-        };
-        if (isDelete) {
-            base.border = isHover ? `1px solid ${colors.semantic.error}` : `1px solid ${colors.highlight.border}`;
-            base.color = isHover ? colors.semantic.error : colors.fg.muted;
-        } else {
-            base.border = `1px solid ${colors.highlight.border}`;
-            base.color = colors.fg.muted;
-        }
-        return base;
-    };
-
     if (entries.length === 0) {
         return (
             <div
                 style={{
                     padding: spacing[8],
                     textAlign: "center",
-                    color: colors.fg.muted,
-                    border: `1px solid ${colors.highlight.medium}`,
+                    color: colors.fg.dim,
+                    border: `1px solid ${colors.fill}`,
                     borderRadius: radius.lg,
                 }}
             >
@@ -183,14 +91,15 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
     const tdStyle: React.CSSProperties = {
         padding: `${spacing[1]} ${spacing[3]}`,
         verticalAlign: "middle",
-        height: "48px",
+        height: "46px",
+        border: `1px solid ${colors.fill}`,
     };
 
     const moneyStyle: React.CSSProperties = {
-        fontFamily: fonts.family.mono,
-        fontWeight: 600,
-        fontSize: fonts.size.sm,
-        color: colors.fg.default,
+        fontFamily: fonts.family.display,
+        fontWeight: 500,
+        fontSize: fonts.table.amount,
+        color: colors.fg.base,
         display: "block",
         overflow: "hidden",
         textOverflow: "ellipsis",
@@ -208,9 +117,9 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
     };
 
     const moneyAltStyle: React.CSSProperties = {
-        fontFamily: fonts.family.mono,
-        fontSize: fonts.size.xs,
-        color: colors.fg.muted,
+        fontFamily: fonts.family.display,
+        fontSize: fonts.table.meta,
+        color: colors.fg.dim,
         opacity: 0.7,
         display: "block",
         overflow: "hidden",
@@ -218,120 +127,117 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
         whiteSpace: "nowrap",
     };
 
-    const fixedWidthStyle = (width: string): React.CSSProperties => ({ width, minWidth: width, maxWidth: width });
 
     return (
-        <div style={{ border: `1px solid ${colors.highlight.medium}`, borderRadius: radius.lg, overflow: "hidden" }}>
+        <div style={{
+            borderRadius: radius.lg,
+            overflow: "hidden",
+            backgroundColor: colors.bg.surface,
+        }}>
             <table style={tableStyle}>
-                <thead style={theadStyle}>
-<tr>
-                        <th style={{ ...thStyle(!!onSort, sort === "month"), ...sortableThStyle, width: "90px" }} onClick={() => onSort && onSort("month")}>
-                            Mes{renderSortIcon("month")}
-                        </th>
-                        <th style={{ ...thStyle(!!onSort, sort === "income"), textAlign: "center", width: "100px" }} onClick={() => handleSortClick("income")}>
-                            Ingreso{renderSortIcon("income")}
-                        </th>
-                        <th style={{ ...thStyle(!!onSort, sort === "expense"), textAlign: "center", width: "100px" }} onClick={() => handleSortClick("expense")}>
-                            Gasto{renderSortIcon("expense")}
-                        </th>
-                        <th style={{ ...thStyle(false, false), textAlign: "center", width: "90px" }}>Ahorro</th>
-                        <th style={{ ...thStyle(false, false), textAlign: "center", width: "100px" }}>Ing. Fijo</th>
-                        <th style={{ ...thStyle(false, false), textAlign: "center", width: "100px" }}>Gas. Fijo</th>
-                        <th style={{ ...thStyle(false, false), textAlign: "center", width: "100px" }}>Ing. Variable</th>
-                        <th style={{ ...thStyle(false, false), textAlign: "center", width: "100px" }}>Gas. Variable</th>
-                        <th style={{ ...thStyle(false, false), textAlign: "center", width: "70px" }}>T.C.</th>
-                        <th style={{ ...thStyle(false, false), textAlign: "center", width: "100px" }}>Fuente</th>
-                        <th style={{ ...thStyle(false, false), textAlign: "right", width: "60px" }}>Opciones</th>
+            <thead style={theadStyle}>
+                <tr>
+                    <th style={{ ...thStyle(!!onSort, sort === "month"), width: "110px" }} onClick={() => onSort && onSort("month")}>
+                        <span style={sortableThStyle}>Mes{renderSortIcon("month")}</span>
+                    </th>
+                    <th style={{ ...thStyle(!!onSort, sort === "income"), width: "100px" }} onClick={() => handleSortClick("income")}>
+                        <span style={sortableThStyle}>Ingreso{renderSortIcon("income")}</span>
+                    </th>
+                    <th style={{ ...thStyle(false, false), width: "100px" }}>Ing. Fijo</th>
+                    <th style={{ ...thStyle(false, false), width: "100px" }}>Ing. Variable</th>
+                    <th style={{ ...thStyle(!!onSort, sort === "expense"), width: "100px" }} onClick={() => handleSortClick("expense")}>
+                        <span style={sortableThStyle}>Gasto{renderSortIcon("expense")}</span>
+                    </th>
+                    <th style={{ ...thStyle(false, false), width: "100px" }}>Gas. Fijo</th>
+                    <th style={{ ...thStyle(false, false), width: "100px" }}>Gas. Variable</th>
+                    <th style={{ ...thStyle(false, false), width: "90px" }}>Ahorro</th>
+                    <th style={{ ...thStyle(false, false), width: "70px" }}>T.C.</th>
+                    <th style={{ ...thStyle(false, false), width: "100px" }}>Fuente</th>
+                    <th style={{ ...thStyle(false, false, "right"), width: "110px", minWidth: "110px", maxWidth: "110px" }}>Opciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {entries.map((entry) => (
+                    <tr
+                        key={entry.month}
+                        style={{ transition: "background-color 0.15s" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#181B1D")}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                    >
+                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("110px"), whiteSpace: "nowrap", cursor: "pointer" }} onClick={toggleMonthFormat}>
+                            {formatMonth(entry.month, useFullMonthFormat, userDateFormat)}
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("100px") }}>
+                            <Tooltip content={formatAmount(entry.income)}>
+                                <span style={incomeStyle}>{formatAmount(entry.income)}</span>
+                            </Tooltip>
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("100px") }}>
+                            <Tooltip content={formatAmount(entry.income_fixed)}>
+                                <span style={moneyAltStyle}>{formatAmount(entry.income_fixed)}</span>
+                            </Tooltip>
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("100px") }}>
+                            <Tooltip content={formatAmount(entry.income_variable)}>
+                                <span style={moneyAltStyle}>{formatAmount(entry.income_variable)}</span>
+                            </Tooltip>
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("100px") }}>
+                            <Tooltip content={formatAmount(entry.expense)}>
+                                <span style={expenseStyle}>{formatAmount(entry.expense)}</span>
+                            </Tooltip>
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("100px") }}>
+                            <Tooltip content={formatAmount(entry.expense_fixed)}>
+                                <span style={moneyAltStyle}>{formatAmount(entry.expense_fixed)}</span>
+                            </Tooltip>
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("100px") }}>
+                            <Tooltip content={formatAmount(entry.expense_variable)}>
+                                <span style={moneyAltStyle}>{formatAmount(entry.expense_variable)}</span>
+                            </Tooltip>
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("90px") }}>
+                            <Tooltip content={formatAmount(entry.savings)}>
+                                <span style={moneyStyle}>{formatAmount(entry.savings)}</span>
+                            </Tooltip>
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("70px") }}>
+                            <Tooltip content={entry.exchange_rate % 1 === 0 ? String(entry.exchange_rate) : entry.exchange_rate.toFixed(2)}>
+                                <span style={{ fontFamily: fonts.family.display, fontSize: fonts.table.meta, color: colors.fg.dim, opacity: 0.7, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{entry.exchange_rate % 1 === 0 ? String(entry.exchange_rate) : entry.exchange_rate.toFixed(2)}</span>
+                            </Tooltip>
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("100px") }}>
+                            <span style={{
+                                fontSize: fonts.table.badge,
+                                padding: `${spacing[1]} ${spacing[2]}`,
+                                borderRadius: radius.md,
+                                textTransform: "uppercase",
+                                fontWeight: 500,
+                                backgroundColor: entry.source === "historical" ? `${colors.accent.purple}26` : `${colors.bg.surface}26`,
+                                color: entry.source === "historical" ? colors.accent.purple : colors.fg.dim,
+                            }}>
+                                {entry.source === "historical" ? "Histórico" : "Transacciones"}
+                            </span>
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("110px") }}>
+                            <span style={{ display: "flex", gap: spacing[1], justifyContent: "flex-end" }}>
+                                {entry.source === "historical" && onEdit && (
+                                    <Button variant="icon" onClick={() => onEdit(entry)} title="Editar">
+                                        <Pencil size={14} />
+                                    </Button>
+                                )}
+                                {entry.source === "historical" && onDelete && (
+                                    <Button variant="icon" onClick={() => onDelete(entry)} title="Eliminar">
+                                        <Trash2 size={14} />
+                                    </Button>
+                                )}
+                            </span>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    {entries.map((entry) => (
-                        <tr
-                            key={entry.month}
-                            style={{
-                                borderBottom: `1px solid ${colors.highlight.medium}`,
-                            }}
-                        >
-                            <td style={{ ...tdStyle, ...fixedWidthStyle("90px"), whiteSpace: "nowrap", cursor: "pointer" }} onClick={toggleMonthFormat}>
-                                {formatMonth(entry.month, useFullMonthFormat)}
-                            </td>
-                            <td style={{ ...tdStyle, ...fixedWidthStyle("100px"), textAlign: "center" }}>
-                                <Tooltip content={formatAmount(entry.income)}>
-                                    <span style={incomeStyle}>{formatAmount(entry.income)}</span>
-                                </Tooltip>
-                            </td>
-                            <td style={{ ...tdStyle, ...fixedWidthStyle("100px"), textAlign: "center" }}>
-                                <Tooltip content={formatAmount(entry.expense)}>
-                                    <span style={expenseStyle}>{formatAmount(entry.expense)}</span>
-                                </Tooltip>
-                            </td>
-                            <td style={{ ...tdStyle, ...fixedWidthStyle("90px"), textAlign: "center" }}>
-                                <Tooltip content={formatAmount(entry.savings)}>
-                                    <span style={moneyStyle}>{formatAmount(entry.savings)}</span>
-                                </Tooltip>
-                            </td>
-                            <td style={{ ...tdStyle, ...fixedWidthStyle("100px"), textAlign: "center" }}>
-                                <Tooltip content={formatAmount(entry.income_fixed)}>
-                                    <span style={moneyAltStyle}>{formatAmount(entry.income_fixed)}</span>
-                                </Tooltip>
-                            </td>
-                            <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("100px") }}>
-                                <Tooltip content={formatAmount(entry.expense_fixed)}>
-                                    <span style={moneyAltStyle}>{formatAmount(entry.expense_fixed)}</span>
-                                </Tooltip>
-                            </td>
-                            <td style={{ ...tdStyle, ...fixedWidthStyle("100px"), textAlign: "center" }}>
-                                <Tooltip content={formatAmount(entry.income_variable)}>
-                                    <span style={moneyAltStyle}>{formatAmount(entry.income_variable)}</span>
-                                </Tooltip>
-                            </td>
-                            <td style={{ ...tdStyle, ...fixedWidthStyle("100px"), textAlign: "center" }}>
-                                <Tooltip content={formatAmount(entry.expense_variable)}>
-                                    <span style={moneyAltStyle}>{formatAmount(entry.expense_variable)}</span>
-                                </Tooltip>
-                            </td>
-                            <td style={{ ...tdStyle, textAlign: "center", fontFamily: fonts.family.mono, fontSize: fonts.size.xs, color: colors.fg.muted, opacity: 0.7, ...fixedWidthStyle("70px") }}>
-                                <Tooltip content={entry.exchange_rate % 1 === 0 ? String(entry.exchange_rate) : entry.exchange_rate.toFixed(2)}>
-                                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{entry.exchange_rate % 1 === 0 ? String(entry.exchange_rate) : entry.exchange_rate.toFixed(2)}</span>
-                                </Tooltip>
-                            </td>
-                            <td style={{ ...tdStyle, ...fixedWidthStyle("100px"), textAlign: "center" }}>
-                                <span style={{
-                                    fontSize: fonts.size.xs,
-                                    padding: `${spacing[1]} ${spacing[2]}`,
-                                    borderRadius: radius.md,
-                                    textTransform: "uppercase",
-                                    fontWeight: 500,
-                                    backgroundColor: entry.source === "historical" ? `${colors.accent.purple}26` : `${colors.bg.overlay}26`,
-                                    color: entry.source === "historical" ? colors.accent.purple : colors.fg.muted,
-                                }}>
-                                    {entry.source}
-                                </span>
-                            </td>
-                            <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("100px") }}>
-                                <span style={{ display: "flex", gap: spacing[1], justifyContent: "flex-end" }}>
-                                    {entry.source === "historical" && onEdit && (
-                                        <button onClick={() => onEdit(entry)} style={getActionBtnStyle(false, false)} title="Editar">
-                                            <Pencil size={14} />
-                                        </button>
-                                    )}
-                                    {entry.source === "historical" && onDelete && (
-                                        <button 
-                                            style={getActionBtnStyle(true, hoverDelete)} 
-                                            onMouseEnter={() => setHoverDelete(true)} 
-                                            onMouseLeave={() => setHoverDelete(false)} 
-                                            onClick={() => onDelete(entry)}
-                                            title="Eliminar"
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    )}
-                                </span>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+                ))}
+            </tbody>
+        </table>
         </div>
     );
 }
