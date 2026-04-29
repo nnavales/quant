@@ -10,13 +10,13 @@ CREATE TABLE channels (
 CREATE TABLE accounts (
     id         TEXT PRIMARY KEY,
     channel_id TEXT NOT NULL,
-    name       TEXT NOT NULL UNIQUE,
+    name       TEXT NOT NULL,
     instrument TEXT NOT NULL,
-    last_four  TEXT,
     created_at DATETIME NOT NULL,
     updated_at DATETIME,
     deleted_at DATETIME,
-    FOREIGN KEY(channel_id) REFERENCES channels(id) ON DELETE RESTRICT
+    FOREIGN KEY(channel_id) REFERENCES channels(id) ON DELETE CASCADE,
+    UNIQUE (channel_id, name)
 );
 
 CREATE TABLE categories (
@@ -30,11 +30,12 @@ CREATE TABLE categories (
 CREATE TABLE subcategories (
     id          TEXT PRIMARY KEY,
     category_id TEXT NOT NULL,
-    name        TEXT NOT NULL UNIQUE,
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME,
-    deleted_at DATETIME,
-    FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE RESTRICT
+    name        TEXT NOT NULL,
+    created_at  DATETIME NOT NULL,
+    updated_at  DATETIME,
+    deleted_at  DATETIME,
+    FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE CASCADE,
+    UNIQUE (category_id, name)
 );
 
 CREATE TABLE installment_groups (
@@ -80,10 +81,10 @@ CREATE TABLE entries (
     updated_at DATETIME,
     deleted_at DATETIME,
     FOREIGN KEY(transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
-    FOREIGN KEY(account_id)     REFERENCES accounts(id) ON DELETE RESTRICT,
-    FOREIGN KEY(channel_id) REFERENCES channels(id) ON DELETE RESTRICT,
-    FOREIGN KEY(category_id)    REFERENCES categories(id) ON DELETE SET NULL,
-    FOREIGN KEY(subcategory_id) REFERENCES subcategories(id) ON DELETE SET NULL
+    FOREIGN KEY(account_id)     REFERENCES accounts(id) ON DELETE CASCADE,
+    FOREIGN KEY(channel_id) REFERENCES channels(id) ON DELETE CASCADE,
+    FOREIGN KEY(category_id)    REFERENCES categories(id) ON DELETE CASCADE,
+    FOREIGN KEY(subcategory_id) REFERENCES subcategories(id) ON DELETE CASCADE 
 );
 
 CREATE INDEX idx_transactions_date        ON transactions(date);
