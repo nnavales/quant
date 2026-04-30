@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/nnavales/summit/api/backup"
 	"github.com/nnavales/summit/api/categories"
 	"github.com/nnavales/summit/api/channels"
 	"github.com/nnavales/summit/api/config"
@@ -40,6 +41,7 @@ type Services struct {
 	DashboardService    *dashboard.Service
 	NetWorthService     *networth.Service
 	PresetsService      *presets.Service
+	BackupService       *backup.Service
 }
 
 func NewServer(cfg config.Config, services *Services) *Server {
@@ -55,6 +57,7 @@ func NewServer(cfg config.Config, services *Services) *Server {
 	dashboardHandler := dashboard.NewHandler(services.DashboardService)
 	networthHandler := networth.NewHandler(services.NetWorthService)
 	presetsHandler := presets.NewHandler(services.PresetsService)
+	backupHandler := backup.NewHandler(services.BackupService)
 
 	api := http.NewServeMux()
 
@@ -62,7 +65,7 @@ func NewServer(cfg config.Config, services *Services) *Server {
 		financeHandler, transactionsHandler, entriesHandler,
 		installmentsHandler, channelsHandler, categoriesHandler,
 		macroHandler, usersHandler, historicalHandler, dashboardHandler,
-		networthHandler, presetsHandler,
+		networthHandler, presetsHandler, backupHandler,
 	)
 
 	var handler http.Handler = api

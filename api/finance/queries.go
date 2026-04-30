@@ -246,6 +246,10 @@ const (
 )
 
 func BuildListHistoricalEntriesQuery(filter *Filter) (string, []any) {
+	if filter == nil {
+		filter = &Filter{}
+	}
+
 	var whereClauses []string
 	var args []any
 
@@ -308,6 +312,10 @@ func BuildListHistoricalEntriesQuery(filter *Filter) (string, []any) {
 }
 
 func buildHistoricalCountQuery(filter *Filter) (string, []any) {
+	if filter == nil {
+		filter = &Filter{}
+	}
+
 	var whereClauses []string
 	var args []any
 
@@ -331,6 +339,10 @@ func buildHistoricalCountQuery(filter *Filter) (string, []any) {
 }
 
 func BuildListTransactionsQuery(filter *Filter) (string, []any) {
+	if filter == nil {
+		filter = &Filter{}
+	}
+
 	var whereClauses []string
 	var args []any
 

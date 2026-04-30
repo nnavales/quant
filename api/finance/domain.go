@@ -33,6 +33,9 @@ type Repository interface {
 	CancelInstallments(ctx context.Context, groupID string, fromInstallment int, now time.Time) error
 	DeleteTransactionsByInstallmentGroup(ctx context.Context, groupID string, fromInstallment int) error
 	ListHistoricalEntries(ctx context.Context, filter *Filter) (*HistoricalListResponse, error)
+
+	ListHistoricalEntriesRaw(ctx context.Context) ([]HistoricalRowDTO, error)
+	ListTransactionsAggRaw(ctx context.Context) ([]TransactionRowDTO, error)
 }
 
 type InstallmentRowDTO struct {

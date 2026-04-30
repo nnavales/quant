@@ -3,6 +3,7 @@ package transport
 import (
 	"net/http"
 
+	"github.com/nnavales/summit/api/backup"
 	"github.com/nnavales/summit/api/categories"
 	"github.com/nnavales/summit/api/channels"
 	"github.com/nnavales/summit/api/dashboard"
@@ -25,6 +26,7 @@ func addRoutes(mux *http.ServeMux,
 	dh *dashboard.Handler,
 	nw *networth.Handler,
 	ph *presets.Handler,
+	bh *backup.Handler,
 ) {
 	mux.HandleFunc("GET /healthz", handlerHealthz)
 
@@ -128,6 +130,8 @@ func addRoutes(mux *http.ServeMux,
 	mux.HandleFunc("PATCH /presets/{id}", ph.UpdatePreset)
 	mux.HandleFunc("DELETE /presets/{id}", ph.DeletePreset)
 	mux.HandleFunc("POST /presets/{id}/restore", ph.RestorePreset)
+
+	mux.HandleFunc("GET /backup/export", bh.Export)
 }
 
 func handlerHealthz(w http.ResponseWriter, r *http.Request) {

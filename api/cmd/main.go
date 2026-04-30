@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/nnavales/summit/api/backup"
 	"github.com/nnavales/summit/api/categories"
 	"github.com/nnavales/summit/api/channels"
 	"github.com/nnavales/summit/api/config"
@@ -93,6 +94,8 @@ func run() error {
 	presetsRepo := presets.NewSQLiteRepo(dbConn.DB)
 	presetsService := presets.NewService(clock, presetsRepo)
 
+	backupService := backup.NewService(financeRepo, networthRepo)
+
 	if err := users.SeedDefaults(context.Background(), usersRepo, clock); err != nil {
 		slog.Warn("user.config.seed.error", "err", err)
 	}
@@ -118,6 +121,7 @@ func run() error {
 		DashboardService:    dashboardService,
 		NetWorthService:     networthService,
 		PresetsService:      presetsService,
+		BackupService:       backupService,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)

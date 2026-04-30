@@ -672,24 +672,6 @@ func (r *SQLiteRepo) BulkCreateTransactionAggregate(ctx context.Context, txs []T
 			return fmt.Errorf("at least one item is required: %w", ErrInvalidField)
 		}
 
-		entry := agg.Items[0].Entry
-
-		if entry.AccountID != nil && *entry.AccountID != "" {
-			var account channels.Account
-			err := tx.QueryRowContext(ctx, channels.QueryGetAccountByID, *entry.AccountID).Scan(
-				&account.ID, &account.ChannelID, &account.Name, &account.Instrument, &account.CreatedAt, &account.UpdatedAt, &account.DeletedAt,
-			)
-			if err != nil {
-				if err == sql.ErrNoRows {
-					return fmt.Errorf("account not found: %w", ErrNotFound)
-				}
-				return err
-			}
-			if account.ChannelID != entry.ChannelID && entry.ChannelID != "" {
-				return fmt.Errorf("account does not belong to channel: %w", ErrInvalidField)
-			}
-		}
-
 		if agg.Group != nil {
 			_, err := tx.ExecContext(ctx, installments.QueryCreateInstallmentGroup,
 				agg.Group.ID,
@@ -1050,4 +1032,78 @@ func mapDBError(err error) error {
 	}
 
 	return err
+}
+
+func (r *SQLiteRepo) ListTransactionsAggRaw(ctx context.Context) ([]TransactionRowDTO, error) {
+	rows, err := r.db.QueryContext(ctx, baseListTransactionsDTO)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var transactions []TransactionRowDTO
+	for rows.Next() {
+		var t TransactionRowDTO
+		err := rows.Scan(
+			&t.ID,
+			&t.Date,
+			&t.Description,
+			&t.Type,
+			&t.Frequency,
+			&t.IsPaid,
+			&t.EntryID,
+			&t.Amount,
+			&t.Currency,
+			&t.ExchangeRate,
+			&t.CategoryID,
+			&t.SubcategoryID,
+			&t.ChannelID,
+			&t.AccountID,
+			&t.CategoryName,
+			&t.SubcategoryName,
+			&t.AccountName,
+			&t.ChannelName,
+			&t.InstallmentNumber,
+			&t.TotalInstallments,
+			&t.InstallmentStartDate,
+			&t.InstallmentGroupID,
+			&t.IsCanceled,
+			&t.OriginalAmount,
+		)
+		if err != nil {
+			return nil, err
+		}
+		transactions = append(transactions, t)
+	}
+
+	return transactions, rows.Err()
+}
+
+func (r *SQLiteRepo) ListHistoricalEntriesRaw(ctx context.Context) ([]HistoricalRowDTO, error) {
+	rows, err := r.db.QueryContext(ctx, baseListHistoricalDTO)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var histEntry []HistoricalRowDTO
+	for rows.Next() {
+		var h HistoricalRowDTO
+		err := rows.Scan(
+			&h.Month,
+			&h.ExchangeRate,
+			&h.Income,
+			&h.IncomeFixed,
+			&h.IncomeVariable,
+			&h.Expense,
+			&h.ExpenseFixed,
+			&h.ExpenseVariable,
+			&h.Savings,
+			&h.Source,
+		)
+		if err != nil {
+			return nil, err
+		}
+		histEntry = append(histEntry, h)
+	}
+
+	return histEntry, rows.Err()
 }
