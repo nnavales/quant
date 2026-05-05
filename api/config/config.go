@@ -6,8 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-
-	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -19,15 +17,9 @@ type Config struct {
 
 type Runtime struct {
 	Config
+	Env          string
 	AppDataDir   string
 	DatabaseFile string
-}
-
-func isDev() bool {
-	if _, err := os.Stat(".env"); err == nil {
-		godotenv.Load()
-	}
-	return os.Getenv("APP_ENV") == "dev"
 }
 
 func defaultConfig() Config {
@@ -50,6 +42,10 @@ func merge(cfg Config) Config {
 	}
 	if cfg.Version == "" {
 		cfg.Version = def.Version
+	}
+
+	if cfg.Mode == "" {
+		cfg.Mode = def.Mode
 	}
 
 	return cfg
@@ -83,6 +79,7 @@ func New() (Runtime, error) {
 	return Runtime{
 		Config:       cfg,
 		AppDataDir:   dir,
+		Env:          os.Getenv("APP_ENV"),
 		DatabaseFile: filepath.Join(dir, "db.sqlite"),
 	}, nil
 }
@@ -122,8 +119,13 @@ func writeConfigFile(path string, cfg Config) error {
 func AppDataDir() (string, error) {
 	const app = "summit"
 
-	if isDev() {
-		return "./data", nil
+	if os.Getenv("APP_ENV") == "dev" {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+
+		return filepath.Join(homeDir, "."+app), nil
 	}
 
 	// Linux

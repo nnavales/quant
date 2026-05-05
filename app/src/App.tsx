@@ -9,6 +9,8 @@ import { ToastContainer } from "@/components/ui/Toast";
 import { api } from "@/api_client/client";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
+import { listen } from "@tauri-apps/api/event";
+import { toast } from "@/utils/toast";
 
 function ApiUnavailable({ onRetry }: { onRetry: () => void }) {
     return (
@@ -102,6 +104,18 @@ function App() {
         return () => clearInterval(interval);
     }, []);
 
+    useEffect(() => {
+        // Listen for api-not-running event (service mode)
+        const unlisten = listen("api-not-running", () => {
+            toast("El servicio no está corriendo. Inicialo desde Configuración > Servicio.", "warning");
+            setApiReady(false);
+        });
+
+        return () => {
+            unlisten.then((f) => f());
+        };
+    }, []);
+
     if (apiReady === null) {
         return (
             <div
@@ -123,7 +137,12 @@ function App() {
     }
 
     if (!apiReady) {
-        return <ApiUnavailable onRetry={checkHealth} />;
+        return (
+            <>
+                <ApiUnavailable onRetry={checkHealth} />
+                <ToastContainer />
+            </>
+        );
     }
 
     return (

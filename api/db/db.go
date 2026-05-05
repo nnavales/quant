@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 	"github.com/nnavales/summit/api/config"
 	"github.com/pressly/goose/v3"
 )
@@ -24,7 +24,7 @@ func New(cfg config.Runtime) (*DB, error) {
 		return nil, fmt.Errorf("mkdir: %w", err)
 	}
 
-	db, err := sql.Open("sqlite3", cfg.DatabaseFile)
+	db, err := sql.Open("sqlite", cfg.DatabaseFile)
 	if err != nil {
 		return nil, fmt.Errorf("sqlite3 conn: %w", err)
 	}

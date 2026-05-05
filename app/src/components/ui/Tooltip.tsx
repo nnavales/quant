@@ -135,7 +135,7 @@ export function Tooltip({ content, children, alwaysShow = false }: TooltipProps)
             style={{ color: colors.fg.base }}
         >
             {React.isValidElement(children)
-                ? React.cloneElement(children as React.ReactElement, { ref: textRef })
+                ? React.cloneElement<{ ref?: React.Ref<HTMLElement> }>(children as React.ReactElement<{ ref?: React.Ref<HTMLElement> }>, { ref: textRef })
                 : <span ref={textRef}>{children}</span>}
             {show && content && (
                 <div

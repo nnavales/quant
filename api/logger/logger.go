@@ -3,23 +3,39 @@ package logger
 import (
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/nnavales/summit/api/config"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-func New(cfg config.Config) (*slog.Logger, error) {
+func New(cfg config.Runtime) (*slog.Logger, error) {
+	level := slog.LevelInfo
+
 	opts := &slog.HandlerOptions{
 		AddSource: false,
-		Level:     slog.LevelDebug,
+		Level:     level,
 	}
 
-	if cfg.Version != "dev" {
-		opts.Level = slog.LevelInfo
-		handler := slog.NewJSONHandler(os.Stdout, opts)
-		return slog.New(handler), nil
-
+	if cfg.Env == "dev" {
+		level = slog.LevelDebug
+		return slog.New(slog.NewTextHandler(os.Stdout, opts)), nil
 	}
 
-	handler := slog.NewTextHandler(os.Stdout, opts)
+	if err := os.MkdirAll(cfg.AppDataDir, 0755); err != nil {
+		return nil, err
+	}
+
+	path := filepath.Join(cfg.AppDataDir, "log.json")
+
+	w := &lumberjack.Logger{
+		Filename:   path,
+		MaxSize:    100,
+		MaxBackups: 3,
+		MaxAge:     7,
+	}
+
+	handler := slog.NewJSONHandler(w, opts)
+
 	return slog.New(handler), nil
 }

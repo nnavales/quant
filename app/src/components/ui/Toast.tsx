@@ -108,9 +108,10 @@ export function ToastContainer() {
     const [toasts, setToasts] = useState<Toast[]>([]);
 
     useEffect(() => {
-        return addToastListener((t: Toast) => {
+        const unsub = addToastListener((t: Toast) => {
             setToasts((prev) => [...prev, t].slice(-4)); // keep last 4
         });
+        return () => { unsub(); };
     }, []);
 
     const removeToast = useCallback((id: number) => {
