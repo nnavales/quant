@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import type { TransactionRowDTO } from "@/api_client";
 import type { TransactionAggregateReq } from "@/api_client/types";
 import { Check, X, RefreshCw } from "lucide-react";
-import { toast } from "@/components/ui/Toast";
+import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 
 import { colors } from "@/styles/colors";
@@ -49,7 +49,7 @@ const formInputStyle: React.CSSProperties = {
     height: "28px",
     padding: "4px 6px",
     backgroundColor: colors.bg.surface,
-    border: `1px solid ${colors.fill}`,
+    border: `1px solid ${colors.border}`,
     borderRadius: radius.md,
     color: colors.fg.base,
     fontSize: EDIT_ROW_FONT_SIZE,

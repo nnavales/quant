@@ -309,3 +309,17 @@ export const presets = {
     delete: (id: string) => api.delete<void>(`/presets/${id}`),
     restore: (id: string) => api.post<void>(`/presets/${id}/restore`),
 };
+
+export const backup = {
+    export: () =>
+        api.clientInstance.get("/backup/export", {
+            responseType: "blob",
+        }),
+    import: (resource: "transactions" | "historical" | "networth", file: File) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return api.clientInstance.post(`/backup/import/${resource}`, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+    },
+};

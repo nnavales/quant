@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useNetWorth, useCreateAsset, useUpdateAsset, useDeleteAsset } from "@/hooks";
-import { spacing, radius, shadows } from "@/styles/theme";
+import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { Modal, ModalContent } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { toast } from "@/components/ui/Toast";
+import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { CustomSelect } from "@/components/ui/Select";
-import { Plus, X, Wallet, Droplets, Package, Trash2 } from "lucide-react";
+import { Plus, X, Droplets, Package, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { Currency, AssetType, NetWorth } from "@/api_client/types";
 
@@ -53,8 +53,8 @@ function AddAssetForm({ onClose }: AddAssetFormProps) {
                     padding: spacing[4],
                     width: "90%",
                     maxWidth: "400px",
-                    border: `1px solid ${colors.fill}`,
-                    boxShadow: shadows.xl,
+                    border: `1px solid ${colors.border}`,
+                    outline: `1px solid ${colors.border}`,
                 }}
             >
                 <div
@@ -88,7 +88,7 @@ function AddAssetForm({ onClose }: AddAssetFormProps) {
                                 width: "100%",
                                 padding: spacing[2],
                                 backgroundColor: colors.bg.base,
-                                border: `1px solid ${colors.fill}`,
+                                border: `1px solid ${colors.border}`,
                                 borderRadius: radius.md,
                                 color: colors.fg.base,
                                 fontSize: fonts.size.sm,
@@ -108,7 +108,7 @@ function AddAssetForm({ onClose }: AddAssetFormProps) {
                                 width: "100%",
                                 padding: spacing[2],
                                 backgroundColor: colors.bg.base,
-                                border: `1px solid ${colors.fill}`,
+                                border: `1px solid ${colors.border}`,
                                 borderRadius: radius.md,
                                 color: colors.fg.base,
                                 fontSize: fonts.size.sm,
@@ -285,30 +285,6 @@ function AssetRow({ asset }: AssetRowProps) {
                             {asset.name}
                         </span>
                     )}
-                    <span
-                        onClick={() => {
-                            const newType = asset.type === "liquid" ? "physical" : "liquid";
-                            updateAsset.mutate(
-                                { id: asset.id, data: { type: newType } },
-                                {
-                                    onSuccess: () => toast("Tipo actualizado", "success"),
-                onError: (err) => toast(getApiErrorMessage(err)),
-                                }
-                            );
-                        }}
-                        style={{
-                            backgroundColor: colors.bg.surface,
-                            color: asset.type === "liquid" ? colors.accent.cyan : colors.accent.purple,
-                            fontSize: fonts.table.badge,
-                            padding: "1px 4px",
-                            borderRadius: radius.sm,
-                            flexShrink: 0,
-                            cursor: "pointer",
-                            transition: "color 0.15s",
-                        }}
-                    >
-                        {asset.type === "liquid" ? "Líq." : "Fís."}
-                    </span>
                 </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: spacing[2] }}>
@@ -346,13 +322,19 @@ function AssetRow({ asset }: AssetRowProps) {
                         );
                     }}
                     style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                         backgroundColor: colors.bg.surface,
                         color: colors.fg.dim,
                         fontSize: fonts.table.badge,
-                        padding: "1px 4px",
+                        lineHeight: 1,
+                        padding: "2px 0",
                         borderRadius: radius.sm,
                         flexShrink: 0,
                         cursor: "pointer",
+                        width: "40px",
+                        boxSizing: "border-box",
                     }}
                 >
                     {asset.currency}
@@ -406,7 +388,7 @@ function NetWorthWidget({ networthData }: { networthData: NetWorth }) {
                 backgroundColor: colors.bg.surface,
                 borderRadius: radius.lg,
                 padding: spacing[4],
-                border: `1px solid ${colors.fill}`,
+                border: `1px solid ${colors.border}`,
                 display: "flex",
                 flexDirection: "column",
                 gap: spacing[4],
@@ -415,10 +397,7 @@ function NetWorthWidget({ networthData }: { networthData: NetWorth }) {
             }}
         >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: spacing[2] }}>
-                    <Wallet size={18} color={colors.accent.cyan} />
-                    <span style={{ fontSize: fonts.size.sm, color: colors.fg.base, textTransform: "uppercase", fontWeight: 500, letterSpacing: "0.5px" }}>Net Worth</span>
-                </div>
+                <span style={{ fontSize: fonts.size.sm, color: colors.fg.base, textTransform: "uppercase", fontWeight: 500, letterSpacing: "0.5px" }}>Net Worth</span>
                 <Button
                     variant="chip"
                     color="cyan"
@@ -442,10 +421,10 @@ function NetWorthWidget({ networthData }: { networthData: NetWorth }) {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: spacing[2] }}>
                 <div
                     style={{
-                        backgroundColor: "rgba(34, 211, 238, 0.06)",
+                        backgroundColor: colors.widget.cyanBg,
                         borderRadius: radius.md,
                         padding: spacing[3],
-                        border: `1px solid rgba(34, 211, 238, 0.12)`,
+                        border: `1px solid ${colors.widget.cyanBorder}`,
                         display: "flex",
                         flexDirection: "column",
                         gap: spacing[1],
@@ -464,10 +443,10 @@ function NetWorthWidget({ networthData }: { networthData: NetWorth }) {
                 </div>
                 <div
                     style={{
-                        backgroundColor: "rgba(192, 132, 252, 0.06)",
+                        backgroundColor: colors.widget.purpleBg,
                         borderRadius: radius.md,
                         padding: spacing[3],
-                        border: `1px solid rgba(192, 132, 252, 0.12)`,
+                        border: `1px solid ${colors.widget.purpleBorder}`,
                         display: "flex",
                         flexDirection: "column",
                         gap: spacing[1],
@@ -525,10 +504,11 @@ function NetWorthWidget({ networthData }: { networthData: NetWorth }) {
 
 export function NetWorthWidgetContainer() {
     const { data, isLoading, isError } = useNetWorth();
+    const [showAddForm, setShowAddForm] = useState(false);
 
     if (isLoading) {
         return (
-            <div style={{ backgroundColor: colors.bg.surface, borderRadius: radius.lg, padding: spacing[4], border: `1px solid ${colors.fill}` }}>
+            <div style={{ backgroundColor: colors.bg.surface, borderRadius: radius.lg, padding: spacing[4], border: `1px solid ${colors.border}`, height: "100%", minHeight: "420px", boxSizing: "border-box" }}>
                 <div style={{ color: colors.fg.dim, textAlign: "center", padding: spacing[4] }}>Cargando Net Worth...</div>
             </div>
         );
@@ -536,7 +516,7 @@ export function NetWorthWidgetContainer() {
 
     if (isError) {
         return (
-            <div style={{ backgroundColor: colors.bg.surface, borderRadius: radius.lg, padding: spacing[4], border: `1px solid ${colors.fill}` }}>
+            <div style={{ backgroundColor: colors.bg.surface, borderRadius: radius.lg, padding: spacing[4], border: `1px solid ${colors.border}`, height: "100%", minHeight: "420px", boxSizing: "border-box" }}>
                 <div style={{ color: colors.accent.red, textAlign: "center", padding: spacing[4] }}>Error al cargar Net Worth</div>
             </div>
         );
@@ -544,9 +524,33 @@ export function NetWorthWidgetContainer() {
 
     if (!data) {
         return (
-            <div style={{ backgroundColor: colors.bg.surface, borderRadius: radius.lg, padding: spacing[4], border: `1px solid ${colors.fill}` }}>
-                <div style={{ color: colors.fg.dim, textAlign: "center", padding: spacing[4] }}>Sin datos</div>
-            </div>
+            <>
+                <div
+                    style={{
+                        backgroundColor: colors.bg.surface,
+                        borderRadius: radius.lg,
+                        padding: spacing[4],
+                        border: `1px solid ${colors.border}`,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: spacing[4],
+                        height: "100%",
+                        minHeight: "420px",
+                        boxSizing: "border-box",
+                    }}
+                >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: fonts.size.sm, color: colors.fg.base, textTransform: "uppercase", fontWeight: 500, letterSpacing: "0.5px" }}>Net Worth</span>
+                        <Button variant="chip" color="cyan" size="sm" iconLeft={<Plus size={14} />} onClick={() => setShowAddForm(true)}>
+                            Agregar
+                        </Button>
+                    </div>
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ color: colors.fg.dim, fontSize: fonts.size.sm }}>Sin activos registrados</span>
+                    </div>
+                </div>
+                {showAddForm && <AddAssetForm onClose={() => setShowAddForm(false)} />}
+            </>
         );
     }
 

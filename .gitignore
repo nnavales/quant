@@ -1,10 +1,10 @@
-# bin/
-# docs/
-# *.db
+bin/
+docs/
+*.db
 # scripts/
-# .env
-# justfile
-# AGENTS.md
+.env
+justfile
+AGENTS.md
 
 
 # dependencies

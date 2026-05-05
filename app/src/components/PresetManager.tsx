@@ -21,14 +21,14 @@ import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { cardStyle } from "@/styles/layout";
-import { toast } from "./ui/Toast";
+import { toast } from "@/utils/toast";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 
 const inputStyle: React.CSSProperties = {
     padding: `${spacing[2]} ${spacing[3]}`,
     backgroundColor: colors.bg.base,
-    border: `1px solid ${colors.fill}`,
+    border: `1px solid ${colors.border}`,
     borderRadius: radius.md,
     color: colors.fg.base,
     fontSize: fonts.size.sm,
@@ -77,54 +77,37 @@ function TypeToggle({
         <div
             style={{
                 display: "flex",
+                backgroundColor: colors.bg.base,
+                border: `1px solid ${colors.border}`,
                 borderRadius: radius.md,
-                overflow: "hidden",
-                border: `1px solid ${colors.fill}`,
-                height: "28px",
+                padding: "2px",
+                height: "32px",
                 flexShrink: 0,
+                boxSizing: "border-box",
             }}
         >
-            <button
+            <Button
                 type="button"
+                variant="tab"
+                color="red"
+                active={value === "expense"}
                 onClick={() => onChange("expense")}
-                style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: spacing[1],
-                    padding: `0 ${spacing[3]}`,
-                    backgroundColor: value === "expense" ? colors.fill : "transparent",
-                    border: "none",
-                    color: value === "expense" ? colors.fg.base : colors.fg.dim,
-                    fontSize: fonts.size.sm,
-                    cursor: "pointer",
-                    fontWeight: value === "expense" ? 600 : 400,
-                    fontFamily: fonts.family.text,
-                    whiteSpace: "nowrap",
-                }}
+                iconLeft={<TrendingDown size={14} />}
+                style={{ fontSize: fonts.size.sm }}
             >
-                <TrendingDown size={14} /> Gasto
-            </button>
-            <div style={{ width: "1px", backgroundColor: colors.fill }} />
-            <button
+                Gasto
+            </Button>
+            <Button
                 type="button"
+                variant="tab"
+                color="green"
+                active={value === "income"}
                 onClick={() => onChange("income")}
-                style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: spacing[1],
-                    padding: `0 ${spacing[3]}`,
-                    backgroundColor: value === "income" ? colors.fill : "transparent",
-                    border: "none",
-                    color: value === "income" ? colors.fg.base : colors.fg.dim,
-                    fontSize: fonts.size.sm,
-                    cursor: "pointer",
-                    fontWeight: value === "income" ? 600 : 400,
-                    fontFamily: fonts.family.text,
-                    whiteSpace: "nowrap",
-                }}
+                iconLeft={<TrendingUp size={14} />}
+                style={{ fontSize: fonts.size.sm }}
             >
-                <TrendingUp size={14} /> Ingreso
-            </button>
+                Ingreso
+            </Button>
         </div>
     );
 }
@@ -380,13 +363,14 @@ export function PresetManager() {
             {showCreateForm && (
                 <div style={{ ...cardStyle, display: "flex", flexDirection: "column", gap: spacing[3] }}>
                     {/* Header row: name + type + actions */}
-                    <div style={{ display: "flex", gap: spacing[2], flexWrap: "nowrap", alignItems: "center" }}>
+                    <div style={{ display: "flex", gap: spacing[2], flexWrap: "nowrap", alignItems: "flex-end" }}>
                         <div style={{ flex: "1 1 0", minWidth: 0 }}>
+                            <span style={fieldLabelAbove}>Nombre del Preset</span>
                             <input
                                 type="text"
                                 value={createFormData.name}
                                 onChange={(e) => setCreateFormData((p) => ({ ...p, name: e.target.value }))}
-                                placeholder="Nombre del preset..."
+                                placeholder="Ej: Supermercado"
                                 onKeyDown={(e) => { if (e.key === "Enter") handleCreate(); if (e.key === "Escape") closeCreateForm(); }}
                                 autoFocus
                                 style={{ ...inputStyle, height: "28px" }}
@@ -396,13 +380,27 @@ export function PresetManager() {
                             value={createFormData.type}
                             onChange={(type) => setCreateFormData((p) => ({ ...p, type }))}
                         />
-                        <div style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
+                        <div style={{ display: "flex", gap: spacing[1], flexShrink: 0, marginBottom: "1px" }}>
                             <Button variant="icon" onClick={handleCreate} disabled={!createFormData.name?.trim() || isLoadingSubmit}>
                                 <Check size={14} />
                             </Button>
                             <Button variant="icon" onClick={closeCreateForm}>
                                 <X size={14} />
                             </Button>
+                        </div>
+                    </div>
+
+                    {/* Description row */}
+                    <div style={{ display: "flex", gap: spacing[2] }}>
+                        <div style={{ flex: "1 1 0", minWidth: 0 }}>
+                            <span style={fieldLabelAbove}>Descripción</span>
+                            <input
+                                type="text"
+                                value={createFormData.description ?? ""}
+                                onChange={(e) => setCreateFormData((p) => ({ ...p, description: e.target.value }))}
+                                placeholder="Ej: Compras semanales"
+                                style={{ ...inputStyle, height: "28px" }}
+                            />
                         </div>
                     </div>
 
@@ -498,23 +496,38 @@ export function PresetManager() {
                         >
                             {/* Card header */}
                             {isEditing ? (
-                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing[2] }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: spacing[2], flex: 1, minWidth: 0 }}>
-                                        <input
-                                            type="text"
-                                            value={editFormData.name}
-                                            onChange={(e) => setEditFormData((p) => ({ ...p, name: e.target.value }))}
-                                            placeholder="Nombre del preset..."
-                                            onKeyDown={(e) => { if (e.key === "Enter") handleUpdate(); if (e.key === "Escape") closeEditForm(); }}
-                                            autoFocus
-                                            style={{ ...inputStyle, height: "28px", flex: 1, minWidth: 0 }}
-                                        />
+                                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: spacing[2] }}>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: spacing[2], flex: 1, minWidth: 0 }}>
+                                        <div style={{ display: "flex", alignItems: "flex-end", gap: spacing[2] }}>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <span style={fieldLabelAbove}>Nombre del Preset</span>
+                                                <input
+                                                    type="text"
+                                                    value={editFormData.name}
+                                                    onChange={(e) => setEditFormData((p) => ({ ...p, name: e.target.value }))}
+                                                placeholder="Ej: Supermercado"
+                                                onKeyDown={(e) => { if (e.key === "Enter") handleUpdate(); if (e.key === "Escape") closeEditForm(); }}
+                                                autoFocus
+                                                style={{ ...inputStyle, height: "28px", width: "100%" }}
+                                            />
+                                        </div>
                                         <TypeToggle
                                             value={editFormData.type}
                                             onChange={(type) => setEditFormData((p) => ({ ...p, type }))}
                                         />
                                     </div>
-                                    <div style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
+                                    <div>
+                                        <span style={fieldLabelAbove}>Descripción</span>
+                                        <input
+                                            type="text"
+                                            value={editFormData.description ?? ""}
+                                            onChange={(e) => setEditFormData((p) => ({ ...p, description: e.target.value }))}
+                                            placeholder="Ej: Compras semanales"
+                                            style={{ ...inputStyle, height: "28px", width: "100%" }}
+                                        />
+                                        </div>
+                                    </div>
+                                    <div style={{ display: "flex", gap: spacing[1], flexShrink: 0, marginTop: "18px" }}>
                                         <Button variant="icon" onClick={handleUpdate} disabled={!editFormData.name?.trim() || isLoadingSubmit}>
                                             <Check size={14} />
                                         </Button>
@@ -696,7 +709,7 @@ export function PresetManager() {
                                     alignItems: "center",
                                     padding: `${spacing[3]} ${spacing[4]}`,
                                     backgroundColor: colors.bg.surface,
-                                    border: `1px dashed ${colors.fill}`,
+                                    border: `1px dashed ${colors.border}`,
                                     borderRadius: radius.md,
                                     opacity: 0.6,
                                 }}

@@ -10,7 +10,7 @@ export const tableStyle: React.CSSProperties = {
 };
 
 export const theadStyle: React.CSSProperties = {
-    backgroundColor: "#111418",
+    backgroundColor: colors.bg.header,
 };
 
 export const thStyle = (

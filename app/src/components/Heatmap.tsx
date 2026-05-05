@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { spacing, radius, shadows } from "@/styles/theme";
+import { useState, useMemo, useRef, useLayoutEffect } from "react";
+import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { formatCurrency } from "@/utils/format";
@@ -16,14 +16,14 @@ const getHeatmapColor = (value: number, maxValue: number, isIncome: boolean): st
     const intensity = value / maxValue;
 
     if (isIncome) {
-        if (intensity < 0.15) return "#0d1a0d";
-        if (intensity < 0.35) return "#1a3a1a";
-        if (intensity < 0.6) return "#2a5a2a";
+        if (intensity < 0.15) return colors.heatmap.green.low;
+        if (intensity < 0.35) return colors.heatmap.green.mid;
+        if (intensity < 0.6) return colors.heatmap.green.high;
         return colors.accent.green;
     } else {
-        if (intensity < 0.15) return "#1a0d0d";
-        if (intensity < 0.35) return "#3a1a1a";
-        if (intensity < 0.6) return "#6a2a2a";
+        if (intensity < 0.15) return colors.heatmap.red.low;
+        if (intensity < 0.35) return colors.heatmap.red.mid;
+        if (intensity < 0.6) return colors.heatmap.red.high;
         return colors.accent.red;
     }
 };
@@ -72,6 +72,29 @@ export function Heatmap({
         value: number;
         composition: Array<{ key: string; value: number }>;
     } | null>(null);
+    const tooltipRef = useRef<HTMLDivElement>(null);
+
+    useLayoutEffect(() => {
+        if (!hoveredCell || !tooltipRef.current) return;
+        const rect = tooltipRef.current.getBoundingClientRect();
+        const pad = 12;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        let left = hoveredCell.x - rect.width / 2;
+        let top = hoveredCell.y + 10;
+
+        if (left < pad) left = pad;
+        if (left + rect.width > vw - pad) left = vw - rect.width - pad;
+
+        if (top + rect.height > vh - pad) {
+            top = hoveredCell.y - rect.height - 10;
+        }
+        if (top < pad) top = pad;
+
+        tooltipRef.current.style.left = `${Math.round(left)}px`;
+        tooltipRef.current.style.top = `${Math.round(top)}px`;
+    }, [hoveredCell]);
 
     const handleMouseEnter = (
         e: React.MouseEvent,
@@ -82,8 +105,8 @@ export function Heatmap({
     ) => {
         const rect = e.currentTarget.getBoundingClientRect();
         setHoveredCell({
-            x: rect.left + rect.width / 2,
-            y: rect.top,
+            x: Math.round(rect.left + rect.width / 2),
+            y: Math.round(rect.bottom),
             category,
             month,
             value,
@@ -295,30 +318,33 @@ export function Heatmap({
 
             {hoveredCell && hoveredCell.composition && hoveredCell.composition.length > 0 && (
                 <div
+                    ref={tooltipRef}
                     style={{
                         position: "fixed",
-                        left: hoveredCell.x,
-                        top: hoveredCell.y - 10,
-                        transform: "translate(-50%, -100%)",
-                        backgroundColor: colors.bg.surface,
-                        border: `1px solid ${colors.fill}`,
+                        left: 0,
+                        top: 0,
+                        backgroundColor: colors.bg.header,
+                        border: `1px solid ${colors.border}`,
                         borderRadius: radius.md,
-                        padding: spacing[3],
-                        boxShadow: shadows.xl,
+                        padding: `${spacing[2]} ${spacing[3]}`,
+                        outline: `1px solid ${colors.fill}`,
                         zIndex: 1000,
-                        minWidth: "220px",
-                        maxWidth: "420px",
+                        minWidth: "200px",
+                        maxWidth: "380px",
                         pointerEvents: "none",
                         wordBreak: "break-word",
+                        WebkitFontSmoothing: "antialiased",
+                        MozOsxFontSmoothing: "grayscale",
+                        lineHeight: 1.5,
                     }}
                 >
                     <div
                         style={{
                             fontWeight: 600,
-                            fontSize: fonts.table.body,
+                            fontSize: "12.5px",
                             marginBottom: spacing[2],
                             color: colors.fg.base,
-                            borderBottom: `1px solid ${colors.fill}`,
+                            borderBottom: `1px solid ${colors.border}`,
                             paddingBottom: spacing[2],
                             lineHeight: 1.4,
                         }}
@@ -328,7 +354,7 @@ export function Heatmap({
                     </div>
                     <div
                         style={{
-                            fontSize: fonts.table.body,
+                            fontSize: "12.5px",
                             color: colors.fg.dim,
                             marginBottom: spacing[2],
                         }}
@@ -338,7 +364,7 @@ export function Heatmap({
                             style={{
                                 fontFamily: fonts.family.display,
                                 fontWeight: 600,
-                                fontSize: fonts.table.lg,
+                                fontSize: "12.5px",
                                 color: colors.fg.base,
                             }}
                         >
@@ -348,14 +374,14 @@ export function Heatmap({
                     {hoveredCell.composition.length > 0 && (
                         <div
                             style={{
-                                borderTop: `1px solid ${colors.fill}`,
+                                borderTop: `1px solid ${colors.border}`,
                                 paddingTop: spacing[2],
                                 marginTop: spacing[2],
                             }}
                         >
                             <div
                                 style={{
-                                    fontSize: fonts.table.meta,
+                                    fontSize: "12.5px",
                                     color: colors.fg.dim,
                                     marginBottom: spacing[1],
                                     textTransform: "uppercase",
@@ -370,8 +396,8 @@ export function Heatmap({
                                     style={{
                                         display: "flex",
                                         justifyContent: "space-between",
-                                        alignItems: "flex-start",
-                                        fontSize: fonts.table.body,
+                                        alignItems: "center",
+                                        fontSize: "12.5px",
                                         padding: `${spacing[1]} 0`,
                                         gap: spacing[3],
                                     }}
@@ -424,9 +450,9 @@ export function HeatmapLegend({ isIncome }: { isIncome: boolean }) {
                     overflow: "hidden",
                 }}
             >
-                <div style={{ width: "24px", backgroundColor: isIncome ? "#0d1a0d" : "#1a0d0d" }} />
-                <div style={{ width: "24px", backgroundColor: isIncome ? "#1a3a1a" : "#3a1a1a" }} />
-                <div style={{ width: "24px", backgroundColor: isIncome ? "#2a5a2a" : "#6a2a2a" }} />
+                <div style={{ width: "24px", backgroundColor: isIncome ? colors.heatmap.green.low : colors.heatmap.red.low }} />
+                <div style={{ width: "24px", backgroundColor: isIncome ? colors.heatmap.green.mid : colors.heatmap.red.mid }} />
+                <div style={{ width: "24px", backgroundColor: isIncome ? colors.heatmap.green.high : colors.heatmap.red.high }} />
                 <div
                     style={{
                         width: "24px",

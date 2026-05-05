@@ -1,12 +1,14 @@
 import axios, { AxiosInstance, AxiosError } from "axios";
 import type { ApiError } from "./types";
 
-const DEFAULT_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:6969/api";
+const DEFAULT_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:43123/api";
 
 export class ApiClient {
     private client: AxiosInstance;
+    private baseURL: string;
 
     constructor(baseURL: string = DEFAULT_BASE_URL) {
+        this.baseURL = baseURL;
         this.client = axios.create({
             baseURL,
             headers: {
@@ -33,6 +35,21 @@ export class ApiClient {
                 return Promise.reject(new Error(message));
             }
         );
+    }
+
+    async initFromConfig(): Promise<void> {
+        try {
+            const { invoke } = await import("@tauri-apps/api/core");
+            const port = await invoke<number>("get_port");
+            this.baseURL = `http://127.0.0.1:${port}/api`;
+            this.client.defaults.baseURL = this.baseURL;
+        } catch {
+            // keep default
+        }
+    }
+
+    getBaseURL(): string {
+        return this.baseURL;
     }
 
     async get<T>(url: string, params?: Record<string, unknown>): Promise<T> {
@@ -66,6 +83,10 @@ export class ApiClient {
         } catch {
             return false;
         }
+    }
+
+    get clientInstance() {
+        return this.client;
     }
 }
 

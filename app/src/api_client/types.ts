@@ -229,6 +229,7 @@ export interface UserConfig {
     timezone?: string;
     date_format?: string;
     default_rate?: string;
+    theme?: string;
 }
 
 export type UserConfigUpdate = Partial<UserConfig>;

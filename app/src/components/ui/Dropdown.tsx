@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Search, ChevronDown, X } from "lucide-react";
 import { colors } from "@/styles/colors";
-import { spacing, radius, shadows } from "@/styles/theme";
+import { spacing, radius } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
-import { useClickOutside } from "@/hooks";
+import { useClickOutside, useDropdownPosition } from "@/hooks";
 
 let instanceCounter = 0;
 
@@ -36,11 +36,10 @@ export interface DropdownProps {
 const PANEL_BASE: React.CSSProperties = {
     position: "fixed",
     backgroundColor: colors.bg.surface,
-    border: `1px solid ${colors.fill}`,
+    border: `1px solid ${colors.border}`,
     borderRadius: radius.md,
     padding: spacing[2],
     zIndex: 1001,
-    boxShadow: shadows.lg,
     display: "flex",
     flexDirection: "column",
     gap: "1px",
@@ -74,10 +73,11 @@ export function Dropdown({
     const instanceId = useRef(++instanceCounter);
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState("");
-    const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const searchRef = useRef<HTMLInputElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
+
+    useDropdownPosition(triggerRef, panelRef, isOpen, { maxHeight: panelMaxHeight });
 
     const resolvedGroups = useMemo<DropdownGroup[]>(() => {
         if (groups) return groups;
@@ -109,20 +109,13 @@ export function Dropdown({
             .filter((group) => group.items.length > 0);
     }, [resolvedGroups, search]);
 
-    const calculatePosition = useCallback(() => {
-        if (!triggerRef.current) return null;
-        const rect = triggerRef.current.getBoundingClientRect();
-        const panelH = Math.min(panelMaxHeight, 400);
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const top = spaceBelow >= panelH + 8 ? rect.bottom + 4 : rect.top - panelH - 4;
-        return { top, left: rect.left };
-    }, [panelMaxHeight]);
+    const closePanel = useCallback(() => {
+        setIsOpen(false);
+    }, []);
 
-    const openPanel = useCallback(() => {
-        const pos = calculatePosition();
-        if (pos) {
-            setPosition(pos);
-            setIsOpen(true);
+    const handleToggle = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!isOpen) {
             setSearch("");
             window.dispatchEvent(
                 new CustomEvent("dropdown-opened", {
@@ -130,20 +123,7 @@ export function Dropdown({
                 })
             );
         }
-    }, [calculatePosition]);
-
-    const closePanel = useCallback(() => {
-        setIsOpen(false);
-        setPosition(null);
-    }, []);
-
-    const handleToggle = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (isOpen) {
-            closePanel();
-        } else {
-            openPanel();
-        }
+        setIsOpen((prev) => !prev);
     };
 
     const handleSelect = (id: string) => {
@@ -173,13 +153,6 @@ export function Dropdown({
         }
     }, [isOpen]);
 
-    useEffect(() => {
-        if (isOpen) {
-            const pos = calculatePosition();
-            if (pos) setPosition(pos);
-        }
-    }, [isOpen, calculatePosition]);
-
     const hasResults = filteredGroups.some((g) => g.items.length > 0);
 
     return (
@@ -205,15 +178,9 @@ export function Dropdown({
                     width: "100%",
                     boxSizing: "border-box",
                     outline: "none",
-                    transition: "border-color 0.15s",
                     ...triggerStyle,
                 }}
-                onMouseEnter={(e) => {
-                    if (!disabled) e.currentTarget.style.borderColor = colors.fill;
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = colors.fill;
-                }}
+
             >
                 <span
                     style={{
@@ -236,14 +203,13 @@ export function Dropdown({
                 />
             </button>
 
-            {isOpen && position && (
+            {isOpen && (
                 <div
                     ref={panelRef}
                     data-dropdown-panel
                     style={{
                         ...PANEL_BASE,
-                        top: position.top,
-                        left: position.left,
+                        visibility: "hidden",
                         width: typeof panelWidth === "number" ? `${panelWidth}px` : panelWidth,
                         maxHeight: `${panelMaxHeight}px`,
                     }}

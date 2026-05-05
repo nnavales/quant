@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { subcategories, categories } from "@/api_client";
 import type { Subcategory, SubcategoryReq, Category } from "@/api_client/types";
-import { toast } from "@/components/ui/Toast";
+import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";

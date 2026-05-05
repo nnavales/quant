@@ -1,11 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { format } from "date-fns";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
-import { parseLocalDate, formatDate, getDateFormat } from "@/utils/date";
-import { useUserConfig, useClickOutside } from "@/hooks";
+import { parseLocalDateInTimezone, formatDate, getDateFormat, getNowInTimezone, isTodayInTimezone, isSameDayInTimezone } from "@/utils/date";
+import { useUserConfig, useClickOutside, useDropdownPosition } from "@/hooks";
 import { ChevronLeft, ChevronRight, X, ChevronDown, Calendar as CalendarIcon } from "lucide-react";
 
 interface DatePickerProps {
@@ -47,33 +46,12 @@ function getDaysInMonth(year: number, month: number): (Date | null)[] {
     return days;
 }
 
-function isSameDay(d1: Date, d2: Date): boolean {
-    return (
-        d1.getFullYear() === d2.getFullYear() &&
-        d1.getMonth() === d2.getMonth() &&
-        d1.getDate() === d2.getDate()
-    );
+function isSameDay(d1: Date, d2: Date, timezone?: string): boolean {
+    return isSameDayInTimezone(d1, d2, timezone);
 }
 
-function isToday(date: Date): boolean {
-    return isSameDay(date, new Date());
-}
-
-function hasOverflowAncestor(element: HTMLElement): boolean {
-    let el = element.parentElement;
-    while (el) {
-        const style = window.getComputedStyle(el);
-        if (
-            style.overflow === "auto" ||
-            style.overflow === "scroll" ||
-            style.overflowY === "auto" ||
-            style.overflowY === "scroll"
-        ) {
-            return true;
-        }
-        el = el.parentElement;
-    }
-    return false;
+function isToday(date: Date, timezone?: string): boolean {
+    return isTodayInTimezone(date, timezone);
 }
 
 function DropdownSelect({
@@ -136,9 +114,8 @@ function DropdownSelect({
                         left: 0,
                         marginTop: "2px",
                         backgroundColor: colors.bg.surface,
-                        border: `1px solid ${colors.fill}`,
+                        border: `1px solid ${colors.border}`,
                         borderRadius: radius.base,
-                        boxShadow: "0 4px 12px rgb(0 0 0 / 0.2)",
                         zIndex: 10,
                         maxHeight: "180px",
                         overflowY: "auto",
@@ -185,43 +162,18 @@ export function DatePicker({
     placeholder = "Seleccionar fecha",
     triggerStyle,
 }: DatePickerProps) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [viewDate, setViewDate] = useState(() => (value ? parseLocalDate(value) : new Date()));
-    const [usePortal, setUsePortal] = useState(false);
-    const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const selectedDate = value ? parseLocalDate(value) : undefined;
     const { data: userConfig } = useUserConfig();
+    const tz = userConfig?.timezone;
     const userDateFormat = getDateFormat(userConfig?.date_format);
 
+    const [isOpen, setIsOpen] = useState(false);
+    const [viewDate, setViewDate] = useState(() => (value ? parseLocalDateInTimezone(value, tz) : getNowInTimezone(tz)));
+    const containerRef = useRef<HTMLDivElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+    const selectedDate = value ? parseLocalDateInTimezone(value, tz) : undefined;
+
     useClickOutside(containerRef, () => setIsOpen(false));
-
-    useEffect(() => {
-        if (containerRef.current && isOpen) {
-            setUsePortal(hasOverflowAncestor(containerRef.current));
-            const rect = containerRef.current.getBoundingClientRect();
-            setPosition({ top: rect.bottom + 4, left: rect.left });
-        }
-    }, [isOpen]);
-
-    useEffect(() => {
-        if (!isOpen || !usePortal) return;
-
-        const updatePosition = () => {
-            if (containerRef.current) {
-                const rect = containerRef.current.getBoundingClientRect();
-                setPosition({ top: rect.bottom + 4, left: rect.left });
-            }
-        };
-
-        window.addEventListener("scroll", updatePosition, true);
-        window.addEventListener("resize", updatePosition);
-
-        return () => {
-            window.removeEventListener("scroll", updatePosition, true);
-            window.removeEventListener("resize", updatePosition);
-        };
-    }, [isOpen, usePortal]);
+    useDropdownPosition(containerRef, panelRef, isOpen, { maxHeight: 360 });
 
     const handleSelect = (date: Date) => {
         onChange(format(date, "yyyy-MM-dd"));
@@ -248,7 +200,7 @@ export function DatePicker({
     const year = viewDate.getFullYear();
     const month = viewDate.getMonth();
     const days = getDaysInMonth(year, month);
-    const currentYear = new Date().getFullYear();
+    const currentYear = getNowInTimezone(tz).getFullYear();
     const yearOptions = Array.from({ length: 51 }, (_, i) => ({
         value: currentYear - 25 + i,
         label: String(currentYear - 25 + i),
@@ -257,324 +209,11 @@ export function DatePicker({
 
     const handleToday = (e: React.MouseEvent) => {
         e.stopPropagation();
-        const today = new Date();
+        const today = getNowInTimezone(tz);
         setViewDate(today);
         onChange(format(today, "yyyy-MM-dd"));
         setIsOpen(false);
     };
-
-    const calendarPanel = (
-        <div
-            style={{
-                position: "absolute",
-                top: "100%",
-                left: 0,
-                marginTop: spacing[1],
-                zIndex: 1000,
-                backgroundColor: colors.bg.surface,
-                border: `1px solid ${colors.fill}`,
-                borderRadius: radius.lg,
-                boxShadow: "0 10px 25px -3px rgb(0 0 0 / 0.3)",
-                padding: spacing[3],
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-        >
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: spacing[2],
-                }}
-            >
-                <button
-                    type="button"
-                    onClick={prevMonth}
-                    style={{
-                        background: "transparent",
-                        border: "none",
-                        color: colors.fg.dim,
-                        cursor: "pointer",
-                        padding: "4px",
-                        display: "flex",
-                        borderRadius: radius.base,
-                    }}
-                >
-                    <ChevronLeft size={18} />
-                </button>
-                <div style={{ display: "flex", gap: spacing[2] }}>
-                    <DropdownSelect
-                        value={month}
-                        options={monthOptions}
-                        onChange={(v) => setViewDate(new Date(year, v, 1))}
-                        width="110px"
-                    />
-                    <DropdownSelect
-                        value={year}
-                        options={yearOptions}
-                        onChange={(v) => setViewDate(new Date(v, month, 1))}
-                        width="70px"
-                    />
-                </div>
-                <button
-                    type="button"
-                    onClick={nextMonth}
-                    style={{
-                        background: "transparent",
-                        border: "none",
-                        color: colors.fg.dim,
-                        cursor: "pointer",
-                        padding: "4px",
-                        display: "flex",
-                        borderRadius: radius.base,
-                    }}
-                >
-                    <ChevronRight size={18} />
-                </button>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 32px)", gap: "2px" }}>
-                {WEEKDAYS.map((day) => (
-                    <div
-                        key={day}
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "11px",
-                            fontWeight: 600,
-                            color: colors.fg.dim,
-                            height: "28px",
-                        }}
-                    >
-                        {day}
-                    </div>
-                ))}
-                {days.map((day, idx) =>
-                    day ? (
-                        <div
-                            key={idx}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleSelect(day);
-                            }}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                width: "32px",
-                                height: "32px",
-                                fontSize: "13px",
-                                borderRadius: radius.base,
-                                cursor: "pointer",
-                                backgroundColor:
-                                    selectedDate && isSameDay(day, selectedDate)
-                                        ? colors.accent.teal
-                                        : "transparent",
-                                color:
-                                    selectedDate && isSameDay(day, selectedDate)
-                                        ? colors.bg.base
-                                        : isToday(day)
-                                          ? colors.accent.teal
-                                          : colors.fg.base,
-                                fontWeight:
-                                    (selectedDate && isSameDay(day, selectedDate)) || isToday(day)
-                                        ? 600
-                                        : 400,
-                            }}
-                        >
-                            {day.getDate()}
-                        </div>
-                    ) : (
-                        <div key={idx} style={{ width: "32px", height: "32px" }} />
-                    )
-                )}
-            </div>
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    marginTop: spacing[2],
-                    paddingTop: spacing[2],
-                    borderTop: `1px solid ${colors.fill}`,
-                }}
-            >
-                <button
-                    type="button"
-                    onClick={handleToday}
-                    style={{
-                        backgroundColor: "rgba(70, 194, 168, 0.1)",
-                        border: "1px solid rgba(70, 194, 168, 0.25)",
-                        color: colors.accent.teal,
-                        fontSize: "13px",
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        padding: "4px 8px",
-                        borderRadius: radius.base,
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(70, 194, 168, 0.18)"; e.currentTarget.style.borderColor = "rgba(70, 194, 168, 0.35)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "rgba(70, 194, 168, 0.1)"; e.currentTarget.style.borderColor = "rgba(70, 194, 168, 0.25)"; }}
-                >
-                    Hoy
-                </button>
-            </div>
-        </div>
-    );
-
-    const portalPanel = position && (
-        <div
-            style={{
-                position: "fixed",
-                top: position.top,
-                left: position.left,
-                zIndex: 10000,
-                backgroundColor: colors.bg.surface,
-                border: `1px solid ${colors.fill}`,
-                borderRadius: radius.lg,
-                boxShadow: "0 10px 25px -3px rgb(0 0 0 / 0.3)",
-                padding: spacing[3],
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-        >
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: spacing[2],
-                }}
-            >
-                <button
-                    type="button"
-                    onClick={prevMonth}
-                    style={{
-                        background: "transparent",
-                        border: "none",
-                        color: colors.fg.dim,
-                        cursor: "pointer",
-                        padding: "4px",
-                        display: "flex",
-                        borderRadius: radius.base,
-                    }}
-                >
-                    <ChevronLeft size={18} />
-                </button>
-                <div style={{ display: "flex", gap: spacing[2] }}>
-                    <DropdownSelect
-                        value={month}
-                        options={monthOptions}
-                        onChange={(v) => setViewDate(new Date(year, v, 1))}
-                        width="110px"
-                    />
-                    <DropdownSelect
-                        value={year}
-                        options={yearOptions}
-                        onChange={(v) => setViewDate(new Date(v, month, 1))}
-                        width="70px"
-                    />
-                </div>
-                <button
-                    type="button"
-                    onClick={nextMonth}
-                    style={{
-                        background: "transparent",
-                        border: "none",
-                        color: colors.fg.dim,
-                        cursor: "pointer",
-                        padding: "4px",
-                        display: "flex",
-                        borderRadius: radius.base,
-                    }}
-                >
-                    <ChevronRight size={18} />
-                </button>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 32px)", gap: "2px" }}>
-                {WEEKDAYS.map((day) => (
-                    <div
-                        key={day}
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "11px",
-                            fontWeight: 600,
-                            color: colors.fg.dim,
-                            height: "28px",
-                        }}
-                    >
-                        {day}
-                    </div>
-                ))}
-                {days.map((day, idx) =>
-                    day ? (
-                        <div
-                            key={idx}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleSelect(day);
-                            }}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                width: "32px",
-                                height: "32px",
-                                fontSize: "13px",
-                                borderRadius: radius.base,
-                                cursor: "pointer",
-                                backgroundColor:
-                                    selectedDate && isSameDay(day, selectedDate)
-                                        ? colors.accent.teal
-                                        : "transparent",
-                                color:
-                                    selectedDate && isSameDay(day, selectedDate)
-                                        ? colors.bg.base
-                                        : isToday(day)
-                                          ? colors.accent.teal
-                                          : colors.fg.base,
-                                fontWeight:
-                                    (selectedDate && isSameDay(day, selectedDate)) || isToday(day)
-                                        ? 600
-                                        : 400,
-                            }}
-                        >
-                            {day.getDate()}
-                        </div>
-                    ) : (
-                        <div key={idx} style={{ width: "32px", height: "32px" }} />
-                    )
-                )}
-            </div>
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    marginTop: spacing[2],
-                    paddingTop: spacing[2],
-                    borderTop: `1px solid ${colors.fill}`,
-                }}
-            >
-                <button
-                    type="button"
-                    onClick={handleToday}
-                    style={{
-                        backgroundColor: "rgba(70, 194, 168, 0.1)",
-                        border: "1px solid rgba(70, 194, 168, 0.25)",
-                        color: colors.accent.teal,
-                        fontSize: "13px",
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        padding: "4px 8px",
-                        borderRadius: radius.base,
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(70, 194, 168, 0.18)"; e.currentTarget.style.borderColor = "rgba(70, 194, 168, 0.35)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "rgba(70, 194, 168, 0.1)"; e.currentTarget.style.borderColor = "rgba(70, 194, 168, 0.25)"; }}
-                >
-                    Hoy
-                </button>
-            </div>
-        </div>
-    );
 
     return (
         <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
@@ -599,12 +238,7 @@ export function DatePicker({
                     transition: "border-color 0.15s",
                     ...triggerStyle,
                 }}
-                onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = colors.fill;
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = colors.fill;
-                }}
+
             >
                 <span style={{ display: "flex", alignItems: "center", gap: spacing[2], flex: 1, overflow: "hidden" }}>
                     <CalendarIcon size={16} style={{ flexShrink: 0, color: colors.fg.dim }} />
@@ -624,10 +258,159 @@ export function DatePicker({
                     <ChevronDown size={14} style={{ flexShrink: 0, opacity: 0.6 }} />
                 )}
             </div>
-            {isOpen &&
-                (usePortal && portalPanel
-                    ? createPortal(portalPanel, document.body)
-                    : !usePortal && calendarPanel)}
+            {isOpen && (
+                <div
+                    ref={panelRef}
+                    style={{
+                        position: "fixed",
+                        visibility: "hidden",
+                        zIndex: 1000,
+                        backgroundColor: colors.bg.surface,
+                        border: `1px solid ${colors.border}`,
+                        borderRadius: radius.lg,
+                        padding: spacing[3],
+                    }}
+                >
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginBottom: spacing[2],
+                        }}
+                    >
+                        <button
+                            type="button"
+                            onClick={prevMonth}
+                            style={{
+                                background: "transparent",
+                                border: "none",
+                                color: colors.fg.dim,
+                                cursor: "pointer",
+                                padding: "4px",
+                                display: "flex",
+                                borderRadius: radius.base,
+                            }}
+                        >
+                            <ChevronLeft size={18} />
+                        </button>
+                        <div style={{ display: "flex", gap: spacing[2] }}>
+                            <DropdownSelect
+                                value={month}
+                                options={monthOptions}
+                                onChange={(v) => setViewDate(new Date(year, v, 1))}
+                                width="110px"
+                            />
+                            <DropdownSelect
+                                value={year}
+                                options={yearOptions}
+                                onChange={(v) => setViewDate(new Date(v, month, 1))}
+                                width="70px"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={nextMonth}
+                            style={{
+                                background: "transparent",
+                                border: "none",
+                                color: colors.fg.dim,
+                                cursor: "pointer",
+                                padding: "4px",
+                                display: "flex",
+                                borderRadius: radius.base,
+                            }}
+                        >
+                            <ChevronRight size={18} />
+                        </button>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 32px)", gap: "2px" }}>
+                        {WEEKDAYS.map((day) => (
+                            <div
+                                key={day}
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontSize: "11px",
+                                    fontWeight: 600,
+                                    color: colors.fg.dim,
+                                    height: "28px",
+                                }}
+                            >
+                                {day}
+                            </div>
+                        ))}
+                        {days.map((day, idx) =>
+                            day ? (
+                                <div
+                                    key={idx}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSelect(day);
+                                    }}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        width: "32px",
+                                        height: "32px",
+                                        fontSize: "13px",
+                                        borderRadius: radius.base,
+                                        cursor: "pointer",
+                                        backgroundColor:
+                                            selectedDate && isSameDay(day, selectedDate, tz)
+                                                ? colors.accent.teal
+                                                : "transparent",
+                                        color:
+                                            selectedDate && isSameDay(day, selectedDate, tz)
+                                                ? colors.bg.base
+                                                : isToday(day, tz)
+                                                  ? colors.accent.teal
+                                                  : colors.fg.base,
+                                        fontWeight:
+                                            (selectedDate && isSameDay(day, selectedDate, tz)) || isToday(day, tz)
+                                                ? 600
+                                                : 400,
+                                    }}
+                                >
+                                    {day.getDate()}
+                                </div>
+                            ) : (
+                                <div key={idx} style={{ width: "32px", height: "32px" }} />
+                            )
+                        )}
+                    </div>
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            marginTop: spacing[2],
+                            paddingTop: spacing[2],
+                            borderTop: `1px solid ${colors.fill}`,
+                        }}
+                    >
+                        <button
+                            type="button"
+                            onClick={handleToday}
+                            style={{
+                                backgroundColor: colors.variant.teal.bg,
+                                border: `1px solid ${colors.variant.teal.border}`,
+                                color: colors.accent.teal,
+                                fontSize: "13px",
+                                fontWeight: 500,
+                                cursor: "pointer",
+                                padding: "4px 8px",
+                                borderRadius: radius.base,
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.variant.teal.hoverBg; e.currentTarget.style.borderColor = colors.variant.teal.hoverBorder; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.variant.teal.bg; e.currentTarget.style.borderColor = colors.variant.teal.border; }}
+                        >
+                            Hoy
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

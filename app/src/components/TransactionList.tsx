@@ -29,7 +29,7 @@ export function TransactionList({ transactions, sort, order, onSort, onDelete, o
                     padding: spacing[8],
                     textAlign: "center",
                     color: colors.fg.dim,
-                    border: `1px solid ${colors.fill}`,
+                    border: `1px solid ${colors.border}`,
                     borderRadius: radius.lg,
                 }}
             >
@@ -71,7 +71,7 @@ export function TransactionList({ transactions, sort, order, onSort, onDelete, o
                 </tr>
             </thead>
             <tbody>
-                {transactions.map((transaction) => (
+                {transactions.map((transaction, idx) => (
                     <TransactionRow
                         key={transaction.id}
                         transaction={transaction}
@@ -80,6 +80,7 @@ export function TransactionList({ transactions, sort, order, onSort, onDelete, o
                         isEditing={editingId === transaction.id}
                         onStartEdit={() => setEditingId(transaction.id)}
                         onFinishEdit={() => setEditingId(null)}
+                        index={idx}
                     />
                 ))}
             </tbody>

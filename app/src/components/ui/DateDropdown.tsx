@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useRef } from "react";
 import { ChevronDown } from "lucide-react";
 import { colors } from "@/styles/colors";
-import { spacing, radius, shadows } from "@/styles/theme";
+import { spacing, radius } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
-import { useClickOutside } from "@/hooks";
+import { useClickOutside, useDropdownPosition } from "@/hooks";
 
 export interface DateDropdownProps {
     label: string | null;
@@ -18,11 +18,10 @@ export interface DateDropdownProps {
 const PANEL_BASE: React.CSSProperties = {
     position: "fixed",
     backgroundColor: colors.bg.surface,
-    border: `1px solid ${colors.fill}`,
+    border: `1px solid ${colors.border}`,
     borderRadius: radius.md,
     padding: spacing[2],
     zIndex: 1001,
-    boxShadow: shadows.lg,
     display: "flex",
     flexDirection: "column",
     gap: "1px",
@@ -40,23 +39,7 @@ export function DateDropdown({
     const triggerRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
 
-    const calculatePosition = useCallback(() => {
-        if (!triggerRef.current) return null;
-        const rect = triggerRef.current.getBoundingClientRect();
-        const panelH = 320;
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const top = spaceBelow >= panelH + 8 ? rect.bottom + 4 : rect.top - panelH - 4;
-        return { top, left: rect.left };
-    }, []);
-
-    const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
-
-    useEffect(() => {
-        if (open) {
-            const pos = calculatePosition();
-            if (pos) setPosition(pos);
-        }
-    }, [open, calculatePosition]);
+    useDropdownPosition(triggerRef, panelRef, open, { maxHeight: 320 });
 
     useClickOutside(triggerRef, () => {
         if (open) onToggle();
@@ -91,15 +74,9 @@ export function DateDropdown({
                     width: "100%",
                     boxSizing: "border-box",
                     outline: "none",
-                    transition: "border-color 0.15s",
                     ...triggerStyle,
                 }}
-                onMouseEnter={(e) => {
-                    if (!disabled) e.currentTarget.style.borderColor = colors.fill;
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = colors.fill;
-                }}
+
             >
                 <span
                     style={{
@@ -122,17 +99,18 @@ export function DateDropdown({
                 />
             </button>
 
-            {open && position && (
+            {open && (
                 <div
                     ref={panelRef}
                     data-dropdown-panel
                     style={{
                         ...PANEL_BASE,
-                        top: position.top,
-                        left: position.left,
+                        visibility: "hidden",
                         width: typeof triggerStyle?.width === "number"
                             ? `${triggerStyle.width}px`
                             : triggerStyle?.width || "260px",
+                        maxHeight: "320px",
+                        overflowY: "auto",
                     }}
                 >
                     {children}

@@ -2,6 +2,7 @@ package categories
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -54,6 +55,7 @@ type Repository interface {
 	CreateSubcategory(ctx context.Context, s Subcategory) (*Subcategory, error)
 	GetSubcategoryByID(ctx context.Context, id string) (*Subcategory, error)
 	GetSubcategoryByName(ctx context.Context, name string) (*Subcategory, error)
+	GetSubcategoryByCategoryAndName(ctx context.Context, categoryID, name string) (*Subcategory, error)
 	ListSubcategories(ctx context.Context, filter Filter) ([]Subcategory, error)
 	UpdateSubcategory(ctx context.Context, s Subcategory) (*Subcategory, error)
 	DeleteSubcategory(ctx context.Context, id string, now time.Time) error
@@ -63,6 +65,12 @@ type Repository interface {
 
 	HardDeleteCategory(ctx context.Context, id string) error
 	HardDeleteSubcategory(ctx context.Context, id string) error
+
+	// Tx variants for bulk import
+	CreateCategoryTx(ctx context.Context, tx *sql.Tx, c Category) (*Category, error)
+	GetCategoryByNameTx(ctx context.Context, tx *sql.Tx, name string) (*Category, error)
+	CreateSubcategoryTx(ctx context.Context, tx *sql.Tx, s Subcategory) (*Subcategory, error)
+	GetSubcategoryByCategoryAndNameTx(ctx context.Context, tx *sql.Tx, categoryID, name string) (*Subcategory, error)
 }
 
 type CategoryReq struct {

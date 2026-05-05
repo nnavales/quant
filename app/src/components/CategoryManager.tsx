@@ -19,7 +19,7 @@ import {
     useHardDeleteSubcategory,
 } from "@/hooks";
 import { InputGroup } from "./ui/InputGroup";
-import { toast } from "./ui/Toast";
+import { toast } from "@/utils/toast";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { colors } from "@/styles/colors";
@@ -354,7 +354,7 @@ export function CategoryManager() {
                                     <ChevronRight
                                         size={16}
                                         style={{
-                                            color: colors.accent.teal,
+                                            color: colors.fg.dim,
                                             transition: "transform 0.15s",
                                             transform: expandedCategories.has(group.category.id) ? "rotate(90deg)" : "rotate(0deg)",
                                         }}

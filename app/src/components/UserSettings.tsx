@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useUserConfig, useUpdateUserConfig, useDollarBanks } from "@/hooks";
-import { toast } from "@/components/ui/Toast";
+import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { Dropdown, type DropdownOption } from "@/components/ui/Dropdown";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { colors } from "@/styles/colors";
+import { colors, presets } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
 import { cardStyle } from "@/styles/layout";
@@ -24,7 +24,7 @@ const inputStyle: React.CSSProperties = {
     height: "32px",
     padding: `0 ${spacing[3]}`,
     backgroundColor: colors.bg.surface,
-    border: `1px solid ${colors.fill}`,
+    border: `1px solid ${colors.border}`,
     borderRadius: radius.md,
     color: colors.fg.base,
     fontSize: fonts.size.sm,
@@ -60,6 +60,15 @@ export function UserSettings() {
     const [timezone, setTimezone] = useState("America/Argentina/Buenos_Aires");
     const [dateFormat, setDateFormat] = useState("DD/MM/YYYY");
     const [defaultRate, setDefaultRate] = useState("");
+    const [theme, setTheme] = useState("dark");
+
+    const themeOptions: DropdownOption[] = Object.keys(presets).map((id) => ({
+        id,
+        label: id
+            .split("-")
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(" "),
+    }));
 
     useEffect(() => {
         if (config) {
@@ -68,6 +77,7 @@ export function UserSettings() {
             setTimezone(config.timezone ?? "America/Argentina/Buenos_Aires");
             setDateFormat(config.date_format ?? "DD/MM/YYYY");
             setDefaultRate(config.default_rate ?? "");
+            setTheme(config.theme ?? "dark");
         }
     }, [config]);
 
@@ -90,11 +100,15 @@ export function UserSettings() {
         });
     }
 
+    function getSaveData(overrides?: Record<string, string>) {
+        return { username, dollar_source: dollarSource, timezone, date_format: dateFormat, default_rate: defaultRate, theme, ...overrides };
+    }
+
     const isUsernameDirty = username !== (config?.username ?? "");
     const isDefaultRateDirty = defaultRate !== (config?.default_rate ?? "");
 
     const saveUsername = () => {
-        autoSave({ username, dollar_source: dollarSource, timezone, date_format: dateFormat, default_rate: defaultRate });
+        autoSave(getSaveData());
     };
 
     const cancelUsername = () => {
@@ -102,7 +116,7 @@ export function UserSettings() {
     };
 
     const saveDefaultRate = () => {
-        autoSave({ username, dollar_source: dollarSource, timezone, date_format: dateFormat, default_rate: defaultRate });
+        autoSave(getSaveData());
     };
 
     const cancelDefaultRate = () => {
@@ -144,7 +158,7 @@ export function UserSettings() {
                     value={dollarSource}
                     onChange={(id) => {
                         setDollarSource(id);
-                        autoSave({ username, dollar_source: id, timezone, date_format: dateFormat, default_rate: defaultRate });
+                        autoSave(getSaveData({ dollar_source: id }));
                     }}
                     options={dollarSourceOptions}
                     placeholder="Seleccionar..."
@@ -182,7 +196,7 @@ export function UserSettings() {
                     value={timezone}
                     onChange={(id) => {
                         setTimezone(id);
-                        autoSave({ username, dollar_source: dollarSource, timezone: id, date_format: dateFormat, default_rate: defaultRate });
+                        autoSave(getSaveData({ timezone: id }));
                     }}
                     options={timezoneOptions}
                     placeholder="Seleccionar..."
@@ -196,9 +210,24 @@ export function UserSettings() {
                     value={dateFormat}
                     onChange={(id) => {
                         setDateFormat(id);
-                        autoSave({ username, dollar_source: dollarSource, timezone, date_format: id, default_rate: defaultRate });
+                        autoSave(getSaveData({ date_format: id }));
                     }}
                     options={dateFormatOptions}
+                    placeholder="Seleccionar..."
+                    triggerStyle={{ height: "32px", fontSize: fonts.size.sm }}
+                />
+            </div>
+
+            <div style={cardStyle}>
+                <h3 style={sectionHeaderStyle}>Tema</h3>
+                <Dropdown
+                    value={theme}
+                    onChange={(id) => {
+                        localStorage.setItem("theme", id);
+                        autoSave(getSaveData({ theme: id }));
+                        setTimeout(() => window.location.reload(), 150);
+                    }}
+                    options={themeOptions}
                     placeholder="Seleccionar..."
                     triggerStyle={{ height: "32px", fontSize: fonts.size.sm }}
                 />

@@ -81,7 +81,7 @@ function HoldButton({
                 borderRadius: radius.md,
                 border: "none",
                 backgroundColor: colors.accent.red,
-                color: "#fff",
+                color: colors.fg.white,
                 fontSize: fonts.size.sm,
                 fontWeight: 500,
                 cursor: disabled ? "not-allowed" : "pointer",
@@ -101,7 +101,7 @@ function HoldButton({
                     top: 0,
                     left: 0,
                     bottom: 0,
-                    backgroundColor: "rgba(0,0,0,0.30)",
+                    backgroundColor: colors.overlay.black30,
                     width: `${progress * 100}%`,
                     zIndex: 0,
                 }}
@@ -158,7 +158,7 @@ export function ConfirmDialog({
                 style={{
                     position: "fixed",
                     inset: 0,
-                    backgroundColor: "rgba(0,0,0,0.55)",
+                    backgroundColor: colors.overlay.black55,
                     backdropFilter: "blur(4px)",
                     WebkitBackdropFilter: "blur(4px)",
                     display: "flex",
@@ -176,8 +176,8 @@ export function ConfirmDialog({
                         padding: spacing[6],
                         maxWidth: "380px",
                         width: "90%",
-                        border: `1px solid ${colors.fill}`,
-                        boxShadow: "0 16px 48px rgba(0,0,0,0.40)",
+                        border: `1px solid ${colors.border}`,
+                        outline: `1px solid ${colors.fill}`,
                         animation: "dialogContentIn 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
                     }}
                     onClick={(e) => e.stopPropagation()}
@@ -200,7 +200,7 @@ export function ConfirmDialog({
                                     width: "32px",
                                     height: "32px",
                                     borderRadius: radius.full,
-                                    backgroundColor: "rgba(217, 84, 107, 0.10)",
+                                    backgroundColor: colors.badge.destructive,
                                     flexShrink: 0,
                                 }}
                             >

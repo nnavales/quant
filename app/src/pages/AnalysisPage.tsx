@@ -11,9 +11,18 @@ import {
     TrendingDown,
     PiggyBank,
     Wallet,
-    BarChart3,
-    Percent,
-    Calendar,
+    Building2,
+    PieChart,
+    Briefcase,
+    Umbrella,
+    Shuffle,
+    Hourglass,
+    Target,
+    Gem,
+    Sprout,
+    Flame,
+    Waves,
+    Gauge,
 } from "lucide-react";
 import { KPICard } from "@/components/KPICard";
 import { Heatmap, HeatmapLegend } from "@/components/Heatmap";
@@ -53,6 +62,7 @@ export function AnalysisPage() {
                 display: "flex",
                 flexDirection: "column",
                 gap: spacing[4],
+                animation: "fadeIn 0.2s ease-out",
             }}
         >
             {selectedKPI && <KPIEvolutionModal kpi={selectedKPI} onClose={() => setSelectedKPI(null)} />}
@@ -137,7 +147,7 @@ export function AnalysisPage() {
                         backgroundColor: colors.bg.surface,
                         borderRadius: radius.lg,
                         padding: spacing[4],
-                        border: `1px solid ${colors.fill}`,
+                        border: `1px solid ${colors.border}`,
                         overflow: "visible",
                     }}
                 >
@@ -166,6 +176,7 @@ export function AnalysisPage() {
                                 }}
                             >
                                 <span
+                                    className="tab-title"
                                     style={{
                                         fontSize: fonts.size.sm,
                                         color:
@@ -186,11 +197,13 @@ export function AnalysisPage() {
                                         textTransform: "uppercase",
                                         fontWeight: 500,
                                         letterSpacing: "0.5px",
+                                        borderBottom: "1px solid transparent",
                                     }}
                                 >
                                     por
                                 </span>
                                 <span
+                                    className="tab-title"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setDimension(
@@ -215,6 +228,7 @@ export function AnalysisPage() {
                                         textTransform: "uppercase",
                                         fontWeight: 500,
                                         letterSpacing: "0.5px",
+                                        borderBottom: "1px solid transparent",
                                     }}
                                 >
                                     {currentYear}
@@ -283,7 +297,7 @@ export function AnalysisPage() {
                     )}
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: spacing[3] }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: spacing[4] }}>
                     <div>
                         <div
                             style={{
@@ -291,7 +305,7 @@ export function AnalysisPage() {
                                 color: colors.fg.dim,
                                 textTransform: "uppercase",
                                 letterSpacing: "1px",
-                                marginBottom: spacing[2],
+                                marginBottom: spacing[3],
                                 paddingLeft: spacing[1],
                             }}
                         >
@@ -301,14 +315,14 @@ export function AnalysisPage() {
                             style={{
                                 display: "grid",
                                 gridTemplateColumns: "1fr 1fr",
-                                gap: spacing[2],
+                                gap: spacing[3],
                             }}
                         >
                             <KPICard
                                 label="Ratio Costos Fijos"
                                 value={data.currentYtd.FixedCostRatio}
                                 format="percent"
-                                icon={BarChart3}
+                                icon={Building2}
                                 iconColor={colors.accent.orange}
                                 compact
                                 tooltip="Porcentaje de los ingresos acumulados que se destina a cubrir gastos fijos. Mide cuánto pesa tu estructura fija sobre tu ingreso total."
@@ -317,7 +331,7 @@ export function AnalysisPage() {
                                 label="Mix Gastos Fijos"
                                 value={data.currentYtd.FixedExpenseMix}
                                 format="percent"
-                                icon={TrendingDown}
+                                icon={PieChart}
                                 iconColor={colors.accent.red}
                                 compact
                                 tooltip="Porcentaje de los egresos acumulados que corresponde a gastos fijos. Mide qué parte de tu gasto total es estructural y menos flexible."
@@ -331,7 +345,7 @@ export function AnalysisPage() {
                                 color: colors.fg.dim,
                                 textTransform: "uppercase",
                                 letterSpacing: "1px",
-                                marginBottom: spacing[2],
+                                marginBottom: spacing[3],
                                 paddingLeft: spacing[1],
                             }}
                         >
@@ -341,14 +355,14 @@ export function AnalysisPage() {
                             style={{
                                 display: "grid",
                                 gridTemplateColumns: "1fr 1fr",
-                                gap: spacing[2],
+                                gap: spacing[3],
                             }}
                         >
                             <KPICard
                                 label="Mix Ingresos Fijos"
                                 value={data.currentYtd.FixedIncomeMix}
                                 format="percent"
-                                icon={TrendingUp}
+                                icon={Briefcase}
                                 iconColor={colors.accent.green}
                                 compact
                                 tooltip="Porcentaje de los egresos totales que corresponde a gastos fijos. Mide qué parte de tu gasto total es estructural y menos flexible."
@@ -358,7 +372,7 @@ export function AnalysisPage() {
                                 value={data.currentYtd.StableIncomeCoverage}
                                 format="number"
                                 suffix="x"
-                                icon={Percent}
+                                icon={Umbrella}
                                 iconColor={colors.accent.purple}
                                 compact
                                 tooltip="Relación entre ingresos fijos y gastos fijos. Mide cuántas veces tu ingreso estable cubre tu estructura fija. Un valor superior a 1 indica una cobertura saludable."
@@ -382,14 +396,14 @@ export function AnalysisPage() {
                             style={{
                                 display: "grid",
                                 gridTemplateColumns: "1fr 1fr",
-                                gap: spacing[2],
+                                gap: spacing[3],
                             }}
                         >
                             <KPICard
                                 label="Flexibilidad"
                                 value={data.currentYtd.FinancialFlexibility}
                                 format="percent"
-                                icon={Wallet}
+                                icon={Shuffle}
                                 iconColor={colors.accent.cyan}
                                 compact
                                 tooltip="Porcentaje de los egresos totales que corresponde a gasto variable. Mide qué parte de tu estructura es ajustable en caso de necesitar recortar gasto."
@@ -398,7 +412,7 @@ export function AnalysisPage() {
                                 label="Meses Cobertura"
                                 value={data.currentYtd.ExpenseCoverageMonths}
                                 format="number"
-                                icon={Calendar}
+                                icon={Hourglass}
                                 iconColor={colors.accent.purple}
                                 compact
                                 tooltip="Cantidad de meses que tu capital actual podría cubrir tomando como referencia tu gasto mensual actual. Mide tu capacidad de sostén financiero."
@@ -422,14 +436,14 @@ export function AnalysisPage() {
                             style={{
                                 display: "grid",
                                 gridTemplateColumns: "1fr 1fr",
-                                gap: spacing[2],
+                                gap: spacing[3],
                             }}
                         >
                             <KPICard
                                 label="Ahorro Proyectado"
                                 value={data.currentYtd.ProjectedYearlySavings}
                                 format="currency"
-                                icon={PiggyBank}
+                                icon={Target}
                                 iconColor={colors.accent.green}
                                 compact
                                 tooltip="Ahorro estimado al cierre del año si se mantiene el ritmo actual de ahorro. Mide la proyección anual de generación de ahorro."
@@ -438,7 +452,7 @@ export function AnalysisPage() {
                                 label="Capital Proyectado"
                                 value={data.currentYtd.ProjectedYearlyCapital}
                                 format="currency"
-                                icon={Wallet}
+                                icon={Gem}
                                 iconColor={colors.accent.cyan}
                                 compact
                                 tooltip="Capital estimado al cierre del año si se mantiene el ritmo actual de acumulación. Mide la proyección de patrimonio al cierre del año."
@@ -462,14 +476,14 @@ export function AnalysisPage() {
                             style={{
                                 display: "grid",
                                 gridTemplateColumns: "1fr 1fr",
-                                gap: spacing[2],
+                                gap: spacing[3],
                             }}
                         >
                             <KPICard
                                 label="Tasa Crecimiento"
                                 value={data.currentYtd.CapitalGrowthRateYTD}
                                 format="percent"
-                                icon={TrendingUp}
+                                icon={Sprout}
                                 iconColor={colors.accent.green}
                                 compact
                                 tooltip="Porcentaje del capital actual explicado por el ahorro acumulado del año. Mide la velocidad a la que el ahorro está expandiendo tu base de capital."
@@ -478,7 +492,7 @@ export function AnalysisPage() {
                                 label="Gasto Core"
                                 value={data.currentYtd.CoreBurnRate}
                                 format="currency"
-                                icon={Wallet}
+                                icon={Flame}
                                 iconColor={colors.accent.yellow}
                                 compact
                                 tooltip="Nivel mínimo de gasto estructural mensual necesario para sostener tu operación personal. Representa el 'piso' de gasto que no puede reducirse fácilmente."
@@ -502,14 +516,14 @@ export function AnalysisPage() {
                             style={{
                                 display: "grid",
                                 gridTemplateColumns: "1fr 1fr",
-                                gap: spacing[2],
+                                gap: spacing[3],
                             }}
                         >
                             <KPICard
                                 label="Volatilidad"
                                 value={data.currentYtd.SavingsVolatility}
                                 format="number"
-                                icon={BarChart3}
+                                icon={Waves}
                                 iconColor={colors.accent.yellow}
                                 compact
                                 tooltip="Mide la variabilidad del ahorro mensual a lo largo del año. Un valor más alto indica menor estabilidad en la generación de ahorro mes a mes."
@@ -518,7 +532,7 @@ export function AnalysisPage() {
                                 label="Ratio Volatilidad"
                                 value={data.currentYtd.SavingsVolatilityRatio}
                                 format="percent"
-                                icon={Percent}
+                                icon={Gauge}
                                 iconColor={colors.accent.yellow}
                                 compact
                                 tooltip="Relación entre la volatilidad del ahorro y el ahorro promedio. Mide la estabilidad relativa de la generación de ahorro."

@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { Filter, RotateCcw, X } from "lucide-react";
+import { RotateCcw, X } from "lucide-react";
 import type { TransactionFilters } from "@/api_client";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
-import { filterContainerStyle, dropdownItemStyle, clearButtonStyle } from "@/styles/filters";
+import { filterContainerStyle, dropdownItemStyle, clearButtonStyle, chipTriggerStyle } from "@/styles/filters";
 import { useCategories, useSubcategories, useChannels, useAccounts, useClickOutside } from "@/hooks";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Dropdown } from "@/components/ui/Dropdown";
@@ -22,18 +22,6 @@ const filterWrapperStyle: React.CSSProperties = {
     position: "relative",
     maxWidth: "160px",
 };
-
-const inputStyle = (hasValue: boolean): React.CSSProperties => ({
-    padding: "5px 10px",
-    backgroundColor: "transparent",
-    border: `1px solid ${hasValue ? colors.fill : "rgba(255,255,255,0.06)"}`,
-    borderRadius: radius.md,
-    color: colors.fg.base,
-    fontSize: "12px",
-    outline: "none",
-    width: "120px",
-    transition: "border-color 0.15s",
-});
 
 const inputWrapperStyle: React.CSSProperties = {
     position: "relative",
@@ -130,27 +118,6 @@ export function TransactionFilters({
 
     return (
         <div>
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: spacing[1],
-                    marginBottom: spacing[2],
-                }}
-            >
-                <Filter size={12} style={{ color: colors.fg.dim }} />
-                <span
-                    style={{
-                        fontSize: "11px",
-                        fontWeight: 500,
-                        color: colors.fg.dim,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.5px",
-                    }}
-                >
-                    Filtros
-                </span>
-            </div>
             <div style={filterContainerStyle} ref={dropdownRef}>
                 {/* Search */}
                 <div style={inputWrapperStyle}>
@@ -160,12 +127,10 @@ export function TransactionFilters({
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                        style={inputStyle(!!filters.search)}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = colors.fill;
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = !!filters.search ? colors.fill : "rgba(255,255,255,0.06)";
+                        style={{
+                            ...chipTriggerStyle(!!filters.search),
+                            width: "120px",
+                            outline: "none",
                         }}
                     />
                     {searchText && (
@@ -196,13 +161,7 @@ export function TransactionFilters({
                         placeholder="Fecha"
                         open={openDropdown === "date"}
                         onToggle={() => toggleDropdown("date")}
-                        triggerStyle={{
-                            height: "28px",
-                            fontSize: "12px",
-                            padding: "0 10px",
-                            backgroundColor: "transparent",
-                            border: `1px solid ${!!filters.date_from || !!filters.date_to ? colors.fill : "rgba(255,255,255,0.06)"}`,
-                        }}
+                        triggerStyle={chipTriggerStyle(!!filters.date_from || !!filters.date_to)}
                     >
                         <div
                             style={{
@@ -225,6 +184,16 @@ export function TransactionFilters({
                                 });
                                 setOpenDropdown(null);
                             }}
+                            onMouseEnter={(e) => {
+                                if (filters.date_from || filters.date_to) {
+                                    e.currentTarget.style.backgroundColor = colors.fill;
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (filters.date_from || filters.date_to) {
+                                    e.currentTarget.style.backgroundColor = "transparent";
+                                }
+                            }}
                         >
                             Todas las fechas
                         </div>
@@ -245,6 +214,12 @@ export function TransactionFilters({
                                         page: 1,
                                     });
                                     setOpenDropdown(null);
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = colors.fill;
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = "transparent";
                                 }}
                             >
                                 {preset.label}
@@ -307,13 +282,7 @@ export function TransactionFilters({
                         placeholder="Tipo"
                         clearable
                         clearLabel="Todos"
-                        triggerStyle={{
-                            height: "28px",
-                            fontSize: "12px",
-                            padding: "0 10px",
-                            backgroundColor: "transparent",
-                            border: `1px solid ${filters.type ? colors.fill : "rgba(255,255,255,0.06)"}`,
-                        }}
+                        triggerStyle={chipTriggerStyle(!!filters.type)}
                     />
                 </div>
 
@@ -334,13 +303,7 @@ export function TransactionFilters({
                         }
                         placeholder="Moneda"
                         clearable
-                        triggerStyle={{
-                            height: "28px",
-                            fontSize: "12px",
-                            padding: "0 10px",
-                            backgroundColor: "transparent",
-                            border: `1px solid ${filters.currency ? colors.fill : "rgba(255,255,255,0.06)"}`,
-                        }}
+                        triggerStyle={chipTriggerStyle(!!filters.currency)}
                     />
                 </div>
 
@@ -361,13 +324,7 @@ export function TransactionFilters({
                         }
                         placeholder="Frecuencia"
                         clearable
-                        triggerStyle={{
-                            height: "28px",
-                            fontSize: "12px",
-                            padding: "0 10px",
-                            backgroundColor: "transparent",
-                            border: `1px solid ${filters.frequency ? colors.fill : "rgba(255,255,255,0.06)"}`,
-                        }}
+                        triggerStyle={chipTriggerStyle(!!filters.frequency)}
                     />
                 </div>
 
@@ -390,13 +347,7 @@ export function TransactionFilters({
                         }
                         placeholder="Cuotas"
                         clearable
-                        triggerStyle={{
-                            height: "28px",
-                            fontSize: "12px",
-                            padding: "0 10px",
-                            backgroundColor: "transparent",
-                            border: `1px solid ${filters.installments !== undefined ? colors.fill : "rgba(255,255,255,0.06)"}`,
-                        }}
+                        triggerStyle={chipTriggerStyle(filters.installments !== undefined)}
                     />
                 </div>
 
@@ -419,13 +370,7 @@ export function TransactionFilters({
                         }
                         placeholder="Estado"
                         clearable
-                        triggerStyle={{
-                            height: "28px",
-                            fontSize: "12px",
-                            padding: "0 10px",
-                            backgroundColor: "transparent",
-                            border: `1px solid ${filters.is_paid !== undefined ? colors.fill : "rgba(255,255,255,0.06)"}`,
-                        }}
+                        triggerStyle={chipTriggerStyle(filters.is_paid !== undefined)}
                     />
                 </div>
 
@@ -440,13 +385,7 @@ export function TransactionFilters({
                         placeholder="Categoría"
                         searchable
                         clearable
-                        triggerStyle={{
-                            height: "28px",
-                            fontSize: "12px",
-                            padding: "0 10px",
-                            backgroundColor: "transparent",
-                            border: `1px solid ${filters.category ? colors.fill : "rgba(255,255,255,0.06)"}`,
-                        }}
+                        triggerStyle={chipTriggerStyle(!!filters.category)}
                     />
                 </div>
 
@@ -461,13 +400,7 @@ export function TransactionFilters({
                         placeholder="Subcategoría"
                         searchable
                         clearable
-                        triggerStyle={{
-                            height: "28px",
-                            fontSize: "12px",
-                            padding: "0 10px",
-                            backgroundColor: "transparent",
-                            border: `1px solid ${filters.subcategory ? colors.fill : "rgba(255,255,255,0.06)"}`,
-                        }}
+                        triggerStyle={chipTriggerStyle(!!filters.subcategory)}
                     />
                 </div>
 
@@ -483,13 +416,7 @@ export function TransactionFilters({
                         searchable
                         clearable
                         clearLabel="Todos"
-                        triggerStyle={{
-                            height: "28px",
-                            fontSize: "12px",
-                            padding: "0 10px",
-                            backgroundColor: "transparent",
-                            border: `1px solid ${filters.channel ? colors.fill : "rgba(255,255,255,0.06)"}`,
-                        }}
+                        triggerStyle={chipTriggerStyle(!!filters.channel)}
                     />
                 </div>
 
@@ -504,13 +431,7 @@ export function TransactionFilters({
                         placeholder="Cuenta"
                         searchable
                         clearable
-                        triggerStyle={{
-                            height: "28px",
-                            fontSize: "12px",
-                            padding: "0 10px",
-                            backgroundColor: "transparent",
-                            border: `1px solid ${filters.account ? colors.fill : "rgba(255,255,255,0.06)"}`,
-                        }}
+                        triggerStyle={chipTriggerStyle(!!filters.account)}
                     />
                 </div>
 
@@ -518,12 +439,12 @@ export function TransactionFilters({
                     <button
                         onClick={clearAllFilters}
                         onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = `${colors.accent.red}30`;
-                            e.currentTarget.style.borderColor = `${colors.accent.red}80`;
-                        }}
-                        onMouseLeave={(e) => {
                             e.currentTarget.style.backgroundColor = `${colors.accent.red}15`;
                             e.currentTarget.style.borderColor = `${colors.accent.red}40`;
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = "transparent";
+                            e.currentTarget.style.borderColor = colors.border;
                         }}
                         style={clearButtonStyle}
                         title="Limpiar filtros"
@@ -551,7 +472,7 @@ export function TransactionFilters({
                             height: "28px",
                             padding: "0 10px",
                             backgroundColor: "transparent",
-                            border: `1px solid ${page <= 1 ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.08)"}`,
+                            border: `1px solid ${page <= 1 ? colors.overlay.white06 : colors.border}`,
                             borderRadius: radius.md,
                             color: colors.fg.dim,
                             cursor: page <= 1 ? "not-allowed" : "pointer",
@@ -575,7 +496,7 @@ export function TransactionFilters({
                             height: "28px",
                             padding: "0 10px",
                             backgroundColor: "transparent",
-                            border: `1px solid ${page >= totalPages ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.08)"}`,
+                            border: `1px solid ${page >= totalPages ? colors.overlay.white06 : colors.border}`,
                             borderRadius: radius.md,
                             color: colors.fg.dim,
                             cursor: page >= totalPages ? "not-allowed" : "pointer",
@@ -611,7 +532,7 @@ export function TransactionFilters({
                             marginLeft: spacing[1],
                             padding: "0 6px",
                             backgroundColor: "transparent",
-                            border: `1px solid rgba(255, 255, 255, 0.08)`,
+                            border: `1px solid ${colors.overlay.white08}`,
                             borderRadius: radius.md,
                             color: colors.fg.base,
                             fontSize: "12px",

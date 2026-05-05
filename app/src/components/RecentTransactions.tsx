@@ -4,7 +4,7 @@ import { useUserConfig } from "@/hooks";
 import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
-import { Wallet, Plus, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatDateStr, getDateFormat } from "@/utils/date";
 
@@ -29,7 +29,7 @@ export function RecentTransactions({ limit = 8, onAddIncome, onAddExpense }: Rec
                     backgroundColor: colors.bg.surface,
                     borderRadius: radius.lg,
                     padding: spacing[4],
-                    border: `1px solid ${colors.fill}`,
+                    border: `1px solid ${colors.border}`,
                 }}
             >
                 <div style={{ color: colors.fg.dim, textAlign: "center", padding: spacing[4] }}>Cargando...</div>
@@ -43,27 +43,14 @@ export function RecentTransactions({ limit = 8, onAddIncome, onAddExpense }: Rec
                     backgroundColor: colors.bg.surface,
                     borderRadius: radius.lg,
                     padding: spacing[4],
-                    border: `1px solid ${colors.fill}`,
+                    border: `1px solid ${colors.border}`,
                 }}
             >
                 <div style={{ color: colors.accent.red, textAlign: "center", padding: spacing[4] }}>Error</div>
             </div>
         );
     }
-    if (!data || data.data.length === 0) {
-        return (
-            <div
-                style={{
-                    backgroundColor: colors.bg.surface,
-                    borderRadius: radius.lg,
-                    padding: spacing[4],
-                    border: `1px solid ${colors.fill}`,
-                }}
-            >
-                <div style={{ color: colors.fg.dim, textAlign: "center", padding: spacing[4] }}>Sin transacciones</div>
-            </div>
-        );
-    }
+    const transactions = data?.data?.slice(0, limit) ?? [];
 
     return (
         <div
@@ -71,10 +58,11 @@ export function RecentTransactions({ limit = 8, onAddIncome, onAddExpense }: Rec
                 backgroundColor: colors.bg.surface,
                 borderRadius: radius.lg,
                 padding: spacing[4],
-                border: `1px solid ${colors.fill}`,
+                border: `1px solid ${colors.border}`,
                 display: "flex",
                 flexDirection: "column",
                 height: "100%",
+                minHeight: "420px",
                 boxSizing: "border-box",
             }}
         >
@@ -86,12 +74,9 @@ export function RecentTransactions({ limit = 8, onAddIncome, onAddExpense }: Rec
                     marginBottom: spacing[3],
                 }}
             >
-                <div style={{ display: "flex", alignItems: "center", gap: spacing[2] }}>
-                    <Wallet size={18} color={colors.accent.cyan} />
-                    <span style={{ fontSize: fonts.size.sm, color: colors.fg.base, textTransform: "uppercase", fontWeight: 500, letterSpacing: "0.5px" }}>
-                        Transacciones Recientes
-                    </span>
-                </div>
+                <span style={{ fontSize: fonts.size.sm, color: colors.fg.base, textTransform: "uppercase", fontWeight: 500, letterSpacing: "0.5px" }}>
+                    Transacciones Recientes
+                </span>
                 <div style={{ display: "flex", gap: spacing[2] }}>
                     <Button variant="chip" size="sm" color="green" iconLeft={<Plus size={12} />} onClick={onAddIncome}>
                         Ingreso
@@ -101,11 +86,17 @@ export function RecentTransactions({ limit = 8, onAddIncome, onAddExpense }: Rec
                     </Button>
                 </div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-                {data.data.slice(0, limit).map((t, idx) => {
+            <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+                {transactions.length === 0 ? (
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ color: colors.fg.dim, fontSize: fonts.size.sm }}>Sin transacciones</span>
+                    </div>
+                ) : (
+                    transactions.map((t, idx) => {
                     const isIncome = t.type === "income";
                     const displayAmount = isIncome ? `+${t.amount}` : `-${t.amount}`;
                     const dateFormatted = formatDateStr(t.date, userDateFormat);
+                    const zebraBg = idx % 2 === 1 ? colors.bg.base : undefined;
 
                     return (
                         <div
@@ -115,8 +106,9 @@ export function RecentTransactions({ limit = 8, onAddIncome, onAddExpense }: Rec
                                 alignItems: "center",
                                 gap: spacing[2],
                                 padding: `${spacing[3]} ${spacing[1]}`,
-                                borderBottom: idx < data.data.slice(0, limit).length - 1 ? `1px solid ${colors.fill}` : "none",
+                                borderBottom: idx < transactions.length - 1 ? `1px solid ${colors.fill}` : "none",
                                 minWidth: 0,
+                                backgroundColor: zebraBg,
                             }}
                         >
                             {/* Icon */}
@@ -126,8 +118,8 @@ export function RecentTransactions({ limit = 8, onAddIncome, onAddExpense }: Rec
                                     height: 34,
                                     borderRadius: radius.md,
                                     backgroundColor: isIncome
-                                        ? "rgba(143, 207, 122, 0.12)"
-                                        : "rgba(224, 97, 122, 0.12)",
+                                        ? colors.badge.income
+                                        : colors.badge.expense,
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
@@ -219,7 +211,7 @@ export function RecentTransactions({ limit = 8, onAddIncome, onAddExpense }: Rec
                             </span>
                         </div>
                     );
-                })}
+                }))}
             </div>
         </div>
     );

@@ -13,6 +13,7 @@ import {
     networth,
     assets,
     presets,
+    backup,
     type TransactionFilters,
     type TransactionAggregateReq,
     type CancelInstallmentsReq,
@@ -703,7 +704,37 @@ export function useRestorePreset() {
     });
 }
 
+export function useExportBackup() {
+    return useMutation({
+        mutationFn: () => backup.export(),
+    });
+}
+
+export function useImportBackup() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ resource, file }: { resource: "transactions" | "historical" | "networth"; file: File }) =>
+            backup.import(resource, file),
+        onSuccess: () => {
+            invalidateKeys(queryClient, [
+                "transaction-aggregates",
+                "transactions",
+                "historical",
+                "assets",
+                "networth",
+                "dashboard",
+                "categories",
+                "subcategories",
+                "channels",
+                "accounts",
+            ]);
+        },
+    });
+}
+
 export { useClickOutside } from "./useClickOutside";
+export { useDropdownPosition } from "./useDropdownPosition";
 export { useCategoryGroups, useAccountGroups } from "./useDropdownGroups";
 export { useDollarRate } from "./useDollarRate";
 export { useGroupedChannels, useGroupedCategories } from "./useGroupedItems";

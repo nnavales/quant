@@ -4,7 +4,7 @@ import { fonts } from "@/styles/fonts";
 
 type ButtonVariant = "primary" | "secondary" | "icon" | "chip" | "tab" | "badge" | "plain" | "ghost";
 type ButtonSize = "sm" | "md" | "lg";
-type ButtonColor = "default" | "green" | "red" | "cyan" | "teal";
+type ButtonColor = "default" | "green" | "red" | "cyan" | "teal" | "blue" | "orange";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: ButtonVariant;
@@ -21,31 +21,31 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 const colorMap: Record<ButtonColor, { bg: string; border: string; text: string; hoverBg: string; hoverBorder: string }> = {
     default: {
         bg: colors.fill,
-        border: colors.fill,
+        border: colors.border,
         text: colors.fg.base,
-        hoverBg: colors.border,
-        hoverBorder: colors.border,
+        hoverBg: colors.interactive.hoverBg,
+        hoverBorder: colors.interactive.hoverBorder,
     },
     green: {
-        bg: "rgba(143, 207, 122, 0.1)",
-        border: "rgba(143, 207, 122, 0.25)",
+        bg: colors.variant.green.bg,
+        border: colors.variant.green.border,
         text: colors.accent.green,
-        hoverBg: "rgba(143, 207, 122, 0.18)",
-        hoverBorder: "rgba(143, 207, 122, 0.35)",
+        hoverBg: colors.variant.green.hoverBg,
+        hoverBorder: colors.variant.green.hoverBorder,
     },
     red: {
-        bg: "rgba(224, 97, 122, 0.1)",
-        border: "rgba(224, 97, 122, 0.25)",
+        bg: colors.variant.red.bg,
+        border: colors.variant.red.border,
         text: colors.accent.red,
-        hoverBg: "rgba(224, 97, 122, 0.18)",
-        hoverBorder: "rgba(224, 97, 122, 0.35)",
+        hoverBg: colors.variant.red.hoverBg,
+        hoverBorder: colors.variant.red.hoverBorder,
     },
     cyan: {
-        bg: "rgba(66, 189, 224, 0.1)",
-        border: "rgba(66, 189, 224, 0.25)",
+        bg: colors.variant.cyan.bg,
+        border: colors.variant.cyan.border,
         text: colors.accent.cyan,
-        hoverBg: "rgba(66, 189, 224, 0.18)",
-        hoverBorder: "rgba(66, 189, 224, 0.35)",
+        hoverBg: colors.variant.cyan.hoverBg,
+        hoverBorder: colors.variant.cyan.hoverBorder,
     },
     teal: {
         bg: `${colors.accent.teal}26`,
@@ -53,6 +53,20 @@ const colorMap: Record<ButtonColor, { bg: string; border: string; text: string; 
         text: colors.accent.teal,
         hoverBg: `${colors.accent.teal}36`,
         hoverBorder: `${colors.accent.teal}50`,
+    },
+    blue: {
+        bg: colors.variant.blue.bg,
+        border: colors.variant.blue.border,
+        text: colors.accent.blue,
+        hoverBg: colors.variant.blue.hoverBg,
+        hoverBorder: colors.variant.blue.hoverBorder,
+    },
+    orange: {
+        bg: colors.variant.orange.bg,
+        border: colors.variant.orange.border,
+        text: colors.accent.orange,
+        hoverBg: colors.variant.orange.hoverBg,
+        hoverBorder: colors.variant.orange.hoverBorder,
     },
 };
 
@@ -98,7 +112,7 @@ export function Button({
         };
 
         switch (variant) {
-            case "primary":
+            case "primary": {
                 return {
                     ...base,
                     padding: s.padding,
@@ -108,6 +122,7 @@ export function Button({
                     borderRadius: radius.md,
                     color: c.text,
                 };
+            }
             case "secondary":
                 return {
                     ...base,
@@ -151,6 +166,18 @@ export function Button({
                     color: c.text,
                 };
             case "tab":
+                if (active && color !== "default") {
+                    return {
+                        ...base,
+                        padding: s.padding,
+                        fontSize: s.fontSize,
+                        backgroundColor: c.bg,
+                        border: "none",
+                        borderRadius: radius.sm,
+                        color: c.text,
+                        fontWeight: 600,
+                    };
+                }
                 return {
                     ...base,
                     padding: s.padding,
@@ -209,7 +236,11 @@ export function Button({
                 if (!active) el.style.backgroundColor = colors.fill;
                 break;
             case "tab":
-                if (!active) el.style.backgroundColor = colors.fill;
+                if (active && color !== "default") {
+                    el.style.backgroundColor = c.hoverBg;
+                } else if (!active) {
+                    el.style.backgroundColor = colors.fill;
+                }
                 break;
             case "plain":
                 el.style.color = colors.fg.base;
@@ -240,7 +271,11 @@ export function Button({
                 if (!active) el.style.backgroundColor = "transparent";
                 break;
             case "tab":
-                if (!active) el.style.backgroundColor = "transparent";
+                if (active && color !== "default") {
+                    el.style.backgroundColor = c.bg;
+                } else if (!active) {
+                    el.style.backgroundColor = "transparent";
+                }
                 break;
             case "plain":
                 el.style.color = colors.fg.dim;

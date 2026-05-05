@@ -1,22 +1,24 @@
 import { useState } from "react";
-import { X, CreditCard, Tag, User, Layers } from "lucide-react";
+import { X, CreditCard, Tag, User, Layers, Database } from "lucide-react";
 import { ChannelAccountManager } from "@/components/ChannelAccountManager";
 import { CategoryManager } from "@/components/CategoryManager";
 import { UserSettings } from "@/components/UserSettings";
 import { PresetManager } from "@/components/PresetManager";
+import { BackupManager } from "@/components/BackupManager";
 import { Modal, ModalContent } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
 
-type SettingsTab = "user" | "channels" | "categories" | "presets";
+type SettingsTab = "user" | "channels" | "categories" | "presets" | "backup";
 
 const tabs: { id: SettingsTab; label: string; icon: React.ElementType }[] = [
     { id: "user", label: "Usuario", icon: User },
     { id: "channels", label: "Canales / Cuentas", icon: CreditCard },
     { id: "categories", label: "Categorías", icon: Tag },
     { id: "presets", label: "Presets", icon: Layers },
+    { id: "backup", label: "Backup", icon: Database },
 ];
 
 interface SettingsModalProps {
@@ -158,6 +160,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                         {activeTab === "channels" && <ChannelAccountManager />}
                         {activeTab === "categories" && <CategoryManager />}
                         {activeTab === "presets" && <PresetManager />}
+                        {activeTab === "backup" && <BackupManager />}
                     </div>
                 </div>
             </ModalContent>

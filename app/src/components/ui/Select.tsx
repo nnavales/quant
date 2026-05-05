@@ -1,9 +1,9 @@
 import { useState, useRef } from "react";
 import { ChevronDown, Check } from "lucide-react";
-import { spacing, radius, shadows } from "@/styles/theme";
+import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
-import { useClickOutside } from "@/hooks";
+import { useClickOutside, useDropdownPosition } from "@/hooks";
 
 interface SelectOption {
     value: string;
@@ -19,15 +19,24 @@ interface CustomSelectProps {
 
 export function CustomSelect({ value, options, onChange, style }: CustomSelectProps) {
     const [open, setOpen] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
-
-    useClickOutside(ref, () => setOpen(false));
+    const wrapperRef = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
 
     const selected = options.find((o) => o.value === value);
 
+    useClickOutside(wrapperRef, () => setOpen(false));
+    useDropdownPosition(triggerRef, panelRef, open, { matchTriggerWidth: true });
+
+    const handleSelect = (v: string) => {
+        onChange(v);
+        setOpen(false);
+    };
+
     return (
-        <div ref={ref} style={{ position: "relative", ...style }}>
+        <div ref={wrapperRef} style={{ position: "relative", ...style }}>
             <button
+                ref={triggerRef}
                 type="button"
                 onClick={() => setOpen(!open)}
                 style={{
@@ -50,24 +59,21 @@ export function CustomSelect({ value, options, onChange, style }: CustomSelectPr
             </button>
             {open && (
                 <div
+                    ref={panelRef}
                     style={{
-                        position: "absolute",
-                        top: "100%",
-                        left: 0,
-                        marginTop: spacing[1],
+                        position: "fixed",
+                        visibility: "hidden",
                         backgroundColor: colors.bg.surface,
-                        border: `1px solid ${colors.fill}`,
+                        border: `1px solid ${colors.border}`,
                         borderRadius: radius.md,
                         padding: spacing[1],
-                        minWidth: "100%",
-                        zIndex: 200,
-                        boxShadow: shadows.lg,
+                        zIndex: 9999,
                     }}
                 >
                     {options.map((opt) => (
                         <div
                             key={opt.value}
-                            onClick={() => { onChange(opt.value); setOpen(false); }}
+                            onClick={() => handleSelect(opt.value)}
                             style={{
                                 display: "flex",
                                 alignItems: "center",

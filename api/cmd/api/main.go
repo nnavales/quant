@@ -27,6 +27,20 @@ import (
 	"github.com/nnavales/summit/api/users"
 )
 
+/*
+1. Check de si la db esta
+	> Si esta: check de migraciones y correr normalmente
+	> Si no esta: Crear el archivo y migraciones
+
+2. Setear port para la API y escribirlo en un archivo.
+	> Si estaba escrito correr con ese port.
+	> Si no estaba setear nuevo puerto y escribirlo.
+
+3. De alguna manera preguntar al usuario si quiere que el processo se convierta en un daemon.
+	> Si acepta: crea el deamon para el OS del user
+	> Si no acepta: la API se corre en modo user (solo corre con el cliente opened)
+*/
+
 func main() {
 	if err := run(); err != nil {
 		slog.Error("api.error", "err", err)
@@ -41,7 +55,7 @@ func run() error {
 		return fmt.Errorf("config.error: %w", err)
 	}
 
-	logger, err := logger.New(cfg)
+	logger, err := logger.New(cfg.Config)
 	if err != nil {
 		return fmt.Errorf("logger.error %w", err)
 	}
@@ -94,18 +108,10 @@ func run() error {
 	presetsRepo := presets.NewSQLiteRepo(dbConn.DB)
 	presetsService := presets.NewService(clock, presetsRepo)
 
-	backupService := backup.NewService(financeRepo, networthRepo)
+	backupService := backup.NewService(dbConn.DB, financeRepo, networthRepo, historicalRepo, categoriesRepo, channelsRepo)
 
 	if err := users.SeedDefaults(context.Background(), usersRepo, clock); err != nil {
 		slog.Warn("user.config.seed.error", "err", err)
-	}
-
-	if err := channels.SeedDefaults(context.Background(), channelsRepo, clock); err != nil {
-		slog.Warn("channel.config.seed.error", "err", err)
-	}
-
-	if err := categories.SeedDefaults(context.Background(), categoriesRepo, clock); err != nil {
-		slog.Warn("category.config.seed.error", "err", err)
 	}
 
 	services := &transport.Services{
@@ -127,7 +133,7 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	httpServer := transport.NewServer(cfg, services)
+	httpServer := transport.NewServer(cfg.Config, services)
 
 	go func() {
 		if err := httpServer.Run(ctx); err != nil {

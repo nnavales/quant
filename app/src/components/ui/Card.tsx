@@ -7,12 +7,12 @@ import { Button } from "./Button";
 const cardStyle: React.CSSProperties = {
     backgroundColor: colors.bg.surface,
     borderRadius: radius.lg,
-    padding: spacing[4],
-    border: `1px solid ${colors.fill}`,
-    boxShadow: "0 4px 24px rgba(0, 0, 0, 0.2)",
+    padding: spacing[5],
+    border: `1px solid ${colors.border}`,
     display: "flex",
     flexDirection: "column",
     minHeight: 150,
+    animation: "fadeIn 0.2s ease-out",
 };
 
 const sectionTitleStyle: React.CSSProperties = {

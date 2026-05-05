@@ -3,7 +3,7 @@ import { RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
 import type { TransactionAggregateReq, Preset } from "@/api_client/types";
 import { useCreateTransaction, useCategories, useSubcategories, useChannels, useAccounts, useUserConfig, useDollarBanks, useCategoryGroups, useAccountGroups, useDollarRate, usePresets } from "@/hooks";
 import { spacing, radius } from "@/styles/theme";
-import { toast } from "@/components/ui/Toast";
+import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
@@ -28,13 +28,13 @@ const modalStyle: React.CSSProperties = {
     display: "flex",
     flexDirection: "column",
     border: `1px solid ${colors.border}`,
-    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+    outline: `1px solid ${colors.border}`,
 };
 
 const inputStyle: React.CSSProperties = {
     padding: `${spacing[2]} ${spacing[3]}`,
     backgroundColor: colors.bg.base,
-    border: `1px solid ${colors.fill}`,
+    border: `1px solid ${colors.border}`,
     borderRadius: radius.md,
     color: colors.fg.base,
     fontSize: fonts.size.sm,
@@ -281,7 +281,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                         style={{
                             display: "flex",
                             backgroundColor: colors.bg.base,
-                            border: `1px solid ${colors.fill}`,
+                            border: `1px solid ${colors.border}`,
                             borderRadius: radius.md,
                             padding: "2px",
                         }}
@@ -289,6 +289,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                         <Button
                             type="button"
                             variant="tab"
+                            color="red"
                             active={formData.type === "expense"}
                             onClick={() => {
                                 setSelectedPresetId("");
@@ -302,6 +303,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                         <Button
                             type="button"
                             variant="tab"
+                            color="green"
                             active={formData.type === "income"}
                             onClick={() => {
                                 setSelectedPresetId("");
@@ -322,10 +324,10 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                                 value={formData.date}
                                 onChange={(value) => setFormData({ ...formData, date: value })}
                                 triggerStyle={{
-                                    backgroundColor: colors.bg.base,
-                                    border: `1px solid ${colors.fill}`,
-                                    borderRadius: radius.md,
-                                    height: "40px",
+                                backgroundColor: colors.bg.base,
+                                border: `1px solid ${colors.border}`,
+                                borderRadius: radius.md,
+                                height: "40px",
                                     fontSize: fonts.size.sm,
                                     padding: `${spacing[2]} ${spacing[3]}`,
                                 }}

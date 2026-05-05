@@ -97,7 +97,6 @@ func addRoutes(mux *http.ServeMux,
 	mux.HandleFunc("GET /installment-groups/{id}/transactions", h.GetTransactionsByInstallmentGroup)
 	mux.HandleFunc("POST /transaction-aggregates", h.CreateTransactionAggregate)
 	mux.HandleFunc("POST /transaction-aggregates/bulk", h.CreateBulkTransactionAggregate)
-	mux.HandleFunc("POST /transaction-aggregates/bulk/csv", h.CreateBulkTransactionAggregateCSV)
 	mux.HandleFunc("GET /transaction-aggregates", h.ListTransactionsAggregate)
 	mux.HandleFunc("GET /transaction-aggregates/{id}", h.GetTransactionAggregate)
 	mux.HandleFunc("PATCH /transaction-aggregates/{id}", h.UpdateTransactionAggregate)
@@ -132,6 +131,7 @@ func addRoutes(mux *http.ServeMux,
 	mux.HandleFunc("POST /presets/{id}/restore", ph.RestorePreset)
 
 	mux.HandleFunc("GET /backup/export", bh.Export)
+	mux.HandleFunc("POST /backup/import/{resource}", bh.Import)
 }
 
 func handlerHealthz(w http.ResponseWriter, r *http.Request) {

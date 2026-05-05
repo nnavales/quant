@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useDashboard } from "@/hooks";
 import { dashboard as dashboardApi } from "@/api_client/endpoints";
-import { spacing, radius, shadows } from "@/styles/theme";
+import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { Modal, ModalContent } from "@/components/ui/Modal";
@@ -60,8 +60,8 @@ export function KPISimpleModal({ kpi, onClose }: KPISimpleModalProps) {
                     maxWidth: "600px",
                     maxHeight: "80vh",
                     overflow: "auto",
-                    border: `1px solid ${colors.fill}`,
-                    boxShadow: shadows.xl,
+                    border: `1px solid ${colors.border}`,
+                    outline: `1px solid ${colors.fill}`,
                 }}
             >
                 <div
@@ -128,7 +128,7 @@ export function KPISimpleModal({ kpi, onClose }: KPISimpleModalProps) {
                                             borderRadius: "4px 4px 0 0",
                                             minHeight: "4px",
                                         }}
-                                        title={`${point.year}: ${point.value.toFixed(2)}`}
+                                        title={`${point.year}: ${Math.round(point.value).toLocaleString("es-AR")}`}
                                     />
                                     <span style={{ fontSize: fonts.size.xs, color: colors.fg.dim }}>
                                         {point.year}
@@ -290,7 +290,7 @@ export function KPIEvolutionModal({ kpi, onClose }: KPIEvolutionModalProps) {
                     maxHeight: "80vh",
                     overflow: "auto",
                     border: `1px solid ${colors.border}`,
-                    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+                    outline: `1px solid ${colors.fill}`,
                 }}
             >
                 <div
@@ -401,6 +401,10 @@ export function KPIEvolutionModal({ kpi, onClose }: KPIEvolutionModalProps) {
                                 backgroundColor: colors.bg.surface,
                                 borderColor: colors.fill,
                                 textStyle: { color: colors.fg.base },
+                                formatter: (params: Array<{ seriesName: string; value: number; name: string; color: string }>) => {
+                                    const p = params[0];
+                                    return `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${p.name}</div><div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-weight:600">${Math.round(p.value).toLocaleString("es-AR")}</span></div>`;
+                                },
                             },
                             series: [
                                 {

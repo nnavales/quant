@@ -11,6 +11,7 @@ const (
 	KeyDateFormat   = "date_format"
 	KeyDefaultRate  = "default_rate"
 	KeyAccentColor  = "accent_color"
+	KeyTheme        = "theme"
 )
 
 type DateFormat string
@@ -31,6 +32,7 @@ var cfg = map[string]any{
 	KeyDateFormat:   DateSASlash,
 	KeyDefaultRate:  "1400",
 	KeyAccentColor:  "blue",
+	KeyTheme:        "dark",
 }
 
 func NewConfig() Config {

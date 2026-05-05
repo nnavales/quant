@@ -3,6 +3,7 @@ import { Sidebar } from "./Sidebar";
 import { SettingsModal } from "./SettingsModal";
 import { colors } from "@/styles/colors";
 import { spacing } from "@/styles/theme";
+import { fonts } from "@/styles/fonts";
 
 interface LayoutProps {
     children: ReactNode;
@@ -21,7 +22,7 @@ export function Layout({ children, activeTab, onTabChange, showSettings, onOpenS
                 minHeight: "100vh",
                 backgroundColor: colors.bg.base,
                 color: colors.fg.base,
-                fontFamily: "var(--font-sans)",
+                fontFamily: fonts.family.text,
             }}
         >
             <Sidebar activeTab={activeTab} onTabChange={onTabChange} onOpenSettings={onOpenSettings} />
@@ -34,8 +35,8 @@ export function Layout({ children, activeTab, onTabChange, showSettings, onOpenS
                 >
                     <h1
                         style={{
-                            fontFamily: "var(--font-display)",
-                            fontSize: "var(--font-size-xl)",
+                            fontFamily: fonts.family.display,
+                            fontSize: fonts.size.xl,
                             fontWeight: 600,
                             margin: 0,
                         }}

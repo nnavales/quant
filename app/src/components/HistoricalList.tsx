@@ -73,7 +73,7 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
                     padding: spacing[8],
                     textAlign: "center",
                     color: colors.fg.dim,
-                    border: `1px solid ${colors.fill}`,
+                    border: `1px solid ${colors.border}`,
                     borderRadius: radius.lg,
                 }}
             >
@@ -157,12 +157,14 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
                 </tr>
             </thead>
             <tbody>
-                {entries.map((entry) => (
+                {entries.map((entry, idx) => {
+                    const zebraBg = idx % 2 === 1 ? colors.bg.base : "transparent";
+                    return (
                     <tr
                         key={entry.month}
-                        style={{ transition: "background-color 0.15s" }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#181B1D")}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                        style={{ transition: "background-color 0.15s", backgroundColor: zebraBg }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.bg.hover)}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = zebraBg)}
                     >
                         <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("110px"), whiteSpace: "nowrap", cursor: "pointer" }} onClick={toggleMonthFormat}>
                             {formatMonth(entry.month, useFullMonthFormat, userDateFormat)}
@@ -235,7 +237,7 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
                             </span>
                         </td>
                     </tr>
-                ))}
+                )})}
             </tbody>
         </table>
         </div>

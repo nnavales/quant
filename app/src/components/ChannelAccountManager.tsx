@@ -19,7 +19,7 @@ import {
 } from "@/hooks";
 import { InputGroup } from "./ui/InputGroup";
 import { Button } from "@/components/ui/Button";
-import { toast } from "./ui/Toast";
+import { toast } from "@/utils/toast";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { Dropdown } from "./ui/Dropdown";
 import { getApiErrorMessage } from "@/utils/apiErrors";
@@ -359,7 +359,7 @@ export function ChannelAccountManager() {
                                     <ChevronRight
                                         size={16}
                                         style={{
-                                            color: colors.accent.teal,
+                                            color: colors.fg.dim,
                                             transition: "transform 0.15s",
                                             transform: expandedChannels.has(group.channel.id) ? "rotate(90deg)" : "rotate(0deg)",
                                         }}

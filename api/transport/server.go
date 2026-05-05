@@ -3,6 +3,7 @@ package transport
 import (
 	"context"
 	"log/slog"
+	"net"
 	"net/http"
 	"time"
 
@@ -77,14 +78,25 @@ func NewServer(cfg config.Config, services *Services) *Server {
 	root.Handle("/api/", http.StripPrefix("/api", handler))
 
 	return &Server{
-		Server: http.Server{Addr: cfg.Addr, Handler: root},
+		Server: http.Server{Handler: root},
 	}
 }
 
 func (sv *Server) Run(ctx context.Context) error {
-	slog.Info("server.started", slog.String("addr", sv.Addr))
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return nil
+	}
 
-	if err := sv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	port := ln.Addr().(*net.TCPAddr).Port
+
+	if err := config.SavePort(port); err != nil {
+		return nil
+	}
+
+	slog.Info("server.started", slog.String("addr", ln.Addr().String()))
+
+	if err := sv.Serve(ln); err != nil && err != http.ErrServerClosed {
 		return err
 	}
 

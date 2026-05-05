@@ -143,6 +143,30 @@ func (r *SQLiteRepo) DeleteHistoricalEntry(ctx context.Context, h HistoricalEntr
 	return nil
 }
 
+func (r *SQLiteRepo) GetCutOff(ctx context.Context) (*timeutils.Date, error) {
+	row := r.db.QueryRowContext(ctx, `
+        SELECT MAX(date) 
+        FROM historical_entries;
+    `)
+
+	var date sql.NullString
+
+	if err := row.Scan(&date); err != nil {
+		return nil, err
+	}
+
+	if !date.Valid {
+		return nil, nil
+	}
+
+	parsedDate, err := timeutils.ParseDate(date.String)
+	if err != nil {
+		return nil, err
+	}
+
+	return &parsedDate, nil
+}
+
 func (r *SQLiteRepo) BulkCreateHistoricalEntries(ctx context.Context, histEntries []HistoricalEntry) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -170,28 +194,4 @@ func (r *SQLiteRepo) BulkCreateHistoricalEntries(ctx context.Context, histEntrie
 	}
 
 	return tx.Commit()
-}
-
-func (r *SQLiteRepo) GetCutOff(ctx context.Context) (*timeutils.Date, error) {
-	row := r.db.QueryRowContext(ctx, `
-        SELECT MAX(date) 
-        FROM historical_entries;
-    `)
-
-	var date sql.NullString
-
-	if err := row.Scan(&date); err != nil {
-		return nil, err
-	}
-
-	if !date.Valid {
-		return nil, nil
-	}
-
-	parsedDate, err := timeutils.ParseDate(date.String)
-	if err != nil {
-		return nil, err
-	}
-
-	return &parsedDate, nil
 }

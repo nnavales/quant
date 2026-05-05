@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Wallet, TrendingUp, TrendingDown, PiggyBank, Percent, BarChart3, Calendar } from "lucide-react";
-import { useDashboard } from "@/hooks";
+import { Wallet, TrendingUp, TrendingDown, PiggyBank, Percent, BarChart3, Calendar, Scale, Flame, Target } from "lucide-react";
+import { useDashboard, useUserConfig } from "@/hooks";
 import type { KPI } from "@/api_client/types";
 import { spacing } from "@/styles/theme";
 import { colors } from "@/styles/colors";
@@ -22,12 +22,12 @@ const KPI_ICONS: Record<string, React.ElementType> = {
     fixed_expense_mix: TrendingDown,
     fixed_income_mix: TrendingUp,
     stable_income_coverage: Percent,
-    financial_flexibility: Wallet,
-    core_burn_rate: Wallet,
+    financial_flexibility: Scale,
+    core_burn_rate: Flame,
     savings_volatility: BarChart3,
     savings_volatility_ratio: Percent,
     projected_yearly_savings: PiggyBank,
-    projected_yearly_capital: Wallet,
+    projected_yearly_capital: Target,
     capital_growth_rate_ytd: TrendingUp,
     expense_coverage_months: Calendar,
 };
@@ -57,7 +57,9 @@ const KPI_COLORS: Record<string, string> = {
 export function DashboardPage() {
     const [selectedKPI, setSelectedKPI] = useState<KPI | null>(null);
     const [transactionModal, setTransactionModal] = useState<{ open: boolean; type: "income" | "expense" }>({ open: false, type: "expense" });
+    const { data: config } = useUserConfig();
     const { data, isLoading, isError } = useDashboard();
+    const username = config?.username;
 
     const handleAddIncome = () => setTransactionModal({ open: true, type: "income" });
     const handleAddExpense = () => setTransactionModal({ open: true, type: "expense" });
@@ -70,14 +72,12 @@ export function DashboardPage() {
         return <div style={{ padding: spacing[4], color: colors.accent.red }}>Error al cargar dashboard</div>;
     }
 
-    if (!data || !data.monthlySeries || data.monthlySeries.length === 0) {
-        return <div style={{ padding: spacing[4], color: colors.fg.dim }}>Sin datos</div>;
-    }
-
-    const current = data.monthlySeries[data.monthlySeries.length - 1];
-    const previous = data.monthlySeries[data.monthlySeries.length - 2];
+    const hasData = data && data.monthlySeries && data.monthlySeries.length > 0;
+    const current = hasData ? data.monthlySeries[data.monthlySeries.length - 1] : null;
+    const previous = hasData ? data.monthlySeries[data.monthlySeries.length - 2] : null;
     const monthsShort = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sept","Oct","Nov","Dic"];
     const currentMonthLabel = (() => {
+        if (!current) return "";
         const [y, m] = current.month.split("-");
         return `${monthsShort[parseInt(m) - 1]} ${y}`;
     })();
@@ -91,7 +91,7 @@ export function DashboardPage() {
     };
 
     return (
-        <div style={{ padding: spacing[3], display: "flex", flexDirection: "column", gap: spacing[4] }}>
+        <div style={{ padding: spacing[3], display: "flex", flexDirection: "column", gap: spacing[4], animation: "fadeIn 0.2s ease-out" }}>
             {selectedKPI && <KPISimpleModal kpi={selectedKPI} onClose={() => setSelectedKPI(null)} />}
             <TransactionModal
                 isOpen={transactionModal.open}
@@ -100,15 +100,55 @@ export function DashboardPage() {
             />
 
             <div>
-                <h1 style={{ fontFamily: fonts.family.display, fontSize: fonts.size.xl, fontWeight: fonts.weight.semibold, color: colors.fg.base, margin: 0, marginBottom: spacing[1] }}>Bienvenido</h1>
+                <h1 style={{ fontFamily: fonts.family.display, fontSize: fonts.size.xl, fontWeight: fonts.weight.semibold, color: colors.fg.base, margin: 0, marginBottom: spacing[1] }}>Bienvenido{username ? `, ${username}` : ""}</h1>
                 <p style={{ fontFamily: fonts.family.text, fontSize: fonts.size.sm, color: colors.fg.dim, margin: 0 }}>Aquí está tu resumen financiero</p>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: spacing[3] }}>
-                <KPICard label="Balance" value={current.capital} prevValue={previous?.capital} changeLabel={getChangeLabel(previous?.month)} currentMonth={currentMonthLabel} icon={KPI_ICONS.capital_total} iconColor={KPI_COLORS.capital_total} format="currency" />
-                <KPICard label="Ahorro" value={current.savings} prevValue={previous?.savings} changeLabel={getChangeLabel(previous?.month)} currentMonth={currentMonthLabel} icon={KPI_ICONS.net_savings_ytd} iconColor={KPI_COLORS.net_savings_ytd} format="currency" />
-                <KPICard label="Ingresos" value={current.income} prevValue={previous?.income} changeLabel={getChangeLabel(previous?.month)} currentMonth={currentMonthLabel} icon={KPI_ICONS.income_ytd} iconColor={KPI_COLORS.income_ytd} format="currency" />
-                <KPICard label="Gastos" value={current.expense} prevValue={previous?.expense} changeLabel={getChangeLabel(previous?.month)} currentMonth={currentMonthLabel} icon={KPI_ICONS.expenses_ytd} iconColor={KPI_COLORS.expenses_ytd} format="currency" />
+                <KPICard
+                    label="Balance"
+                    value={current?.capital}
+                    prevValue={previous?.capital}
+                    changeLabel={getChangeLabel(previous?.month)}
+                    currentMonth={currentMonthLabel}
+                    icon={KPI_ICONS.capital_total}
+                    iconColor={KPI_COLORS.capital_total}
+                    format="currency"
+                    tooltip="Capital total disponible al cierre del mes."
+                />
+                <KPICard
+                    label="Ahorro"
+                    value={current?.savings}
+                    prevValue={previous?.savings}
+                    changeLabel={getChangeLabel(previous?.month)}
+                    currentMonth={currentMonthLabel}
+                    icon={KPI_ICONS.net_savings_ytd}
+                    iconColor={KPI_COLORS.net_savings_ytd}
+                    format="currency"
+                    tooltip="Ahorro neto del mes."
+                />
+                <KPICard
+                    label="Ingresos"
+                    value={current?.income}
+                    prevValue={previous?.income}
+                    changeLabel={getChangeLabel(previous?.month)}
+                    currentMonth={currentMonthLabel}
+                    icon={KPI_ICONS.income_ytd}
+                    iconColor={KPI_COLORS.income_ytd}
+                    format="currency"
+                    tooltip="Ingresos totales del mes."
+                />
+                <KPICard
+                    label="Gastos"
+                    value={current?.expense}
+                    prevValue={previous?.expense}
+                    changeLabel={getChangeLabel(previous?.month)}
+                    currentMonth={currentMonthLabel}
+                    icon={KPI_ICONS.expenses_ytd}
+                    iconColor={KPI_COLORS.expenses_ytd}
+                    format="currency"
+                    tooltip="Egresos totales del mes."
+                />
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: spacing[4], alignItems: "stretch" }}>

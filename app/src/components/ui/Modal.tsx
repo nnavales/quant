@@ -36,6 +36,7 @@ export function Modal({
                 justifyContent: "center",
                 zIndex,
                 padding,
+                animation: "fadeIn 0.15s ease-out",
             }}
             onClick={closeOnBackdrop ? onClose : undefined}
         >
@@ -58,6 +59,7 @@ export function ModalContent({
             onClick={onClick}
             style={{
                 position: "relative",
+                animation: "scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
                 ...style,
             }}
         >

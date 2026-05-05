@@ -116,3 +116,23 @@ func (r *SQLiteRepo) Delete(ctx context.Context, ID string) error {
 
 	return nil
 }
+
+func (r *SQLiteRepo) BulkCreateAssets(ctx context.Context, assets []Asset) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	for _, a := range assets {
+		_, err := tx.ExecContext(ctx, QueryCreateAsset, a.ID, a.Name, a.Amount, a.Currency, a.Type, a.CreatedAt)
+		if err != nil {
+			if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+				return apperrors.ErrDuplicate
+			}
+			return err
+		}
+	}
+
+	return tx.Commit()
+}

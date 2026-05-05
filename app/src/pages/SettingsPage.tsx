@@ -5,12 +5,13 @@ import { CategoryManager } from "@/components/CategoryManager";
 import { SubcategoryList } from "@/components/SubcategoryList";
 import { UserSettings } from "@/components/UserSettings";
 import { PresetManager } from "@/components/PresetManager";
+import { BackupManager } from "@/components/BackupManager";
 import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 
 
-type SettingsTab = "user" | "channels" | "accounts" | "categories" | "subcategories" | "presets";
+type SettingsTab = "user" | "channels" | "accounts" | "categories" | "subcategories" | "presets" | "backup";
 
 const tabs: { id: SettingsTab; label: string }[] = [
     { id: "user", label: "Usuario" },
@@ -19,13 +20,14 @@ const tabs: { id: SettingsTab; label: string }[] = [
     { id: "categories", label: "Categorías" },
     { id: "subcategories", label: "Subcategorías" },
     { id: "presets", label: "Presets" },
+    { id: "backup", label: "Backup" },
 ];
 
 export function SettingsPage() {
     const [activeTab, setActiveTab] = useState<SettingsTab>("user");
 
     return (
-        <div style={{ padding: spacing[3], display: "flex", flexDirection: "column", gap: spacing[4] }}>
+        <div style={{ padding: spacing[3], display: "flex", flexDirection: "column", gap: spacing[4], animation: "fadeIn 0.2s ease-out" }}>
             <div>
                 <h1 style={{ fontFamily: fonts.family.display, fontSize: fonts.size.xl, fontWeight: fonts.weight.semibold, color: colors.fg.base, margin: 0, marginBottom: spacing[1] }}>Configuración</h1>
                 <p style={{ fontFamily: fonts.family.text, fontSize: fonts.size.sm, color: colors.fg.dim, margin: 0 }}>Gestiona tus categorías y cuentas</p>
@@ -50,7 +52,7 @@ export function SettingsPage() {
                                 transition: "all 0.15s",
                                 fontFamily: fonts.family.text,
                                 letterSpacing: "0.3px",
-                                boxShadow: isActive ? `0 1px 2px rgba(0,0,0,0.15)` : "none",
+                                boxShadow: "none",
                             }}
                             onMouseEnter={(e) => {
                                 if (!isActive) {
@@ -77,6 +79,7 @@ export function SettingsPage() {
             {activeTab === "categories" && <CategoryManager />}
             {activeTab === "subcategories" && <SubcategoryList />}
             {activeTab === "presets" && <PresetManager />}
+            {activeTab === "backup" && <BackupManager />}
         </div>
     );
 }

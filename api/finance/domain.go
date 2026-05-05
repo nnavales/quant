@@ -2,6 +2,7 @@ package finance
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -25,6 +26,7 @@ var (
 type Repository interface {
 	CreateTransactionAggregate(ctx context.Context, agg TransactionAggregate) error
 	BulkCreateTransactionAggregate(ctx context.Context, agg []TransactionAggregate) error
+	BulkCreateTransactionAggregateTx(ctx context.Context, tx *sql.Tx, agg []TransactionAggregate) error
 	ListTransactionsAggregate(ctx context.Context, filter *Filter) (*TransactionListResponse, error)
 	GetTransactionAggregate(ctx context.Context, id string) (*TransactionRowDTO, error)
 	DeleteTransactionAggregate(ctx context.Context, id string) error

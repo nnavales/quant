@@ -3,22 +3,7 @@ import { X, AlertCircle, CheckCircle } from "lucide-react";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
-
-export type ToastType = "error" | "success" | "warning";
-
-interface Toast {
-    id: number;
-    message: string;
-    type: ToastType;
-}
-
-let toastId = 0;
-const listeners: Set<(toast: Toast) => void> = new Set();
-
-export function toast(message: string, type: ToastType = "error") {
-    const t: Toast = { id: ++toastId, message, type };
-    listeners.forEach((listener) => listener(t));
-}
+import { addToastListener, type Toast, type ToastType } from "@/utils/toast";
 
 /* ─── Subtle depth without colored borders ─── */
 const containerStyle: React.CSSProperties = {
@@ -40,9 +25,8 @@ const toastBaseStyle: React.CSSProperties = {
     gap: spacing[3],
     padding: `${spacing[3]} ${spacing[4]}`,
     backgroundColor: colors.bg.surface,
-    border: `1px solid ${colors.fill}`,
+    border: `1px solid ${colors.border}`,
     borderRadius: radius.lg,
-    boxShadow: `0 8px 24px rgba(0,0,0,0.35)`,
     pointerEvents: "auto",
     animation: "toastSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
 };
@@ -56,10 +40,10 @@ const iconWrapStyle = (type: ToastType): React.CSSProperties => ({
     borderRadius: radius.full,
     backgroundColor:
         type === "error"
-            ? "rgba(217, 84, 107, 0.12)"
+            ? `${colors.accent.red}1A`
             : type === "warning"
-              ? "rgba(234, 179, 8, 0.12)"
-              : "rgba(125, 196, 104, 0.12)",
+              ? `${colors.accent.yellow}1A`
+              : `${colors.accent.green}1A`,
     flexShrink: 0,
     marginTop: "1px",
 });
@@ -76,7 +60,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: number) =
                 {toast.type === "error" ? (
                     <AlertCircle size={14} style={{ color: colors.accent.red }} />
                 ) : toast.type === "warning" ? (
-                    <AlertCircle size={14} style={{ color: "#eab308" }} />
+                    <AlertCircle size={14} style={{ color: colors.accent.yellow }} />
                 ) : (
                     <CheckCircle size={14} style={{ color: colors.accent.green }} />
                 )}
@@ -124,20 +108,14 @@ export function ToastContainer() {
     const [toasts, setToasts] = useState<Toast[]>([]);
 
     useEffect(() => {
-        const listener = (t: Toast) => {
+        return addToastListener((t: Toast) => {
             setToasts((prev) => [...prev, t].slice(-4)); // keep last 4
-        };
-        listeners.add(listener);
-        return () => {
-            listeners.delete(listener);
-        };
+        });
     }, []);
 
     const removeToast = useCallback((id: number) => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
     }, []);
-
-    if (toasts.length === 0) return null;
 
     return (
         <>
@@ -153,11 +131,13 @@ export function ToastContainer() {
                     }
                 }
             `}</style>
-            <div style={containerStyle}>
-                {toasts.map((t) => (
-                    <ToastItem key={t.id} toast={t} onRemove={removeToast} />
-                ))}
-            </div>
+            {toasts.length > 0 && (
+                <div style={containerStyle}>
+                    {toasts.map((t) => (
+                        <ToastItem key={t.id} toast={t} onRemove={removeToast} />
+                    ))}
+                </div>
+            )}
         </>
     );
 }

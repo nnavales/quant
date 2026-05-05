@@ -7,14 +7,14 @@ import { formatCurrency, formatPercent } from "@/utils/format";
 
 export interface KPICardProps {
     label: string;
-    value: number;
+    value?: number | null;
     format?: "currency" | "percent" | "number";
     suffix?: string;
     icon: React.ElementType;
     iconColor: string;
     compact?: boolean;
     onClick?: () => void;
-    prevValue?: number;
+    prevValue?: number | null;
     changeLabel?: string;
     directChange?: number;
     tooltip?: string;
@@ -38,15 +38,18 @@ export function KPICard({
     year,
     currentMonth,
 }: KPICardProps) {
-    const displayValue =
-        format === "currency"
+    const hasValue = value !== undefined && value !== null;
+
+    const displayValue = !hasValue
+        ? "—"
+        : format === "currency"
             ? formatCurrency(value)
             : format === "percent"
               ? formatPercent(value)
               : value.toFixed(0) + (suffix || "");
 
     const change =
-        prevValue !== undefined && prevValue !== 0
+        hasValue && prevValue !== undefined && prevValue !== null && prevValue !== 0
             ? ((value - prevValue) / prevValue) * 100
             : null;
     const isPositive = change !== null && change >= 0;
@@ -63,8 +66,8 @@ export function KPICard({
                 backgroundColor: colors.bg.surface,
                 borderRadius: radius.lg,
                 padding,
-                border: `1px solid ${colors.fill}`,
-                boxShadow: "0 4px 24px rgba(0, 0, 0, 0.2)",
+                border: `1px solid ${colors.border}`,
+                boxShadow: "none",
                 display: "flex",
                 flexDirection: "column",
                 cursor: onClick ? "pointer" : "default",

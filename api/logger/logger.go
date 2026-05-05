@@ -13,7 +13,7 @@ func New(cfg config.Config) (*slog.Logger, error) {
 		Level:     slog.LevelDebug,
 	}
 
-	if cfg.Env == config.ENV_PRODUCTION {
+	if cfg.Version != "dev" {
 		opts.Level = slog.LevelInfo
 		handler := slog.NewJSONHandler(os.Stdout, opts)
 		return slog.New(handler), nil

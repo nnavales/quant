@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Plus, X, RotateCcw, Trash2 } from "lucide-react";
 import { categories, subcategories } from "@/api_client";
 import type { CategoryWithSubcategories } from "@/api_client/types";
-import { toast } from "@/components/ui/Toast";
+import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";

@@ -9,7 +9,7 @@ import { fonts } from "@/styles/fonts";
 import { formatNumber } from "@/utils/format";
 import { formatDateStr, getDateFormat } from "@/utils/date";
 import { economic } from "@/api_client";
-import { toast } from "@/components/ui/Toast";
+import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import {
     useInflation,

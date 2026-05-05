@@ -96,6 +96,11 @@ const (
 		FROM accounts WHERE name = ? AND deleted_at IS NULL
 	`
 
+	QueryGetAccountByChannelAndName = `
+		SELECT id, channel_id, name, instrument, created_at, updated_at, deleted_at
+		FROM accounts WHERE channel_id = ? AND name = ? AND deleted_at IS NULL
+	`
+
 	QueryHardDeleteChannel = `
 		DELETE FROM channels 
 		WHERE id = ? AND deleted_at IS NOT NULL;

@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
-import { spacing, radius, shadows } from "@/styles/theme";
+import React, { useState, useRef, useCallback } from "react";
+import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 
@@ -9,89 +9,141 @@ interface TooltipProps {
     alwaysShow?: boolean;
 }
 
+const tooltipBaseStyle: React.CSSProperties = {
+    position: "fixed",
+    backgroundColor: colors.bg.header,
+    border: `1px solid ${colors.border}`,
+    borderRadius: radius.md,
+    padding: `${spacing[2]} ${spacing[3]}`,
+    fontSize: fonts.size.xs,
+    color: colors.fg.base,
+    lineHeight: 1.5,
+    zIndex: 9999,
+    wordBreak: "break-word",
+    pointerEvents: "none",
+    visibility: "hidden",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+};
+
 export function Tooltip({ content, children, alwaysShow = false }: TooltipProps) {
     const [show, setShow] = useState(false);
-    const [pos, setPos] = useState({ x: 0, y: 0 });
-    const checkedRef = useRef(false);
-    const textRef = useRef<HTMLSpanElement>(null);
+    const triggerRef = useRef<HTMLSpanElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
+    const textRef = useRef<HTMLElement>(null);
 
-    const adjustPosition = (x: number, y: number) => {
-        const tooltipEl = tooltipRef.current;
-        if (!tooltipEl) {
-            setPos({ x, y });
-            return;
-        }
-        const rect = tooltipEl.getBoundingClientRect();
-        const pad = 8;
-        let nx = x;
-        let ny = y;
-        if (nx + rect.width > window.innerWidth - pad) {
-            nx = window.innerWidth - rect.width - pad;
-        }
-        if (nx < pad) nx = pad;
-        if (ny + rect.height > window.innerHeight - pad) {
-            ny = y - rect.height - 12;
-        }
-        if (ny < pad) ny = pad;
-        setPos({ x: nx, y: ny });
-    };
+    const positionTooltip = useCallback(() => {
+        const tooltip = tooltipRef.current;
+        const trigger = triggerRef.current;
+        if (!tooltip || !trigger) return;
 
-    const handleMouseMove = (e: React.MouseEvent) => {
-        adjustPosition(e.clientX + 10, e.clientY + 10);
-    };
+        const pad = 12;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        let left: number;
+        let top: number;
+
+        const triggerRect = trigger.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+        const gap = 8;
+
+        // Center horizontally
+        left = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
+
+        // Default: place below trigger
+        top = triggerRect.bottom + gap;
+
+        // Clamp to viewport edges
+        if (left < pad) left = pad;
+        if (left + tooltipRect.width > vw - pad) {
+            left = vw - tooltipRect.width - pad;
+        }
+
+        // Flip above if not enough space below
+        if (top + tooltipRect.height > vh - pad) {
+            top = triggerRect.top - tooltipRect.height - gap;
+        }
+
+        // Safety: if still off-screen above, clamp to top
+        if (top < pad) {
+            top = pad;
+        }
+
+        tooltip.style.left = `${Math.round(left)}px`;
+        tooltip.style.top = `${Math.round(top)}px`;
+        tooltip.style.visibility = "visible";
+    }, [alwaysShow]);
 
     const handleMouseEnter = () => {
         if (alwaysShow) {
             setShow(true);
+            requestAnimationFrame(() => positionTooltip());
             return;
         }
-        if (!checkedRef.current && textRef.current) {
+
+        if (textRef.current) {
             const el = textRef.current;
-            checkedRef.current = el.scrollWidth > el.clientWidth;
-        }
-        if (checkedRef.current) {
-            setShow(true);
+            if (el.scrollWidth > el.clientWidth) {
+                setShow(true);
+                requestAnimationFrame(() => positionTooltip());
+            }
         }
     };
 
-    useEffect(() => {
-        if (show && tooltipRef.current) {
-            adjustPosition(pos.x, pos.y);
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (alwaysShow) return;
+
+        const tooltip = tooltipRef.current;
+        if (!tooltip) return;
+
+        const pad = 12;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const rect = tooltip.getBoundingClientRect();
+
+        let left = e.clientX + 12;
+        let top = e.clientY + 12;
+
+        if (left + rect.width > vw - pad) {
+            left = e.clientX - rect.width - 8;
         }
-    }, [show]);
+        if (left < pad) left = pad;
+        if (top + rect.height > vh - pad) {
+            top = e.clientY - rect.height - 8;
+        }
+        if (top < pad) top = pad;
+
+        tooltip.style.left = `${Math.round(left)}px`;
+        tooltip.style.top = `${Math.round(top)}px`;
+    };
+
+    const handleMouseLeave = () => {
+        setShow(false);
+        const tooltip = tooltipRef.current;
+        if (tooltip) {
+            tooltip.style.visibility = "hidden";
+        }
+    };
 
     return (
         <span
+            ref={triggerRef}
             onMouseEnter={handleMouseEnter}
-            onMouseLeave={() => setShow(false)}
+            onMouseLeave={handleMouseLeave}
             onMouseMove={handleMouseMove}
             style={{ color: colors.fg.base }}
         >
             {React.isValidElement(children)
-                ? React.cloneElement(
-                      children as React.ReactElement<{ ref?: React.Ref<HTMLSpanElement> }>,
-                      { ref: textRef }
-                  )
-                : children}
+                ? React.cloneElement(children as React.ReactElement, { ref: textRef })
+                : <span ref={textRef}>{children}</span>}
             {show && content && (
                 <div
                     ref={tooltipRef}
                     style={{
-                        position: "fixed",
-                        left: pos.x,
-                        top: pos.y,
-                        backgroundColor: colors.bg.surface,
-                        border: `1px solid ${colors.fill}`,
-                        borderRadius: radius.md,
-                        padding: `${spacing[1]} ${spacing[2]}`,
-                        fontSize: fonts.size.xs,
-                        color: colors.fg.base,
-                        boxShadow: shadows.base,
-                        zIndex: 1000,
-                        maxWidth: 300,
-                        wordBreak: "break-word",
-                        pointerEvents: "none",
+                        ...tooltipBaseStyle,
+                        maxWidth: Math.min(260, window.innerWidth - 24),
+                        minWidth: alwaysShow ? 180 : undefined,
                     }}
                 >
                     {content}

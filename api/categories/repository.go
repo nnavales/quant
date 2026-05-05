@@ -357,6 +357,27 @@ func (r *SQLiteRepo) GetSubcategoryByName(ctx context.Context, name string) (*Su
 	return &s, nil
 }
 
+func (r *SQLiteRepo) GetSubcategoryByCategoryAndName(ctx context.Context, categoryID, name string) (*Subcategory, error) {
+	var s Subcategory
+
+	err := r.db.QueryRowContext(ctx, QueryGetSubcategoryByCategoryAndName, categoryID, name).Scan(
+		&s.ID,
+		&s.CategoryID,
+		&s.Name,
+		&s.CreatedAt,
+		&s.UpdatedAt,
+		&s.DeletedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	return &s, nil
+}
+
 func (r *SQLiteRepo) HardDeleteCategory(ctx context.Context, id string) error {
 	res, err := r.db.ExecContext(ctx, QueryHardDeleteCategory, id)
 	if err != nil {
@@ -391,4 +412,76 @@ func (r SQLiteRepo) HardDeleteSubcategory(ctx context.Context, id string) error 
 	}
 
 	return nil
+}
+
+func (r *SQLiteRepo) CreateCategoryTx(ctx context.Context, tx *sql.Tx, c Category) (*Category, error) {
+	_, err := tx.ExecContext(ctx, QueryCreateCategory,
+		c.ID,
+		c.Name,
+		c.CreatedAt,
+	)
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return nil, apperrors.ErrDuplicate
+		}
+		return nil, err
+	}
+	return &c, nil
+}
+
+func (r *SQLiteRepo) GetCategoryByNameTx(ctx context.Context, tx *sql.Tx, name string) (*Category, error) {
+	var c Category
+
+	err := tx.QueryRowContext(ctx, QueryGetCategoryByName, name).Scan(
+		&c.ID,
+		&c.Name,
+		&c.CreatedAt,
+		&c.UpdatedAt,
+		&c.DeletedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	return &c, nil
+}
+
+func (r *SQLiteRepo) CreateSubcategoryTx(ctx context.Context, tx *sql.Tx, s Subcategory) (*Subcategory, error) {
+	_, err := tx.ExecContext(ctx, QueryCreateSubcategory,
+		s.ID,
+		s.CategoryID,
+		s.Name,
+		s.CreatedAt,
+	)
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return nil, apperrors.ErrDuplicate
+		}
+		return nil, err
+	}
+	return &s, nil
+}
+
+func (r *SQLiteRepo) GetSubcategoryByCategoryAndNameTx(ctx context.Context, tx *sql.Tx, categoryID, name string) (*Subcategory, error) {
+	var s Subcategory
+
+	err := tx.QueryRowContext(ctx, QueryGetSubcategoryByCategoryAndName, categoryID, name).Scan(
+		&s.ID,
+		&s.CategoryID,
+		&s.Name,
+		&s.CreatedAt,
+		&s.UpdatedAt,
+		&s.DeletedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	return &s, nil
 }

@@ -1,8 +1,6 @@
 package finance
 
 import (
-	"bytes"
-	"io"
 	"net/http"
 
 	"github.com/nnavales/summit/api/categories"
@@ -176,29 +174,6 @@ func (h *Handler) CreateBulkTransactionAggregate(w http.ResponseWriter, r *http.
 		return
 	}
 
-	err = h.service.BulkCreateTransactionAggregate(r.Context(), req)
-	if err != nil {
-		httpx.WriteServiceError(w, r, err)
-		return
-	}
-	w.WriteHeader(http.StatusCreated)
-}
-
-func (h *Handler) CreateBulkTransactionAggregateCSV(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "failed to read request body", err)
-		return
-	}
-
-	resolver := NewCSVResolver(h.categoriesService, h.channelsService)
-	reqs, err := h.ParseTransactionCSV(r.Context(), bytes.NewReader(body), resolver)
-	if err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "invalid CSV", err)
-		return
-	}
-
-	req := BulkTransactionReq{Data: reqs}
 	err = h.service.BulkCreateTransactionAggregate(r.Context(), req)
 	if err != nil {
 		httpx.WriteServiceError(w, r, err)

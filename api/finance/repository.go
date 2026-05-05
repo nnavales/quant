@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nnavales/summit/api/categories"
-	"github.com/nnavales/summit/api/channels"
 	"github.com/nnavales/summit/api/entries"
 	"github.com/nnavales/summit/api/installments"
 	"github.com/nnavales/summit/api/money"
@@ -26,137 +24,118 @@ func NewSQLiteRepo(db *sql.DB) *SQLiteRepo {
 	}
 }
 
-func (r *SQLiteRepo) CreateTransactionAggregate(ctx context.Context, agg TransactionAggregate) error {
-	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{})
+func (r *SQLiteRepo) ListHistoricalEntriesRaw(ctx context.Context) ([]HistoricalRowDTO, error) {
+	rows, err := r.db.QueryContext(ctx, baseListHistoricalDTO)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	defer tx.Rollback()
-
-	if len(agg.Items) == 0 {
-		return fmt.Errorf("at least one item is required: %w", ErrInvalidField)
-	}
-
-	entry := agg.Items[0].Entry
-
-	if entry.AccountID != nil && *entry.AccountID != "" {
-		var account channels.Account
-		err := tx.QueryRowContext(ctx, channels.QueryGetAccountByID, *entry.AccountID).Scan(
-			&account.ID, &account.ChannelID, &account.Name, &account.Instrument, &account.CreatedAt, &account.UpdatedAt, &account.DeletedAt,
+	defer rows.Close()
+	var histEntry []HistoricalRowDTO
+	for rows.Next() {
+		var h HistoricalRowDTO
+		err := rows.Scan(
+			&h.Month,
+			&h.ExchangeRate,
+			&h.Income,
+			&h.IncomeFixed,
+			&h.IncomeVariable,
+			&h.Expense,
+			&h.ExpenseFixed,
+			&h.ExpenseVariable,
+			&h.Savings,
+			&h.Source,
 		)
 		if err != nil {
-			if err == sql.ErrNoRows {
-				return fmt.Errorf("account not found: %w", ErrNotFound)
-			}
-			return err
+			return nil, err
 		}
-		if account.ChannelID != entry.ChannelID && entry.ChannelID != "" {
-			return fmt.Errorf("account does not belong to channel: %w", ErrInvalidField)
-		}
+		histEntry = append(histEntry, h)
 	}
 
-	if entry.SubcategoryID != nil && *entry.SubcategoryID != "" {
-		var subcategory categories.Subcategory
-		err := tx.QueryRowContext(ctx, categories.QueryGetSubcategoryByID, *entry.SubcategoryID).Scan(
-			&subcategory.ID, &subcategory.CategoryID, &subcategory.Name, &subcategory.CreatedAt, &subcategory.UpdatedAt, &subcategory.DeletedAt,
+	return histEntry, rows.Err()
+}
+
+func (r *SQLiteRepo) ListHistoricalEntries(ctx context.Context, filter *Filter) (*HistoricalListResponse, error) {
+	query, args := BuildListHistoricalEntriesQuery(filter)
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var histEntry []HistoricalRowDTO
+	for rows.Next() {
+		var h HistoricalRowDTO
+		err := rows.Scan(
+			&h.Month,
+			&h.ExchangeRate,
+			&h.Income,
+			&h.IncomeFixed,
+			&h.IncomeVariable,
+			&h.Expense,
+			&h.ExpenseFixed,
+			&h.ExpenseVariable,
+			&h.Savings,
+			&h.Source,
 		)
 		if err != nil {
-			if err == sql.ErrNoRows {
-				return fmt.Errorf("subcategory not found: %w", ErrNotFound)
-			}
-			return err
+			return nil, err
 		}
-		if entry.CategoryID != nil && *entry.CategoryID != "" {
-			if subcategory.CategoryID != *entry.CategoryID {
-				return fmt.Errorf("subcategory does not belong to category: %w", ErrInvalidField)
-			}
-		}
+		histEntry = append(histEntry, h)
 	}
 
-	if agg.Group != nil {
-		_, err := tx.ExecContext(ctx, installments.QueryCreateInstallmentGroup,
-			agg.Group.ID,
-			agg.Group.TotalInstallments,
-			agg.Group.StartDate,
-			agg.Group.CreatedAt,
-			agg.Group.OriginalAmount,
-			agg.Group.Description,
-			agg.Group.Currency,
-			agg.Group.IsCanceled,
-		)
-		if err != nil {
-			return err
-		}
-
-		for _, i := range agg.Items {
-			_, err = tx.ExecContext(ctx, transactions.QueryCreateTransaction,
-				i.Transaction.ID,
-				i.Transaction.Date,
-				i.Transaction.Description,
-				i.Transaction.Type,
-				i.Transaction.Frequency,
-				i.Transaction.InstallmentGroupID,
-				i.Transaction.InstallmentNumber,
-				i.Transaction.IsPaid,
-				i.Transaction.CreatedAt,
-			)
-			if err != nil {
-				return err
-			}
-
-			_, err := tx.ExecContext(ctx, entries.QueryCreateEntry,
-				i.Entry.ID,
-				i.Entry.TransactionID,
-				i.Entry.ChannelID,
-				i.Entry.AccountID,
-				i.Entry.Amount,
-				i.Entry.Currency,
-				i.Entry.ExchangeRate,
-				i.Entry.CategoryID,
-				i.Entry.SubcategoryID,
-				i.Entry.CreatedAt,
-			)
-			if err != nil {
-				return err
-			}
-		}
-
-	} else {
-		_, err = tx.ExecContext(ctx, transactions.QueryCreateTransaction,
-			agg.Items[0].Transaction.ID,
-			agg.Items[0].Transaction.Date,
-			agg.Items[0].Transaction.Description,
-			agg.Items[0].Transaction.Type,
-			agg.Items[0].Transaction.Frequency,
-			nil,
-			nil,
-			agg.Items[0].Transaction.IsPaid,
-			agg.Items[0].Transaction.CreatedAt,
-		)
-		if err != nil {
-			return err
-		}
-
-		_, err := tx.ExecContext(ctx, entries.QueryCreateEntry,
-			agg.Items[0].Entry.ID,
-			agg.Items[0].Entry.TransactionID,
-			agg.Items[0].Entry.ChannelID,
-			agg.Items[0].Entry.AccountID,
-			agg.Items[0].Entry.Amount,
-			agg.Items[0].Entry.Currency,
-			agg.Items[0].Entry.ExchangeRate,
-			agg.Items[0].Entry.CategoryID,
-			agg.Items[0].Entry.SubcategoryID,
-			agg.Items[0].Entry.CreatedAt,
-		)
-		if err != nil {
-			return err
-		}
-
+	countQuery, countArgs := buildHistoricalCountQuery(filter)
+	var totalCount int
+	if err := r.db.QueryRowContext(ctx, countQuery, countArgs...).Scan(&totalCount); err != nil {
+		return nil, err
 	}
 
-	return tx.Commit()
+	return &HistoricalListResponse{
+		Data:       histEntry,
+		TotalCount: totalCount,
+	}, rows.Err()
+}
+
+func (r *SQLiteRepo) ListTransactionsAggRaw(ctx context.Context) ([]TransactionRowDTO, error) {
+	rows, err := r.db.QueryContext(ctx, baseListTransactionsDTO)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var transactions []TransactionRowDTO
+	for rows.Next() {
+		var t TransactionRowDTO
+		err := rows.Scan(
+			&t.ID,
+			&t.Date,
+			&t.Description,
+			&t.Type,
+			&t.Frequency,
+			&t.IsPaid,
+			&t.EntryID,
+			&t.Amount,
+			&t.Currency,
+			&t.ExchangeRate,
+			&t.CategoryID,
+			&t.SubcategoryID,
+			&t.ChannelID,
+			&t.AccountID,
+			&t.CategoryName,
+			&t.SubcategoryName,
+			&t.AccountName,
+			&t.ChannelName,
+			&t.InstallmentNumber,
+			&t.TotalInstallments,
+			&t.InstallmentStartDate,
+			&t.InstallmentGroupID,
+			&t.IsCanceled,
+			&t.OriginalAmount,
+		)
+		if err != nil {
+			return nil, err
+		}
+		transactions = append(transactions, t)
+	}
+
+	return transactions, rows.Err()
 }
 
 func (r *SQLiteRepo) ListTransactionsAggregate(ctx context.Context, filter *Filter) (*TransactionListResponse, error) {
@@ -303,51 +282,18 @@ func (r *SQLiteRepo) DeleteTransactionAggregate(ctx context.Context, id string) 
 	}
 
 	defer tx.Rollback()
-	var t transactions.Transaction
-	err = tx.QueryRowContext(ctx, transactions.QueryGetTransactionByID, id).Scan(
-		&t.ID,
-		&t.Date,
-		&t.Description,
-		&t.Type,
-		&t.Frequency,
-		&t.InstallmentGroupID,
-		&t.InstallmentNumber,
-		&t.IsPaid,
-		&t.CreatedAt,
-		&t.UpdatedAt,
-		&t.DeletedAt,
-	)
-
+	t, err := getTransactionByID(ctx, tx, id)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return ErrNotFound
-		}
-		return err
+		return mapDBError(err)
 	}
 
 	if t.InstallmentGroupID != nil {
-		result, err := tx.ExecContext(ctx, installments.QueryDeleteInstallmentGroup, t.InstallmentGroupID)
-		if err != nil {
-			return err
-		}
-		rows, err := result.RowsAffected()
-		if err != nil {
-			return err
-		}
-		if rows == 0 {
-			return ErrNotFound
+		if err := deleteInstallmentGroup(ctx, tx, *t.InstallmentGroupID); err != nil {
+			return mapDBError(err)
 		}
 	} else {
-		result, err := tx.ExecContext(ctx, transactions.QueryDeleteTransaction, t.ID)
-		if err != nil {
-			return err
-		}
-		rows, err := result.RowsAffected()
-		if err != nil {
-			return err
-		}
-		if rows == 0 {
-			return ErrNotFound
+		if err := deleteTransaction(ctx, tx, t.ID); err != nil {
+			return mapDBError(err)
 		}
 	}
 
@@ -426,57 +372,51 @@ func (r *SQLiteRepo) CancelInstallments(ctx context.Context, groupID string, fro
 
 	newTxID := ulid.Make().String()
 	newEntryID := ulid.Make().String()
-
-	_, err = tx.ExecContext(ctx, transactions.QueryCreateTransaction,
-		newTxID,
-		base.Date,
-		base.Description,
-		base.Type,
-		base.Frequency,
-		base.InstallmentGroupID,
-		nil,
-		true,
-		now,
-	)
-	if err != nil {
-		return err
+	newTx := transactions.Transaction{
+		ID:                 newTxID,
+		Date:               base.Date,
+		Description:        base.Description,
+		Type:               base.Type,
+		Frequency:          base.Frequency,
+		InstallmentGroupID: base.InstallmentGroupID,
+		InstallmentNumber:  nil,
+		IsPaid:             true,
+		CreatedAt:          now,
+	}
+	if err := createTransaction(ctx, tx, &newTx); err != nil {
+		return mapDBError(err)
 	}
 
-	_, err = tx.ExecContext(ctx, entries.QueryCreateEntry,
-		newEntryID,
-		newTxID,
-		base.ChannelID,
-		base.AccountID,
-		canceledAmount,
-		base.Currency,
-		base.ExchangeRate,
-		base.CategoryID,
-		base.SubcategoryID,
-		now,
-	)
-	if err != nil {
-		return err
+	newEntry := entries.Entry{
+		ID:            newEntryID,
+		TransactionID: newTxID,
+		ChannelID:     base.ChannelID,
+		AccountID:     base.AccountID,
+		Amount:        canceledAmount,
+		Currency:      base.Currency,
+		ExchangeRate:  base.ExchangeRate,
+		CategoryID:    base.CategoryID,
+		SubcategoryID: base.SubcategoryID,
+		CreatedAt:     now,
+	}
+
+	if err := createEntry(ctx, tx, &newEntry); err != nil {
+		return mapDBError(err)
 	}
 
 	for _, t := range trans {
 		if *t.InstallmentNumber >= fromInstallment {
-			_, err := tx.ExecContext(ctx, transactions.QueryDeleteTransaction, t.ID)
-			if err != nil {
-				return err
+			if err := deleteTransaction(ctx, tx, t.ID); err != nil {
+				return mapDBError(err)
 			}
 		} else {
-			_, err := tx.ExecContext(ctx, transactions.QueryMarkAsPaid,
-				now,
-				t.ID,
-			)
-			if err != nil {
+			if _, err := tx.ExecContext(ctx, transactions.QueryMarkAsPaid, now, t.ID); err != nil {
 				return err
 			}
 		}
 	}
 
-	_, err = tx.ExecContext(ctx, installments.QuerySetCancelled, now, true, base.InstallmentGroupID)
-	if err != nil {
+	if _, err := tx.ExecContext(ctx, installments.QuerySetCancelled, now, true, base.InstallmentGroupID); err != nil {
 		return err
 	}
 
@@ -615,44 +555,103 @@ func (r *SQLiteRepo) UpdateTransactionAggregate(ctx context.Context, id string, 
 	return tx.Commit()
 }
 
-func (r *SQLiteRepo) ListHistoricalEntries(ctx context.Context, filter *Filter) (*HistoricalListResponse, error) {
-	query, args := BuildListHistoricalEntriesQuery(filter)
-	rows, err := r.db.QueryContext(ctx, query, args...)
+func (r *SQLiteRepo) CreateTransactionAggregate(ctx context.Context, agg TransactionAggregate) error {
+	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	defer rows.Close()
-	var histEntry []HistoricalRowDTO
-	for rows.Next() {
-		var h HistoricalRowDTO
-		err := rows.Scan(
-			&h.Month,
-			&h.ExchangeRate,
-			&h.Income,
-			&h.IncomeFixed,
-			&h.IncomeVariable,
-			&h.Expense,
-			&h.ExpenseFixed,
-			&h.ExpenseVariable,
-			&h.Savings,
-			&h.Source,
-		)
-		if err != nil {
-			return nil, err
+
+	defer tx.Rollback()
+
+	if len(agg.Items) == 0 {
+		return fmt.Errorf("at least one item is required: %w", ErrInvalidField)
+	}
+
+	if agg.Group != nil {
+		ig := &installments.InstallmentGroup{
+			ID:                agg.Group.ID,
+			TotalInstallments: agg.Group.TotalInstallments,
+			StartDate:         agg.Group.StartDate,
+			CreatedAt:         agg.Group.CreatedAt,
+			OriginalAmount:    agg.Group.OriginalAmount,
+			Description:       agg.Group.Description,
+			Currency:          agg.Group.Currency,
+			IsCanceled:        agg.Group.IsCanceled,
 		}
-		histEntry = append(histEntry, h)
+
+		if err := createInstallmentGroup(ctx, tx, ig); err != nil {
+			return mapDBError(err)
+		}
+
+		for _, i := range agg.Items {
+			t := &transactions.Transaction{
+				ID:                 i.Transaction.ID,
+				Date:               i.Transaction.Date,
+				Description:        i.Transaction.Description,
+				Type:               i.Transaction.Type,
+				Frequency:          i.Transaction.Frequency,
+				InstallmentGroupID: i.Transaction.InstallmentGroupID,
+				InstallmentNumber:  i.Transaction.InstallmentNumber,
+				IsPaid:             i.Transaction.IsPaid,
+				CreatedAt:          i.Transaction.CreatedAt,
+			}
+			if err := createTransaction(ctx, tx, t); err != nil {
+				return mapDBError(err)
+			}
+
+			e := &entries.Entry{
+				ID:            i.Entry.ID,
+				TransactionID: i.Entry.TransactionID,
+				ChannelID:     i.Entry.ChannelID,
+				AccountID:     i.Entry.AccountID,
+				Amount:        i.Entry.Amount,
+				Currency:      i.Entry.Currency,
+				ExchangeRate:  i.Entry.ExchangeRate,
+				CategoryID:    i.Entry.CategoryID,
+				SubcategoryID: i.Entry.SubcategoryID,
+				CreatedAt:     i.Entry.CreatedAt,
+			}
+			if err := createEntry(ctx, tx, e); err != nil {
+				return mapDBError(err)
+			}
+		}
+
+	} else {
+		t := &transactions.Transaction{
+			ID:                 agg.Items[0].Transaction.ID,
+			Date:               agg.Items[0].Transaction.Date,
+			Description:        agg.Items[0].Transaction.Description,
+			Type:               agg.Items[0].Transaction.Type,
+			Frequency:          agg.Items[0].Transaction.Frequency,
+			InstallmentGroupID: nil,
+			InstallmentNumber:  nil,
+			IsPaid:             agg.Items[0].Transaction.IsPaid,
+			CreatedAt:          agg.Items[0].Transaction.CreatedAt,
+		}
+
+		if err := createTransaction(ctx, tx, t); err != nil {
+			return mapDBError(err)
+		}
+
+		e := &entries.Entry{
+			ID:            agg.Items[0].Entry.ID,
+			TransactionID: agg.Items[0].Entry.TransactionID,
+			ChannelID:     agg.Items[0].Entry.ChannelID,
+			AccountID:     agg.Items[0].Entry.AccountID,
+			Amount:        agg.Items[0].Entry.Amount,
+			Currency:      agg.Items[0].Entry.Currency,
+			ExchangeRate:  agg.Items[0].Entry.ExchangeRate,
+			CategoryID:    agg.Items[0].Entry.CategoryID,
+			SubcategoryID: agg.Items[0].Entry.SubcategoryID,
+			CreatedAt:     agg.Items[0].Entry.CreatedAt,
+		}
+		if err := createEntry(ctx, tx, e); err != nil {
+			return mapDBError(err)
+		}
+
 	}
 
-	countQuery, countArgs := buildHistoricalCountQuery(filter)
-	var totalCount int
-	if err := r.db.QueryRowContext(ctx, countQuery, countArgs...).Scan(&totalCount); err != nil {
-		return nil, err
-	}
-
-	return &HistoricalListResponse{
-		Data:       histEntry,
-		TotalCount: totalCount,
-	}, rows.Err()
+	return tx.Commit()
 }
 
 func (r *SQLiteRepo) BulkCreateTransactionAggregate(ctx context.Context, txs []TransactionAggregate) error {
@@ -663,6 +662,14 @@ func (r *SQLiteRepo) BulkCreateTransactionAggregate(ctx context.Context, txs []T
 
 	defer tx.Rollback()
 
+	if err := r.BulkCreateTransactionAggregateTx(ctx, tx, txs); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (r *SQLiteRepo) BulkCreateTransactionAggregateTx(ctx context.Context, tx *sql.Tx, txs []TransactionAggregate) error {
 	if len(txs) == 0 {
 		return fmt.Errorf("at least one transaction is required: %w", ErrInvalidField)
 	}
@@ -673,91 +680,110 @@ func (r *SQLiteRepo) BulkCreateTransactionAggregate(ctx context.Context, txs []T
 		}
 
 		if agg.Group != nil {
-			_, err := tx.ExecContext(ctx, installments.QueryCreateInstallmentGroup,
-				agg.Group.ID,
-				agg.Group.TotalInstallments,
-				agg.Group.StartDate,
-				agg.Group.CreatedAt,
-				agg.Group.OriginalAmount,
-				agg.Group.Description,
-				agg.Group.Currency,
-				agg.Group.IsCanceled,
-			)
-			if err != nil {
-				return err
+			ig := &installments.InstallmentGroup{
+				ID:                agg.Group.ID,
+				TotalInstallments: agg.Group.TotalInstallments,
+				StartDate:         agg.Group.StartDate,
+				CreatedAt:         agg.Group.CreatedAt,
+				OriginalAmount:    agg.Group.OriginalAmount,
+				Description:       agg.Group.Description,
+				Currency:          agg.Group.Currency,
+				IsCanceled:        agg.Group.IsCanceled,
+			}
+			if err := createInstallmentGroup(ctx, tx, ig); err != nil {
+				return mapDBError(err)
 			}
 
 			for _, i := range agg.Items {
-				_, err = tx.ExecContext(ctx, transactions.QueryCreateTransaction,
-					i.Transaction.ID,
-					i.Transaction.Date,
-					i.Transaction.Description,
-					i.Transaction.Type,
-					i.Transaction.Frequency,
-					i.Transaction.InstallmentGroupID,
-					i.Transaction.InstallmentNumber,
-					i.Transaction.IsPaid,
-					i.Transaction.CreatedAt,
-				)
-				if err != nil {
-					return err
+
+				t := &transactions.Transaction{
+					ID:                 i.Transaction.ID,
+					Date:               i.Transaction.Date,
+					Description:        i.Transaction.Description,
+					Type:               i.Transaction.Type,
+					Frequency:          i.Transaction.Frequency,
+					InstallmentGroupID: i.Transaction.InstallmentGroupID,
+					InstallmentNumber:  i.Transaction.InstallmentNumber,
+					IsPaid:             i.Transaction.IsPaid,
+					CreatedAt:          i.Transaction.CreatedAt,
+				}
+				if err := createTransaction(ctx, tx, t); err != nil {
+					return mapDBError(err)
 				}
 
-				_, err := tx.ExecContext(ctx, entries.QueryCreateEntry,
-					i.Entry.ID,
-					i.Entry.TransactionID,
-					i.Entry.ChannelID,
-					i.Entry.AccountID,
-					i.Entry.Amount,
-					i.Entry.Currency,
-					i.Entry.ExchangeRate,
-					i.Entry.CategoryID,
-					i.Entry.SubcategoryID,
-					i.Entry.CreatedAt,
-				)
-				if err != nil {
-					return err
+				e := &entries.Entry{
+					ID:            i.Entry.ID,
+					TransactionID: i.Entry.TransactionID,
+					ChannelID:     i.Entry.ChannelID,
+					AccountID:     i.Entry.AccountID,
+					Amount:        i.Entry.Amount,
+					Currency:      i.Entry.Currency,
+					ExchangeRate:  i.Entry.ExchangeRate,
+					CategoryID:    i.Entry.CategoryID,
+					SubcategoryID: i.Entry.SubcategoryID,
+					CreatedAt:     i.Entry.CreatedAt,
+				}
+				if err := createEntry(ctx, tx, e); err != nil {
+					return mapDBError(err)
 				}
 			}
 
 		} else {
-			_, err = tx.ExecContext(ctx, transactions.QueryCreateTransaction,
-				agg.Items[0].Transaction.ID,
-				agg.Items[0].Transaction.Date,
-				agg.Items[0].Transaction.Description,
-				agg.Items[0].Transaction.Type,
-				agg.Items[0].Transaction.Frequency,
-				nil,
-				nil,
-				agg.Items[0].Transaction.IsPaid,
-				agg.Items[0].Transaction.CreatedAt,
-			)
-			if err != nil {
-				return err
+			t := &transactions.Transaction{
+				ID:                 agg.Items[0].Transaction.ID,
+				Date:               agg.Items[0].Transaction.Date,
+				Description:        agg.Items[0].Transaction.Description,
+				Type:               agg.Items[0].Transaction.Type,
+				Frequency:          agg.Items[0].Transaction.Frequency,
+				InstallmentGroupID: nil,
+				InstallmentNumber:  nil,
+				IsPaid:             agg.Items[0].Transaction.IsPaid,
+				CreatedAt:          agg.Items[0].Transaction.CreatedAt,
 			}
 
-			_, err := tx.ExecContext(ctx, entries.QueryCreateEntry,
-				agg.Items[0].Entry.ID,
-				agg.Items[0].Entry.TransactionID,
-				agg.Items[0].Entry.ChannelID,
-				agg.Items[0].Entry.AccountID,
-				agg.Items[0].Entry.Amount,
-				agg.Items[0].Entry.Currency,
-				agg.Items[0].Entry.ExchangeRate,
-				agg.Items[0].Entry.CategoryID,
-				agg.Items[0].Entry.SubcategoryID,
-				agg.Items[0].Entry.CreatedAt,
-			)
-			if err != nil {
-				return err
+			if err := createTransaction(ctx, tx, t); err != nil {
+				return mapDBError(err)
+			}
+
+			e := &entries.Entry{
+				ID:            agg.Items[0].Entry.ID,
+				TransactionID: agg.Items[0].Entry.TransactionID,
+				ChannelID:     agg.Items[0].Entry.ChannelID,
+				AccountID:     agg.Items[0].Entry.AccountID,
+				Amount:        agg.Items[0].Entry.Amount,
+				Currency:      agg.Items[0].Entry.Currency,
+				ExchangeRate:  agg.Items[0].Entry.ExchangeRate,
+				CategoryID:    agg.Items[0].Entry.CategoryID,
+				SubcategoryID: agg.Items[0].Entry.SubcategoryID,
+				CreatedAt:     agg.Items[0].Entry.CreatedAt,
+			}
+			if err := createEntry(ctx, tx, e); err != nil {
+				return mapDBError(err)
 			}
 
 		}
 	}
 
-	return tx.Commit()
+	return nil
 }
 
+func mapDBError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	if strings.Contains(err.Error(), "FOREIGN KEY constraint failed") {
+		return fmt.Errorf("invalid reference: %w", ErrInvalidField)
+	}
+
+	if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+		return fmt.Errorf("duplicate value: %w", ErrAlreadyExists)
+	}
+
+	return err
+}
+
+// next functions are used for sql.Tx
 func listTransactionsByInstallmentGroupID(ctx context.Context, tx *sql.Tx, id string) ([]transactions.Transaction, error) {
 	rows, err := tx.QueryContext(ctx, transactions.QueryListTransactionsByInstallmentGroupID, id)
 	if err != nil {
@@ -1016,94 +1042,4 @@ func createEntry(ctx context.Context, tx *sql.Tx, e *entries.Entry) error {
 		return err
 	}
 	return nil
-}
-
-func mapDBError(err error) error {
-	if err == nil {
-		return nil
-	}
-
-	if strings.Contains(err.Error(), "FOREIGN KEY constraint failed") {
-		return fmt.Errorf("invalid reference: %w", ErrInvalidField)
-	}
-
-	if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-		return fmt.Errorf("duplicate value: %w", ErrAlreadyExists)
-	}
-
-	return err
-}
-
-func (r *SQLiteRepo) ListTransactionsAggRaw(ctx context.Context) ([]TransactionRowDTO, error) {
-	rows, err := r.db.QueryContext(ctx, baseListTransactionsDTO)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var transactions []TransactionRowDTO
-	for rows.Next() {
-		var t TransactionRowDTO
-		err := rows.Scan(
-			&t.ID,
-			&t.Date,
-			&t.Description,
-			&t.Type,
-			&t.Frequency,
-			&t.IsPaid,
-			&t.EntryID,
-			&t.Amount,
-			&t.Currency,
-			&t.ExchangeRate,
-			&t.CategoryID,
-			&t.SubcategoryID,
-			&t.ChannelID,
-			&t.AccountID,
-			&t.CategoryName,
-			&t.SubcategoryName,
-			&t.AccountName,
-			&t.ChannelName,
-			&t.InstallmentNumber,
-			&t.TotalInstallments,
-			&t.InstallmentStartDate,
-			&t.InstallmentGroupID,
-			&t.IsCanceled,
-			&t.OriginalAmount,
-		)
-		if err != nil {
-			return nil, err
-		}
-		transactions = append(transactions, t)
-	}
-
-	return transactions, rows.Err()
-}
-
-func (r *SQLiteRepo) ListHistoricalEntriesRaw(ctx context.Context) ([]HistoricalRowDTO, error) {
-	rows, err := r.db.QueryContext(ctx, baseListHistoricalDTO)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var histEntry []HistoricalRowDTO
-	for rows.Next() {
-		var h HistoricalRowDTO
-		err := rows.Scan(
-			&h.Month,
-			&h.ExchangeRate,
-			&h.Income,
-			&h.IncomeFixed,
-			&h.IncomeVariable,
-			&h.Expense,
-			&h.ExpenseFixed,
-			&h.ExpenseVariable,
-			&h.Savings,
-			&h.Source,
-		)
-		if err != nil {
-			return nil, err
-		}
-		histEntry = append(histEntry, h)
-	}
-
-	return histEntry, rows.Err()
 }

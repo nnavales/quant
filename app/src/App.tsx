@@ -87,12 +87,19 @@ function App() {
 
     const checkHealth = async () => {
         setApiReady(null);
+        await api.initFromConfig();
         const ok = await api.healthCheck();
         setApiReady(ok);
     };
 
     useEffect(() => {
         checkHealth();
+        const interval = setInterval(async () => {
+            await api.initFromConfig();
+            const ok = await api.healthCheck();
+            if (!ok) setApiReady(false);
+        }, 15000);
+        return () => clearInterval(interval);
     }, []);
 
     if (apiReady === null) {
@@ -107,6 +114,7 @@ function App() {
                     justifyContent: "center",
                     color: colors.fg.dim,
                     fontSize: fonts.size.sm,
+                    animation: "fadeIn 0.3s ease-out",
                 }}
             >
                 Iniciando...

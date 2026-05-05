@@ -2,6 +2,7 @@ package channels
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -52,6 +53,7 @@ type Repository interface {
 	CreateAccount(ctx context.Context, a Account) (*Account, error)
 	GetAccountByID(ctx context.Context, id string) (*Account, error)
 	GetAccountByName(ctx context.Context, name string) (*Account, error)
+	GetAccountByChannelAndName(ctx context.Context, channelID, name string) (*Account, error)
 	ListAccounts(ctx context.Context, filter Filter) ([]Account, error)
 	UpdateAccount(ctx context.Context, a Account) (*Account, error)
 	DeleteAccount(ctx context.Context, id string, now time.Time) error
@@ -59,6 +61,12 @@ type Repository interface {
 	RestoreAccount(ctx context.Context, id string) error
 	HardDeleteAccount(ctx context.Context, id string) error
 	HardDeleteChannel(ctx context.Context, id string) error
+
+	// Tx variants for bulk import
+	CreateChannelTx(ctx context.Context, tx *sql.Tx, c Channel) (*Channel, error)
+	GetChannelByNameTx(ctx context.Context, tx *sql.Tx, name string) (*Channel, error)
+	CreateAccountTx(ctx context.Context, tx *sql.Tx, a Account) (*Account, error)
+	GetAccountByChannelAndNameTx(ctx context.Context, tx *sql.Tx, channelID, name string) (*Account, error)
 }
 
 // CTOs

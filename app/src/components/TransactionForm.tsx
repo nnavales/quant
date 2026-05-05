@@ -3,10 +3,11 @@ import { Plus, X, RefreshCw } from "lucide-react";
 import type { TransactionAggregateReq, TransactionType } from "@/api_client/types";
 import { useCreateTransaction, useCategories, useSubcategories, useChannels, useAccounts, useUserConfig, useDollarBanks } from "@/hooks";
 import { economic } from "@/api_client";
-import { toast } from "@/components/ui/Toast";
+import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
+import { fonts } from "@/styles/fonts";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Button } from "@/components/ui/Button";
@@ -17,7 +18,7 @@ const inputStyle: React.CSSProperties = {
     border: `1px solid ${colors.fill}`,
     borderRadius: radius.md,
     color: colors.fg.base,
-    fontSize: "var(--font-size-sm)",
+    fontSize: fonts.size.sm,
     width: "100%",
     height: "36px",
     boxSizing: "border-box",
@@ -191,7 +192,7 @@ export function TransactionForm() {
                             backgroundColor: colors.bg.surface,
                         }}
                     >
-                        <span style={{ fontWeight: 600, fontSize: "var(--font-size-sm)", color: colors.fg.base }}>
+                        <span style={{ fontWeight: 600, fontSize: fonts.size.sm, color: colors.fg.base }}>
                             Nueva Transacción
                         </span>
                         <Button
@@ -213,6 +214,7 @@ export function TransactionForm() {
                             <Button
                                 type="button"
                                 variant="tab"
+                                color="red"
                                 active={formData.type === "expense"}
                                 onClick={() => toggleType("expense")}
                                 style={{ flex: 1 }}
@@ -222,6 +224,7 @@ export function TransactionForm() {
                             <Button
                                 type="button"
                                 variant="tab"
+                                color="green"
                                 active={formData.type === "income"}
                                 onClick={() => toggleType("income")}
                                 style={{ flex: 1 }}

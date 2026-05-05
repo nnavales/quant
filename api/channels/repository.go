@@ -357,7 +357,28 @@ func (r *SQLiteRepo) GetAccountByName(ctx context.Context, name string) (*Accoun
 	}
 
 	return &a, nil
+}
 
+func (r *SQLiteRepo) GetAccountByChannelAndName(ctx context.Context, channelID, name string) (*Account, error) {
+	var a Account
+
+	err := r.db.QueryRowContext(ctx, QueryGetAccountByChannelAndName, channelID, name).Scan(
+		&a.ID,
+		&a.ChannelID,
+		&a.Name,
+		&a.Instrument,
+		&a.CreatedAt,
+		&a.UpdatedAt,
+		&a.DeletedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	return &a, nil
 }
 
 func (r *SQLiteRepo) HardDeleteAccount(ctx context.Context, id string) error {
@@ -376,6 +397,80 @@ func (r *SQLiteRepo) HardDeleteAccount(ctx context.Context, id string) error {
 	}
 
 	return nil
+}
+
+func (r *SQLiteRepo) CreateChannelTx(ctx context.Context, tx *sql.Tx, c Channel) (*Channel, error) {
+	_, err := tx.ExecContext(ctx, QueryCreateChannel,
+		c.ID,
+		c.Name,
+		c.CreatedAt,
+	)
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return nil, apperrors.ErrDuplicate
+		}
+		return nil, err
+	}
+	return &c, nil
+}
+
+func (r *SQLiteRepo) GetChannelByNameTx(ctx context.Context, tx *sql.Tx, name string) (*Channel, error) {
+	var c Channel
+
+	err := tx.QueryRowContext(ctx, QueryGetChannelByName, name).Scan(
+		&c.ID,
+		&c.Name,
+		&c.CreatedAt,
+		&c.UpdatedAt,
+		&c.DeletedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	return &c, nil
+}
+
+func (r *SQLiteRepo) CreateAccountTx(ctx context.Context, tx *sql.Tx, a Account) (*Account, error) {
+	_, err := tx.ExecContext(ctx, QueryCreateAccount,
+		a.ID,
+		a.ChannelID,
+		a.Name,
+		a.Instrument,
+		a.CreatedAt,
+	)
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return nil, apperrors.ErrDuplicate
+		}
+		return nil, err
+	}
+	return &a, nil
+}
+
+func (r *SQLiteRepo) GetAccountByChannelAndNameTx(ctx context.Context, tx *sql.Tx, channelID, name string) (*Account, error) {
+	var a Account
+
+	err := tx.QueryRowContext(ctx, QueryGetAccountByChannelAndName, channelID, name).Scan(
+		&a.ID,
+		&a.ChannelID,
+		&a.Name,
+		&a.Instrument,
+		&a.CreatedAt,
+		&a.UpdatedAt,
+		&a.DeletedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	return &a, nil
 }
 
 func (r SQLiteRepo) HardDeleteChannel(ctx context.Context, id string) error {

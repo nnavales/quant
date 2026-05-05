@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE assets(
     id TEXT PRIMARY KEY,
-	name TEXT NOT NULL UNIQUE,
+	name TEXT NOT NULL,
 	amount INTEGER NOT NULL,
 	currency TEXT NOT NULL,
     type TEXT NOT NULL,

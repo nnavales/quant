@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import type { TransactionRowDTO } from "@/api_client";
 import { Pencil, CreditCard, Trash2 } from "lucide-react";
-import { toast } from "@/components/ui/Toast";
+import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { parseLocalDate, formatDateStr, getDateFormat } from "@/utils/date";
 import { colors } from "@/styles/colors";
@@ -23,6 +23,7 @@ interface TransactionRowProps {
     isEditing: boolean;
     onStartEdit: () => void;
     onFinishEdit: () => void;
+    index: number;
 }
 
 const trStyle: React.CSSProperties = {
@@ -99,7 +100,9 @@ export function TransactionRow({
     isEditing,
     onStartEdit,
     onFinishEdit,
+    index,
 }: TransactionRowProps) {
+    const zebraBg = index % 2 === 1 ? colors.bg.base : "transparent";
     const [textFormat, setTextFormat] = useState<DateTextFormat>(() => getStoredTextFormat());
     const { data: userConfig } = useUserConfig();
     const userDateFormat = getDateFormat(userConfig?.date_format);
@@ -167,9 +170,9 @@ export function TransactionRow({
     return (
         <>
             <tr
-                style={trStyle}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#181B1D")}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                style={{ ...trStyle, backgroundColor: zebraBg }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.bg.hover)}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = zebraBg)}
             >
                 <td
                     style={{ ...tdStyle, ...fixedWidthStyle("110px"), cursor: "pointer" }}

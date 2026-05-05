@@ -64,6 +64,7 @@ type Repository interface {
 	Create(ctx context.Context, a Asset) (*Asset, error)
 	Update(ctx context.Context, a Asset) (*Asset, error)
 	Delete(ctx context.Context, ID string) error
+	BulkCreateAssets(ctx context.Context, assets []Asset) error
 }
 
 func calcuateNetWorth(clock timeutils.Clock, assets []Asset, rate float64) *NetWorth {

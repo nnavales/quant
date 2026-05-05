@@ -6,7 +6,7 @@ import { TransactionFilters as TransactionFiltersComponent } from "@/components/
 import { TransactionModal } from "@/components/TransactionModal";
 import { HistoricalTab } from "@/components/HistoricalTab";
 import { Plus, Upload } from "lucide-react";
-import { toast } from "@/components/ui/Toast";
+import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -165,6 +165,7 @@ export function TransactionsPage() {
                 display: "flex",
                 flexDirection: "column",
                 gap: spacing[2],
+                animation: "fadeIn 0.2s ease-out",
             }}
         >
             <div
@@ -180,6 +181,7 @@ export function TransactionsPage() {
                         onClick={() =>
                             setActiveTab(activeTab === "transacciones" ? "historico" : "transacciones")
                         }
+                        title="Clic para cambiar de tabla"
                         style={{
                             fontFamily: fonts.family.display,
                             fontSize: fonts.size.xl,
@@ -189,15 +191,20 @@ export function TransactionsPage() {
                             marginBottom: spacing[1],
                             cursor: "pointer",
                             userSelect: "none",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: spacing[2],
                         }}
                     >
-                        {activeTab === "transacciones" ? "Transacciones" : "Histórico"}
+                        <span className="tab-title">
+                            {activeTab === "transacciones" ? "Transacciones" : "Histórico"}
+                        </span>
                         <span
                             style={{
                                 fontWeight: fonts.weight.regular,
                                 color: colors.fg.dim,
                                 fontSize: fonts.size.sm,
-                                marginLeft: spacing[2],
+                                marginLeft: spacing[1],
                             }}
                         >
                             ({activeTab === "transacciones" ? total : historicalTotal})
@@ -205,11 +212,11 @@ export function TransactionsPage() {
                     </h1>
                 </div>
                 {activeTab === "transacciones" ? (
-                    <Button variant="secondary" iconLeft={<Plus size={18} />} onClick={() => setTransactionModal({ open: true, type: "expense" })}>
+                    <Button variant="primary" color="default" iconLeft={<Plus size={18} />} onClick={() => setTransactionModal({ open: true, type: "expense" })}>
                         Nueva Transacción
                     </Button>
                 ) : (
-                    <Button variant="secondary" iconLeft={<Upload size={18} />} onClick={() => setShowBulkImport(true)}>
+                    <Button variant="primary" color="default" iconLeft={<Upload size={18} />} onClick={() => setShowBulkImport(true)}>
                         Importar CSV
                     </Button>
                 )}

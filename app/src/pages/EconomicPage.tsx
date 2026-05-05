@@ -13,7 +13,7 @@ import { EconomicComparatives } from "@/components/EconomicComparatives";
 
 export function EconomicPage() {
     return (
-        <div style={{ padding: spacing[3], display: "flex", flexDirection: "column", gap: spacing[4] }}>
+        <div style={{ padding: spacing[3], display: "flex", flexDirection: "column", gap: spacing[4], animation: "fadeIn 0.2s ease-out" }}>
             <div>
                 <h1 style={{ fontFamily: fonts.family.display, fontSize: fonts.size.xl, fontWeight: fonts.weight.semibold, color: colors.fg.base, margin: 0, marginBottom: spacing[1] }}>Datos Económicos</h1>
                 <p style={{ fontFamily: fonts.family.text, fontSize: fonts.size.sm, color: colors.fg.dim, margin: 0 }}>Dólar, inflación y más</p>
@@ -34,9 +34,7 @@ export function EconomicPage() {
                 <InflationSection />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: spacing[4], marginTop: spacing[8] }}>
-                <EconomicComparatives />
-            </div>
+            <EconomicComparatives />
         </div>
     );
 }

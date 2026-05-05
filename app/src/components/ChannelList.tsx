@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { channels } from "@/api_client";
 import type { Channel, ChannelReq } from "@/api_client/types";
-import { toast } from "@/components/ui/Toast";
+import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";

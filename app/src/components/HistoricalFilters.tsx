@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import { Filter, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import type { HistoricalFilters } from "@/api_client/endpoints";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
-import { filterContainerStyle, filterWrapperStyle, dropdownItemStyle, clearButtonStyle, paginationButtonStyle } from "@/styles/filters";
+import { filterContainerStyle, filterWrapperStyle, dropdownItemStyle, clearButtonStyle, paginationButtonStyle, chipTriggerStyle } from "@/styles/filters";
 import { useClickOutside } from "@/hooks";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { DateDropdown } from "@/components/ui/DateDropdown";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { getHistoricalDatePresets, formatShortDate } from "@/utils/date";
 
 interface HistoricalFiltersProps {
@@ -67,10 +68,6 @@ export function HistoricalFiltersComponent({ filters, onChange, total, page, lim
 
     return (
         <div>
-            <div style={{ display: "flex", alignItems: "center", gap: spacing[1], marginBottom: spacing[2] }}>
-                <Filter size={12} style={{ color: colors.fg.dim }} />
-                <span style={{ fontSize: "11px", fontWeight: 500, color: colors.fg.dim, textTransform: "uppercase", letterSpacing: "0.5px" }}>Filtros</span>
-            </div>
             <div style={filterContainerStyle} ref={dropdownRef}>
                 {/* Date range dropdown */}
                 <div style={filterWrapperStyle}>
@@ -87,13 +84,7 @@ export function HistoricalFiltersComponent({ filters, onChange, total, page, lim
                         placeholder="Fecha"
                         open={openDropdown === "date"}
                         onToggle={() => setOpenDropdown(openDropdown === "date" ? null : "date")}
-                        triggerStyle={{
-                            height: "28px",
-                            fontSize: "12px",
-                            padding: "0 10px",
-                            backgroundColor: "transparent",
-                            border: `1px solid ${!!filters.date_from || !!filters.date_to ? colors.fill : "rgba(255,255,255,0.06)"}`,
-                        }}
+                        triggerStyle={chipTriggerStyle(!!filters.date_from || !!filters.date_to)}
                     >
                         <div
                             style={{
@@ -108,6 +99,16 @@ export function HistoricalFiltersComponent({ filters, onChange, total, page, lim
                                 onChange({ ...filters, date_from: undefined, date_to: undefined, page: 1 });
                                 setOpenDropdown(null);
                             }}
+                            onMouseEnter={(e) => {
+                                if (filters.date_from || filters.date_to) {
+                                    e.currentTarget.style.backgroundColor = colors.fill;
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (filters.date_from || filters.date_to) {
+                                    e.currentTarget.style.backgroundColor = "transparent";
+                                }
+                            }}
                         >
                             Todas las fechas
                         </div>
@@ -120,6 +121,12 @@ export function HistoricalFiltersComponent({ filters, onChange, total, page, lim
                                     setDateTo(preset.to);
                                     onChange({ ...filters, date_from: preset.from, date_to: preset.to, page: 1 });
                                     setOpenDropdown(null);
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = colors.fill;
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = "transparent";
                                 }}
                             >
                                 {preset.label}
@@ -158,51 +165,17 @@ export function HistoricalFiltersComponent({ filters, onChange, total, page, lim
 
                 {/* Source dropdown */}
                 <div style={filterWrapperStyle}>
-                    <DateDropdown
-                        label={filters.source ? sourceOptions.find((o) => o.id === filters.source)?.label ?? null : null}
+                    <Dropdown
+                        options={sourceOptions}
+                        value={filters.source ?? ""}
+                        onChange={(id) =>
+                            onChange({ ...filters, source: (id as "historical" | "transactions") || undefined, page: 1 })
+                        }
                         placeholder="Origen"
-                        open={openDropdown === "source"}
-                        onToggle={() => setOpenDropdown(openDropdown === "source" ? null : "source")}
-                        triggerStyle={{
-                            height: "28px",
-                            fontSize: "12px",
-                            padding: "0 10px",
-                            backgroundColor: "transparent",
-                            border: `1px solid ${filters.source ? colors.fill : "rgba(255,255,255,0.06)"}`,
-                        }}
-                    >
-                        <div
-                            style={{
-                                ...dropdownItemStyle,
-                                backgroundColor: !filters.source ? colors.fill : "transparent",
-                                fontWeight: !filters.source ? 500 : 400,
-                                color: colors.fg.dim,
-                            }}
-                            onClick={() => {
-                                onChange({ ...filters, source: undefined, page: 1 });
-                                setOpenDropdown(null);
-                            }}
-                        >
-                            Todos los origenes
-                        </div>
-                        {sourceOptions.map((opt) => (
-                            <div
-                                key={opt.id}
-                                style={{
-                                    ...dropdownItemStyle,
-                                    backgroundColor: filters.source === opt.id ? colors.fill : "transparent",
-                                    fontWeight: filters.source === opt.id ? 500 : 400,
-                                    color: colors.fg.base,
-                                }}
-                                onClick={() => {
-                                    onChange({ ...filters, source: opt.id, page: 1 });
-                                    setOpenDropdown(null);
-                                }}
-                            >
-                                {opt.label}
-                            </div>
-                        ))}
-                    </DateDropdown>
+                        clearable
+                        clearLabel="Todos los origenes"
+                        triggerStyle={chipTriggerStyle(!!filters.source)}
+                    />
                 </div>
 
                 {hasActiveFilters && (
@@ -210,12 +183,12 @@ export function HistoricalFiltersComponent({ filters, onChange, total, page, lim
                         style={clearButtonStyle}
                         onClick={clearAllFilters}
                         onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = `${colors.accent.red}30`;
-                            e.currentTarget.style.borderColor = `${colors.accent.red}80`;
-                        }}
-                        onMouseLeave={(e) => {
                             e.currentTarget.style.backgroundColor = `${colors.accent.red}15`;
                             e.currentTarget.style.borderColor = `${colors.accent.red}40`;
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = "transparent";
+                            e.currentTarget.style.borderColor = colors.border;
                         }}
                         title="Limpiar filtros"
                     >
@@ -226,13 +199,13 @@ export function HistoricalFiltersComponent({ filters, onChange, total, page, lim
                 <div style={{ flex: 1 }} />
 
                 <div style={{ display: "flex", alignItems: "center", gap: spacing[2], color: colors.fg.dim, fontSize: "12px", flexShrink: 0 }}>
-                    <button disabled={page <= 1} onClick={() => onPageChange(page - 1)} style={paginationButtonStyle(page <= 1)}>
+                    <button disabled={page <= 1} onClick={() => onPageChange(page - 1)} style={{ ...paginationButtonStyle(page <= 1), border: `1px solid ${page <= 1 ? colors.overlay.white06 : colors.border}` }}>
                         ‹
                     </button>
                     <span style={{ color: colors.fg.dim, fontSize: "12px" }}>
                         {page} / {totalPages}
                     </span>
-                    <button disabled={page >= totalPages} onClick={() => onPageChange(page + 1)} style={paginationButtonStyle(page >= totalPages)}>
+                    <button disabled={page >= totalPages} onClick={() => onPageChange(page + 1)} style={{ ...paginationButtonStyle(page >= totalPages), border: `1px solid ${page >= totalPages ? colors.overlay.white06 : colors.border}` }}>
                         ›
                     </button>
                     <input
@@ -257,7 +230,7 @@ export function HistoricalFiltersComponent({ filters, onChange, total, page, lim
                             marginLeft: spacing[1],
                             padding: "0 6px",
                             backgroundColor: "transparent",
-                            border: `1px solid rgba(255, 255, 255, 0.08)`,
+                            border: `1px solid ${colors.overlay.white08}`,
                             borderRadius: radius.md,
                             color: colors.fg.base,
                             fontSize: "12px",

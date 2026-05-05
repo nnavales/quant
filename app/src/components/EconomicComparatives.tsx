@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Search, X } from "lucide-react";
-import { Card } from "@/components/ui/Card";
+import { Search, X, ChevronDown } from "lucide-react";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
@@ -9,7 +8,7 @@ import { fonts } from "@/styles/fonts";
 import { formatNumber } from "@/utils/format";
 import { formatDateStr, getDateFormat } from "@/utils/date";
 import { economic } from "@/api_client";
-import { toast } from "@/components/ui/Toast";
+import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import {
     useDollarBanks,
@@ -17,9 +16,14 @@ import {
     useYieldAccounts,
     useLoans,
     useUserConfig,
+    useClickOutside,
 } from "@/hooks";
 
 type CompareTab = "dollar" | "tna" | "tea" | "uva";
+
+/* ─── Table layout constants ─── */
+const ROW_HEIGHT = 48;
+const VISIBLE_ROWS = 8;
 
 interface ColumnDef {
     key: string;
@@ -83,32 +87,16 @@ function renderCell(item: any, col: ColumnDef, _tab: CompareTab) {
         case "entity": {
             const name = item.entity || item.name || "";
             return (
-                <div style={{ display: "flex", alignItems: "center", gap: spacing[2], minWidth: 0 }}>
-                    <div style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: radius.sm,
-                        backgroundColor: colors.fill,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                    }}>
-                        <span style={{ fontSize: fonts.size.sm, fontWeight: 700, color: colors.fg.base }}>
-                            {name.charAt(0).toUpperCase()}
-                        </span>
-                    </div>
-                    <span style={{
-                        fontSize: fonts.size.base,
-                        color: colors.fg.base,
-                        fontWeight: 500,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                    }}>
-                        {name}
-                    </span>
-                </div>
+                <span style={{
+                    fontSize: fonts.size.sm,
+                    color: colors.fg.base,
+                    fontWeight: 500,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                }}>
+                    {name}
+                </span>
             );
         }
         case "sell":
@@ -172,6 +160,9 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
     const [search, setSearch] = useState("");
     const [sortColumn, setSortColumn] = useState<string | null>(null);
     const [sortDir, setSortDir] = useState<"asc" | "desc" | null>(null);
+    const [tabMenuOpen, setTabMenuOpen] = useState(false);
+    const tabMenuRef = useRef<HTMLDivElement>(null);
+    useClickOutside(tabMenuRef, () => setTabMenuOpen(false));
 
     const { data: dollarData, isLoading: dollarLoading, isError: dollarError } = useDollarBanks("sell");
     const { data: tnaData, isLoading: tnaLoading, isError: tnaError } = useFixedDeposits();
@@ -230,84 +221,131 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
     const columns = getColumns(activeTab);
     const latestUpdate = sorted[0]?.updated_at;
 
-    const lastUpdatedStyle: React.CSSProperties = {
-        fontSize: fonts.size.xs,
-        color: colors.fg.dim,
-        opacity: 0.7,
-        marginTop: "auto",
-        paddingTop: spacing[4],
-        alignSelf: "flex-start",
-    };
-
     return (
-        <Card
-            title="Comparativas"
-            onRefresh={handleRefresh}
-            titleStyle={{
-                fontSize: fonts.size.sm,
-                color: colors.fg.base,
-                textTransform: "uppercase",
-                fontWeight: 500,
-                letterSpacing: "0.5px",
+        <div
+            style={{
+                backgroundColor: colors.bg.surface,
+                borderRadius: radius.lg,
+                border: `1px solid ${colors.border}`,
+                padding: `${spacing[3]} ${spacing[4]}`,
+                display: "flex",
+                flexDirection: "column",
+                animation: "fadeIn 0.2s ease-out",
             }}
         >
-            <div style={{ display: "flex", flexDirection: "column", gap: spacing[3] }}>
-                {/* ── Toolbar ── */}
+            {/* ── Title row: label + dropdown + search + refresh ── */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing[3] }}>
                 <div style={{ display: "flex", alignItems: "center", gap: spacing[2] }}>
-                    {/* Custom tab toggle — no Button component, no shake */}
-                    <div style={{
-                        display: "flex",
-                        borderRadius: radius.md,
-                        overflow: "hidden",
-                        border: `1px solid ${colors.fill}`,
-                        height: "28px",
-                        flexShrink: 0,
+                    <span style={{
+                        fontSize: fonts.size.sm,
+                        color: colors.fg.base,
+                        textTransform: "uppercase",
+                        fontWeight: 500,
+                        letterSpacing: "0.5px",
                     }}>
-                        {tabs.map((tab) => {
-                            const isActive = activeTab === tab.key;
-                            return (
-                                <button
-                                    key={tab.key}
-                                    type="button"
-                                    onClick={() => {
-                                        setActiveTab(tab.key);
-                                        setSortColumn(null);
-                                        setSortDir(null);
-                                        setSearch("");
-                                    }}
-                                    style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        padding: `0 ${spacing[3]}`,
-                                        backgroundColor: isActive ? colors.fill : "transparent",
-                                        border: "none",
-                                        color: isActive ? colors.fg.base : colors.fg.dim,
-                                        fontSize: fonts.size.xs,
-                                        cursor: "pointer",
-                                        fontWeight: isActive ? 600 : 400,
-                                        fontFamily: fonts.family.text,
-                                        whiteSpace: "nowrap",
-                                        height: "100%",
-                                    }}
-                                >
-                                    {tab.label}
-                                </button>
-                            );
-                        })}
+                        Comparativas
+                    </span>
+                    <span style={{ color: colors.fill, fontSize: fonts.size.sm }}>|</span>
+
+                    <div ref={tabMenuRef} style={{ position: "relative" }}>
+                        <button
+                            type="button"
+                            onClick={() => setTabMenuOpen((p) => !p)}
+                            style={{
+                                background: "none",
+                                border: "none",
+                                padding: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                cursor: "pointer",
+                                color: colors.accent.teal,
+                                fontSize: fonts.size.sm,
+                                fontWeight: 500,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.5px",
+                                fontFamily: fonts.family.text,
+                            }}
+                        >
+                            {tabs.find((t) => t.key === activeTab)?.label}
+                            <ChevronDown
+                                size={14}
+                                style={{
+                                    transition: "transform 0.2s",
+                                    transform: tabMenuOpen ? "rotate(180deg)" : "rotate(0deg)",
+                                }}
+                            />
+                        </button>
+
+                        {tabMenuOpen && (
+                            <div style={{
+                                position: "absolute",
+                                top: "calc(100% + 4px)",
+                                left: 0,
+                                backgroundColor: colors.bg.surface,
+                                border: `1px solid ${colors.border}`,
+                                borderRadius: radius.md,
+                                padding: spacing[1],
+                                zIndex: 100,
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "1px",
+                                minWidth: "180px",
+                            }}>
+                                {tabs.map((tab) => {
+                                    const isActive = activeTab === tab.key;
+                                    return (
+                                        <button
+                                            key={tab.key}
+                                            type="button"
+                                            onClick={() => {
+                                                setActiveTab(tab.key);
+                                                setSortColumn(null);
+                                                setSortDir(null);
+                                                setSearch("");
+                                                setTabMenuOpen(false);
+                                            }}
+                                            style={{
+                                                backgroundColor: isActive ? colors.fill : "transparent",
+                                                border: "none",
+                                                borderRadius: radius.sm,
+                                                padding: `${spacing[1]} ${spacing[2]}`,
+                                                color: isActive ? colors.fg.base : colors.fg.dim,
+                                                fontSize: fonts.size.sm,
+                                                cursor: "pointer",
+                                                fontWeight: isActive ? 500 : 400,
+                                                fontFamily: fonts.family.text,
+                                                textAlign: "left",
+                                                whiteSpace: "nowrap",
+                                                transition: "background-color 0.1s",
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                if (!isActive) e.currentTarget.style.backgroundColor = colors.fill;
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                if (!isActive) e.currentTarget.style.backgroundColor = "transparent";
+                                            }}
+                                        >
+                                            {tab.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
+                </div>
 
-                    <div style={{ flex: 1 }} />
-
-                    {/* Search */}
+                <div style={{ display: "flex", alignItems: "center", gap: spacing[2] }}>
                     <div style={{
                         display: "flex",
                         alignItems: "center",
                         gap: spacing[1],
                         backgroundColor: colors.bg.base,
-                        border: `1px solid ${colors.fill}`,
+                        border: `1px solid ${colors.border}`,
                         borderRadius: radius.md,
                         padding: `${spacing[1]} ${spacing[2]}`,
                         height: "28px",
+                        width: "140px",
                         boxSizing: "border-box",
                     }}>
                         <Search size={11} color={colors.fg.dim} />
@@ -344,34 +382,46 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                             </button>
                         )}
                     </div>
-                </div>
 
-                {/* ── Table ── */}
-                {isLoading ? (
-                    <div style={{ padding: spacing[8], textAlign: "center", color: colors.fg.dim }}>
-                        Cargando...
-                    </div>
-                ) : isError ? (
-                    <div style={{ padding: spacing[8], textAlign: "center", color: colors.accent.red }}>
-                        Error al cargar datos
-                    </div>
-                ) : (
-                <div style={{
-                    backgroundColor: colors.bg.base,
-                    borderRadius: radius.lg,
-                    border: `1px solid ${colors.fill}`,
-                    overflow: "hidden",
-                    display: "flex",
-                    flexDirection: "column",
-                }}>
+                    <button
+                        onClick={handleRefresh}
+                        title="Actualizar"
+                        style={{
+                            background: "none",
+                            border: "none",
+                            color: colors.fg.dim,
+                            cursor: "pointer",
+                            padding: spacing[1],
+                            display: "flex",
+                            alignItems: "center",
+                            transition: "color 0.15s",
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = colors.fg.base; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = colors.fg.dim; }}
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            {/* ── Table ── */}
+            {isLoading ? (
+                <div style={{ padding: spacing[8], textAlign: "center", color: colors.fg.dim }}>
+                    Cargando...
+                </div>
+            ) : isError ? (
+                <div style={{ padding: spacing[8], textAlign: "center", color: colors.accent.red }}>
+                    Error al cargar datos
+                </div>
+            ) : (
+                <div style={{ display: "flex", flexDirection: "column" }}>
                     {/* Header */}
                     <div style={{
                         display: "flex",
                         alignItems: "center",
                         padding: `${spacing[2]} ${spacing[3]}`,
                         borderBottom: `1px solid ${colors.fill}`,
-                        backgroundColor: "#111418",
-                        flexShrink: 0,
+                        backgroundColor: colors.bg.header,
                     }}>
                         {columns.map((col, idx) => {
                             const sortableKey = sortableKeys[idx];
@@ -395,10 +445,10 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                                         <Tooltip content={col.tooltip} alwaysShow>
                                             <span style={{
                                                 fontSize: fonts.table.header,
-                                                fontWeight: 700,
-                                                color: colors.fg.dim,
+                                                fontWeight: 500,
+                                                color: isSorted ? colors.fg.base : colors.fg.dim,
                                                 textTransform: "uppercase",
-                                                letterSpacing: "0.5px",
+                                                letterSpacing: "0.05em",
                                                 display: "inline-flex",
                                                 alignItems: "center",
                                                 gap: "3px",
@@ -414,10 +464,10 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                                     ) : (
                                         <span style={{
                                             fontSize: fonts.table.header,
-                                            fontWeight: 700,
-                                            color: colors.fg.dim,
+                                            fontWeight: 500,
+                                            color: isSorted ? colors.fg.base : colors.fg.dim,
                                             textTransform: "uppercase",
-                                            letterSpacing: "0.5px",
+                                            letterSpacing: "0.05em",
                                             display: "inline-flex",
                                             alignItems: "center",
                                             gap: "3px",
@@ -436,30 +486,33 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                     </div>
 
                     {/* Rows */}
-                    <div style={{ maxHeight: 308, overflowY: "auto", boxSizing: "border-box" }}>
+                    <div style={{ maxHeight: VISIBLE_ROWS * ROW_HEIGHT, overflowY: "auto" }}>
                         {sorted.length === 0 && (
                             <div style={{ padding: spacing[4], textAlign: "center", color: colors.fg.dim, fontSize: fonts.size.sm }}>
                                 Sin resultados
                             </div>
                         )}
-                        {sorted.map((item, i) => (
+                        {sorted.map((item, i) => {
+                            const zebraBg = i % 2 === 1 ? colors.bg.base : undefined;
+                            return (
                             <div
                                 key={(item as any).slug || (item as any).name || i}
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    padding: `${spacing[1]} ${spacing[3]}`,
-                                    borderBottom: `1px solid ${colors.fill}`,
-                                    backgroundColor: "transparent",
-                                    transition: "background-color 0.1s",
-                                    cursor: "default",
-                                    minHeight: 44,
-                                }}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        padding: `0 ${spacing[3]}`,
+                                        borderBottom: i === sorted.length - 1 ? "none" : `1px solid ${colors.fill}`,
+                                        transition: "background-color 0.1s",
+                                        cursor: "default",
+                                        height: ROW_HEIGHT,
+                                        boxSizing: "border-box",
+                                        backgroundColor: zebraBg,
+                                    }}
                                 onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = "#181B1D";
+                                    e.currentTarget.style.backgroundColor = colors.bg.hover;
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = "transparent";
+                                    e.currentTarget.style.backgroundColor = zebraBg || "transparent";
                                 }}
                             >
                                 {columns.map((col) => (
@@ -475,16 +528,23 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                                     </div>
                                 ))}
                             </div>
-                        ))}
+                        )})}
                     </div>
                 </div>
-                )}
-            </div>
+            )}
+
+            {/* ── Footer ── */}
             {latestUpdate && (
-                <div style={{ ...lastUpdatedStyle, marginTop: spacing[2] }}>
+                <div style={{
+                    fontSize: fonts.size.xs,
+                    color: colors.fg.dim,
+                    opacity: 0.6,
+                    marginTop: spacing[3],
+                    alignSelf: "flex-start",
+                }}>
                     Actualizado: {formatDateStr(latestUpdate, userDateFormat)}
                 </div>
             )}
-        </Card>
+        </div>
     );
 }

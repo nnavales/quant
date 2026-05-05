@@ -158,3 +158,56 @@ export function getHistoricalDatePresets(): DatePreset[] {
         },
     ].sort((a, b) => b.from.localeCompare(a.from));
 }
+
+/* ─── Timezone-aware helpers ─── */
+
+function getPartsInTimezone(date: Date, timezone?: string) {
+    const fmt = new Intl.DateTimeFormat("en-US", {
+        timeZone: timezone || undefined,
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        second: "numeric",
+        hour12: false,
+    });
+    const parts = fmt.formatToParts(date);
+    const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+    return {
+        year: get("year"),
+        month: get("month"),
+        day: get("day"),
+        hour: get("hour"),
+        minute: get("minute"),
+        second: get("second"),
+    };
+}
+
+/** Return a local Date whose calendar day matches the user's timezone. */
+export function getNowInTimezone(timezone?: string): Date {
+    const p = getPartsInTimezone(new Date(), timezone);
+    return new Date(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+}
+
+/** Parse a YYYY-MM-DD string into a Date using the user's timezone. */
+export function parseLocalDateInTimezone(dateStr: string, timezone?: string): Date {
+    const datePart = dateStr.split("T")[0];
+    const [year, month, day] = datePart.split("-").map(Number);
+    const d = new Date(year, month - 1, day);
+    if (!timezone) return d;
+    const p = getPartsInTimezone(d, timezone);
+    return new Date(p.year, p.month - 1, p.day);
+}
+
+/** Check if two dates represent the same calendar day in the user's timezone. */
+export function isSameDayInTimezone(d1: Date, d2: Date, timezone?: string): boolean {
+    const p1 = getPartsInTimezone(d1, timezone);
+    const p2 = getPartsInTimezone(d2, timezone);
+    return p1.year === p2.year && p1.month === p2.month && p1.day === p2.day;
+}
+
+/** Check if a date is "today" in the user's timezone. */
+export function isTodayInTimezone(date: Date, timezone?: string): boolean {
+    return isSameDayInTimezone(date, new Date(), timezone);
+}

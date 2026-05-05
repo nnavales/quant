@@ -97,6 +97,11 @@ const (
 		FROM subcategories WHERE name = ? AND deleted_at IS NULL
 	`
 
+	QueryGetSubcategoryByCategoryAndName = `
+		SELECT id, category_id, name, created_at, updated_at, deleted_at
+		FROM subcategories WHERE category_id = ? AND name = ? AND deleted_at IS NULL
+	`
+
 	QueryHardDeleteCategory = `
 		DELETE FROM categories
 		WHERE id = ? AND deleted_at IS NOT NULL;
