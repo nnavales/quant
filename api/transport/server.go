@@ -82,8 +82,8 @@ func NewServer(cfg config.Config, services *Services) *Server {
 	}
 }
 
-func (sv *Server) Run(ctx context.Context) error {
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
+func (sv *Server) Run(ctx context.Context, addr string) error {
+	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil
 	}

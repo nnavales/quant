@@ -84,7 +84,7 @@ api-run:
 cli:
 	@mkdir -p $(BIN_DIR)
 	@go build -o $(BIN_DIR)/quant-cli $(CLI_MAIN)
-	@./$(BIN_DIR)/quant-cli
+	@APP_ENV="dev" ./$(BIN_DIR)/quant-cli
 
 test:
 	@go test ./...

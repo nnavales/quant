@@ -16,14 +16,10 @@ func setMode(mode string) error {
 
 	path := filepath.Join(dir, "config.json")
 
-	cfg, err := config.ReadConfigFile(path)
-	if err != nil {
-		return err
-	}
+	def := config.Default()
+	def.Mode = mode
 
-	cfg.Mode = mode
-
-	return writeConfig(path, cfg)
+	return writeConfig(path, def)
 }
 
 func GetMode() string {
@@ -47,6 +43,10 @@ func GetMode() string {
 }
 
 func writeConfig(path string, cfg config.Config) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+
 	tmp := path + ".tmp"
 
 	b, err := json.MarshalIndent(cfg, "", "  ")

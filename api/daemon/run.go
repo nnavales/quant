@@ -128,10 +128,15 @@ func Run(stopCh <-chan struct{}) error {
 		}()
 	}
 
+	addr := "127.0.0.1:0"
+	if cfg.Mode == "service" {
+		addr = fmt.Sprintf("127.0.0.1:%d", cfg.Port)
+	}
+
 	httpServer := transport.NewServer(cfg.Config, services)
 
 	go func() {
-		if err := httpServer.Run(sigCtx); err != nil {
+		if err := httpServer.Run(sigCtx, addr); err != nil {
 			slog.Error("server.error", "err", err)
 			stop()
 		}

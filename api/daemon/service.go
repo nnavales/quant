@@ -73,6 +73,7 @@ func newServiceConfig() *service.Config {
 		Option:      make(map[string]interface{}),
 	}
 	cfg.Option["UserService"] = true
+	cfg.Option["SystemdScript"] = systemdTemplate
 	return cfg
 }
 
@@ -80,3 +81,36 @@ func openService() (service.Service, error) {
 	s := &QuantService{}
 	return service.New(s, newServiceConfig())
 }
+
+const systemdTemplate = `[Unit]
+Description={{.Description}}
+ConditionFileIsExecutable={{.Path|cmdEscape}}
+{{range $i, $dep := .Dependencies}} 
+{{$dep}} {{end}}
+
+[Service]
+StartLimitInterval=5
+StartLimitBurst=10
+ExecStart={{.Path|cmdEscape}}{{range .Arguments}} {{.|cmd}}{{end}}
+{{if .ChRoot}}RootDirectory={{.ChRoot|cmd}}{{end}}
+{{if .WorkingDirectory}}WorkingDirectory={{.WorkingDirectory|cmdEscape}}{{end}}
+{{if .UserName}}User={{.UserName}}{{end}}
+{{if .ReloadSignal}}ExecReload=/bin/kill -{{.ReloadSignal}} "$MAINPID"{{end}}
+{{if .PIDFile}}PIDFile={{.PIDFile|cmd}}{{end}}
+{{if and .LogOutput .HasOutputFileSupport -}}
+StandardOutput=file:{{.LogDirectory}}/{{.Name}}.out
+StandardError=file:{{.LogDirectory}}/{{.Name}}.err
+{{- end}}
+{{if gt .LimitNOFILE -1 }}LimitNOFILE={{.LimitNOFILE}}{{end}}
+{{if .Restart}}Restart={{.Restart}}{{end}}
+{{if .SuccessExitStatus}}SuccessExitStatus={{.SuccessExitStatus}}{{end}}
+RestartSec=120
+EnvironmentFile=-/etc/sysconfig/{{.Name}}
+
+{{range $k, $v := .EnvVars -}}
+Environment={{$k}}={{$v}}
+{{end -}}
+
+[Install]
+WantedBy=default.target
+`

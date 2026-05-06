@@ -15,6 +15,10 @@ func Install() error {
 		return fmt.Errorf("daemon install is not available in dev mode")
 	}
 
+	if err := setMode("service"); err != nil {
+		return fmt.Errorf("failed to set service mode: %w", err)
+	}
+
 	svc, err := openService()
 	if err != nil {
 		return fmt.Errorf("failed to create service: %w", err)
@@ -26,10 +30,6 @@ func Install() error {
 
 	if err := svc.Start(); err != nil {
 		return fmt.Errorf("failed to start service: %w", err)
-	}
-
-	if err := setMode("service"); err != nil {
-		return fmt.Errorf("service installed but failed to update config: %w", err)
 	}
 
 	fmt.Println("Quant service installed and started.")

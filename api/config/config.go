@@ -21,7 +21,7 @@ type Runtime struct {
 	DatabaseFile string
 }
 
-func defaultConfig() Config {
+func Default() Config {
 	return Config{
 		Name:    "Quant",
 		Port: 43123,
@@ -30,7 +30,7 @@ func defaultConfig() Config {
 }
 
 func merge(cfg Config) Config {
-	def := defaultConfig()
+	def := Default()
 
 	if cfg.Port == 0 {
 		cfg.Port = def.Port
