@@ -156,32 +156,6 @@ fn get_port() -> Result<u16, String> {
     Ok(config.port.unwrap_or(43123))
 }
 
-#[tauri::command]
-fn get_mode() -> String {
-    read_mode()
-}
-
-#[tauri::command]
-fn is_dev() -> bool {
-    std::env::var("APP_ENV").unwrap_or_default() == "dev"
-}
-
-#[tauri::command]
-fn set_mode(mode: String, app: tauri::AppHandle) -> Result<(), String> {
-    let path = config_path();
-    let data = fs::read_to_string(&path).map_err(|e| format!("read config: {}", e))?;
-    let mut config: serde_json::Value =
-        serde_json::from_str(&data).map_err(|e| format!("parse config: {}", e))?;
-
-    config["mode"] = serde_json::Value::String(mode);
-
-    let json = serde_json::to_string_pretty(&config).map_err(|e| format!("serialize: {}", e))?;
-    fs::write(&path, json).map_err(|e| format!("write config: {}", e))?;
-
-    app.restart();
-    Ok(())
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -222,12 +196,7 @@ pub fn run() {
                 }
             }
         })
-        .invoke_handler(tauri::generate_handler![
-            get_port,
-            get_mode,
-            set_mode,
-            is_dev
-        ])
+        .invoke_handler(tauri::generate_handler![get_port])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

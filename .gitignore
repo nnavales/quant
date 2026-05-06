@@ -1,51 +1,75 @@
+# ============================================================
+# SUMMIT - .gitignore
+# ============================================================
+
+# --- Build outputs ---
 bin/
-docs/
-*.db
-# scripts/
-.env
-justfile
-AGENTS.md
+tmp/
+app/dist/
+app/src-tauri/target/
+app/src-tauri/binaries/
 
-
-# dependencies
+# --- Package managers ---
 node_modules/
+app/node_modules/
 
-# Expo
+# --- Python ---
+.venv/
+__pycache__/
+*.pyc
+
+# --- Linters / formatters ---
+.ruff_cache/
+
+# --- Databases ---
+*.db
+*.sqlite
+*.sqlite3
+
+# --- Environment / secrets ---
+.env
+.env*.local
+app/.env
+
+# --- macOS ---
+.DS_Store
+*.pem
+
+# --- Logs / debug ---
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# --- TypeScript ---
+*.tsbuildinfo
+
+# --- Editor / IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# --- OS artifacts ---
+*.orig.*
+Thumbs.db
+
+# --- Project-specific (do not track) ---
+AGENTS.md
+justfile
+app-example
+
+# --- Expo / React Native (legacy, kept for safety) ---
 .expo/
-dist/
 web-build/
 expo-env.d.ts
-
-# Native
 .kotlin/
-*.orig.*
 *.jks
 *.p8
 *.p12
 *.key
 *.mobileprovision
-
-# Metro
 .metro-health-check*
-
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
-
-# macOS
-.DS_Store
-*.pem
-
-# local env files
-.env*.local
-app/.env
-
-# typescript
-*.tsbuildinfo
-
-app-example
-
-# generated native folders
 /ios
 /android

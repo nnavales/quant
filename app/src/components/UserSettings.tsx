@@ -9,7 +9,6 @@ import { colors, presets } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
 import { cardStyle } from "@/styles/layout";
-import { invoke } from "@tauri-apps/api/core";
 
 const sectionHeaderStyle: React.CSSProperties = {
     fontSize: fonts.size.xs,
@@ -62,8 +61,6 @@ export function UserSettings() {
     const [dateFormat, setDateFormat] = useState("DD/MM/YYYY");
     const [defaultRate, setDefaultRate] = useState("");
     const [theme, setTheme] = useState("dark");
-    const [daemonMode, setDaemonMode] = useState("user");
-    const [isDevEnv, setIsDevEnv] = useState(false);
 
     const themeOptions: DropdownOption[] = Object.keys(presets).map((id) => ({
         id,
@@ -83,16 +80,6 @@ export function UserSettings() {
             setTheme(config.theme ?? "dark");
         }
     }, [config]);
-
-    useEffect(() => {
-        invoke("get_mode")
-            .then((mode) => setDaemonMode(mode as string))
-            .catch(() => {});
-
-        invoke("is_dev")
-            .then((dev) => setIsDevEnv(!!dev))
-            .catch(() => {});
-    }, []);
 
     const dollarSourceOptions: DropdownOption[] = dollarBanks
         ? [
@@ -245,31 +232,6 @@ export function UserSettings() {
                     triggerStyle={{ height: "32px", fontSize: fonts.size.sm }}
                 />
             </div>
-
-            {!isDevEnv && (
-                <div style={cardStyle}>
-                    <h3 style={sectionHeaderStyle}>Modo de ejecución</h3>
-                    <p style={{ fontSize: fonts.size.xs, color: colors.fg.dim, marginBottom: spacing[3] }}>
-                        Cambiar esto reiniciará la aplicación.
-                    </p>
-                    <Dropdown
-                        value={daemonMode}
-                        onChange={(id) => {
-                            if (id === daemonMode) return;
-                            setDaemonMode(id);
-                            invoke("set_mode", { mode: id }).catch((err) => {
-                                toast("Error al cambiar modo: " + String(err));
-                            });
-                        }}
-                        options={[
-                            { id: "user", label: "Solo cuando uso la app" },
-                            { id: "service", label: "Siempre en segundo plano" },
-                        ]}
-                        placeholder="Seleccionar..."
-                        triggerStyle={{ height: "32px", fontSize: fonts.size.sm }}
-                    />
-                </div>
-            )}
         </div>
     );
 }
