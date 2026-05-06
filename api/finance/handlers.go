@@ -3,9 +3,9 @@ package finance
 import (
 	"net/http"
 
-	"github.com/nnavales/summit/api/categories"
-	"github.com/nnavales/summit/api/channels"
-	"github.com/nnavales/summit/api/transport/httpx"
+	"github.com/nnavales/quant/api/categories"
+	"github.com/nnavales/quant/api/channels"
+	"github.com/nnavales/quant/api/transport/httpx"
 )
 
 type Handler struct {

@@ -6,8 +6,8 @@ import (
 	"math"
 	"time"
 
-	"github.com/nnavales/summit/api/money"
-	"github.com/nnavales/summit/api/timeutils"
+	"github.com/nnavales/quant/api/money"
+	"github.com/nnavales/quant/api/timeutils"
 )
 
 type KPIEvolutionResponse struct {

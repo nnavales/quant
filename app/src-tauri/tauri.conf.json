@@ -1,8 +1,8 @@
 {
     "$schema": "https://schema.tauri.app/config/2",
-    "productName": "summit",
+    "productName": "Quant",
     "version": "0.1.2",
-    "identifier": "com.nnavales.summit",
+    "identifier": "com.nnavales.quant",
     "build": {
         "beforeDevCommand": "bun run dev",
         "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
     "app": {
         "windows": [
             {
-                "title": "Summit",
+                "title": "Quant",
                 "width": 800,
                 "height": 600
             }
@@ -25,8 +25,8 @@
         "active": true,
         "targets": "all",
         "externalBin": [
-            "binaries/summit-api",
-            "binaries/summit-cli"
+            "binaries/quant-api",
+            "binaries/quant-cli"
         ],
         "icon": [
             "icons/32x32.png",

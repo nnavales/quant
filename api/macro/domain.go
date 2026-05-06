@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nnavales/summit/api/timeutils"
+	"github.com/nnavales/quant/api/timeutils"
 )
 
 type HTTPError struct {

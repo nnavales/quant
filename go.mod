@@ -1,4 +1,4 @@
-module github.com/nnavales/summit
+module github.com/nnavales/quant
 
 go 1.25.7
 

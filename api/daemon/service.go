@@ -7,11 +7,11 @@ import (
 	"github.com/kardianos/service"
 )
 
-type SummitService struct {
+type QuantService struct {
 	stopCh chan struct{}
 }
 
-func (s *SummitService) Start(svc service.Service) error {
+func (s *QuantService) Start(svc service.Service) error {
 	s.stopCh = make(chan struct{})
 	go func() {
 		if err := Run(s.stopCh); err != nil {
@@ -21,7 +21,7 @@ func (s *SummitService) Start(svc service.Service) error {
 	return nil
 }
 
-func (s *SummitService) Stop(svc service.Service) error {
+func (s *QuantService) Stop(svc service.Service) error {
 	if s.stopCh != nil {
 		close(s.stopCh)
 	}
@@ -29,27 +29,27 @@ func (s *SummitService) Stop(svc service.Service) error {
 }
 
 func findAPIExecutable() string {
-	// If SUMMIT_API_PATH is set, use it
-	if path := os.Getenv("SUMMIT_API_PATH"); path != "" {
+	// If QUANT_API_PATH is set, use it
+	if path := os.Getenv("QUANT_API_PATH"); path != "" {
 		return path
 	}
 
-	// Try to find summit-api next to the current executable (summit-cli)
+	// Try to find quant-api next to the current executable (quant-cli)
 	exe, err := os.Executable()
 	if err == nil {
 		dir := filepath.Dir(exe)
-		apiPath := filepath.Join(dir, "summit-api")
+		apiPath := filepath.Join(dir, "quant-api")
 		if _, err := os.Stat(apiPath); err == nil {
 			return apiPath
 		}
 	}
 
 	// Fallback: search in PATH
-	if path, err := execLookPath("summit-api"); err == nil {
+	if path, err := execLookPath("quant-api"); err == nil {
 		return path
 	}
 
-	return "summit-api"
+	return "quant-api"
 }
 
 func execLookPath(file string) (string, error) {
@@ -66,18 +66,17 @@ func execLookPath(file string) (string, error) {
 
 func newServiceConfig() *service.Config {
 	cfg := &service.Config{
-		Name:        "summit",
-		DisplayName: "Summit API",
-		Description: "Summit personal finance API background service",
+		Name:        "quant",
+		DisplayName: "Quant API",
+		Description: "Quant personal finance API background service",
 		Executable:  findAPIExecutable(),
 		Option:      make(map[string]interface{}),
 	}
-	// Force user-level service on Linux (systemd --user)
 	cfg.Option["UserService"] = true
 	return cfg
 }
 
 func openService() (service.Service, error) {
-	s := &SummitService{}
+	s := &QuantService{}
 	return service.New(s, newServiceConfig())
 }

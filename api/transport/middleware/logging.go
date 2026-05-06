@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nnavales/summit/api/transport/httpx"
+	"github.com/nnavales/quant/api/transport/httpx"
 )
 
 type responseWrapper struct {

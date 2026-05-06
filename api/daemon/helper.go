@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/nnavales/summit/api/config"
+	"github.com/nnavales/quant/api/config"
 )
 
 func setMode(mode string) error {

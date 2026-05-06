@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/nnavales/summit/api/cache"
+	"github.com/nnavales/quant/api/cache"
 )
 
 type Provider struct {

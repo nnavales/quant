@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/nnavales/summit/api/timeutils"
+	"github.com/nnavales/quant/api/timeutils"
 )
 
 func FetchIPCFromAPI() (TimeSeries, error) {

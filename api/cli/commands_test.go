@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nnavales/summit/api/entries"
-	"github.com/nnavales/summit/api/money"
-	"github.com/nnavales/summit/api/networth"
+	"github.com/nnavales/quant/api/entries"
+	"github.com/nnavales/quant/api/money"
+	"github.com/nnavales/quant/api/networth"
 )
 
 // ========================

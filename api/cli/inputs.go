@@ -9,12 +9,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nnavales/summit/api/apperrors"
-	"github.com/nnavales/summit/api/entries"
-	"github.com/nnavales/summit/api/money"
-	"github.com/nnavales/summit/api/networth"
-	"github.com/nnavales/summit/api/timeutils"
-	"github.com/nnavales/summit/api/transactions"
+	"github.com/nnavales/quant/api/apperrors"
+	"github.com/nnavales/quant/api/entries"
+	"github.com/nnavales/quant/api/money"
+	"github.com/nnavales/quant/api/networth"
+	"github.com/nnavales/quant/api/timeutils"
+	"github.com/nnavales/quant/api/transactions"
 )
 
 var ErrInvalidInput = apperrors.ErrInvalidInput

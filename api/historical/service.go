@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nnavales/summit/api/timeutils"
-	"github.com/nnavales/summit/api/transactions"
+	"github.com/nnavales/quant/api/timeutils"
+	"github.com/nnavales/quant/api/transactions"
 )
 
 type Service struct {

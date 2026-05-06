@@ -41,7 +41,7 @@ export function Layout({ children, activeTab, onTabChange, showSettings, onOpenS
                             margin: 0,
                         }}
                     >
-                        Summit
+                        Quant
                     </h1>
                 </header>
                 <main

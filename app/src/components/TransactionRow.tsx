@@ -83,7 +83,7 @@ const getNextTextFormat = (current: DateTextFormat): DateTextFormat => {
     return "default";
 };
 
-const STORAGE_KEY = "summit-date-text-format";
+const STORAGE_KEY = "quant-date-text-format";
 
 const getStoredTextFormat = (): DateTextFormat => {
     try {

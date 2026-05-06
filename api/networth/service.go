@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/nnavales/summit/api/macro"
-	"github.com/nnavales/summit/api/timeutils"
-	"github.com/nnavales/summit/api/users"
+	"github.com/nnavales/quant/api/macro"
+	"github.com/nnavales/quant/api/timeutils"
+	"github.com/nnavales/quant/api/users"
 )
 
 type Service struct {

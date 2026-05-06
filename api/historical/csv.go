@@ -7,7 +7,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/nnavales/summit/api/timeutils"
+	"github.com/nnavales/quant/api/timeutils"
 )
 
 var ErrInvalidCSV = errors.New("invalid csv")

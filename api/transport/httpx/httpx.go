@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/nnavales/summit/api/apperrors"
+	"github.com/nnavales/quant/api/apperrors"
 )
 
 var (

@@ -1,4 +1,4 @@
-.PHONY: all dev sidecar-dev client-sidecar release clean test api cli version help
+.PHONY: all dev sidecar-dev client-sidecar prod-test release clean test api cli version help
 
 # Version and build flags
 APP_VERSION ?= 0.1.0
@@ -10,7 +10,6 @@ API_MAIN = ./api/cmd/api/main.go
 CLI_MAIN = ./api/cmd/cli/main.go
 SIDECAR_DIR = app/src-tauri/binaries
 
-# Multi-platform sidecar targets (GOOS/GOARCH:Tauri-target-triple)
 SIDECAR_TARGETS = \
 	linux/amd64:x86_64-unknown-linux-gnu \
 	windows/amd64:x86_64-pc-windows-msvc \
@@ -28,16 +27,9 @@ endif
 
 all: help
 
-# ─── DEV MODE ──────────────────────────────────────────────────────
-# Fast iteration. External API (air) + Tauri client. No sidecars.
-# Environment variables are injected from Makefile — no .env required.
-
 dev:
 	@bash -c "$(DISPLAY_FLAGS) APP_ENV=dev air & \
 		cd app && $(DISPLAY_FLAGS) APP_ENV=dev bun run tauri dev"
-
-# ─── SIDECAR DEV MODE ──────────────────────────────────────────────
-# Simulate production behavior locally. Embedded API as sidecar.
 
 # Build sidecar binaries for the CURRENT platform only.
 sidecar-dev:
@@ -50,16 +42,13 @@ sidecar-dev:
 		ext=""; \
 		if echo "$$target" | grep -q "windows"; then ext=".exe"; fi; \
 		echo "Building sidecar for $$target"; \
-		CGO_ENABLED=0 go build $(LDFLAGS) -o $(SIDECAR_DIR)/summit-api-$$target$$ext $(API_MAIN); \
-		CGO_ENABLED=0 go build $(LDFLAGS) -o $(SIDECAR_DIR)/summit-cli-$$target$$ext $(CLI_MAIN)
+		CGO_ENABLED=0 go build $(LDFLAGS) -o $(SIDECAR_DIR)/quant-api-$$target$$ext $(API_MAIN); \
+		CGO_ENABLED=0 go build $(LDFLAGS) -o $(SIDECAR_DIR)/quant-cli-$$target$$ext $(CLI_MAIN)
 	@echo "Done: sidecar binaries in $(SIDECAR_DIR)/"
 
 # Run Tauri dev with sidecar spawn enabled (SIDECAR=1 forces sidecar in dev).
 client-sidecar:
 	@cd app && $(DISPLAY_FLAGS) APP_ENV=dev SIDECAR=1 bun run tauri dev
-
-# ─── RELEASE MODE ──────────────────────────────────────────────────
-# Deterministic, no env dependency. Multi-platform sidecars + bundle.
 
 # Build sidecar binaries for ALL platforms.
 sidecar:
@@ -72,17 +61,14 @@ sidecar:
 		ext=""; \
 		if [ "$$goos" = "windows" ]; then ext=".exe"; fi; \
 		echo "Building sidecar for $${target}"; \
-		CGO_ENABLED=0 GOOS=$$goos GOARCH=$$goarch go build $(LDFLAGS) -o $(SIDECAR_DIR)/summit-api-$${target}$${ext} $(API_MAIN); \
-		CGO_ENABLED=0 GOOS=$$goos GOARCH=$$goarch go build $(LDFLAGS) -o $(SIDECAR_DIR)/summit-cli-$${target}$${ext} $(CLI_MAIN); \
+		CGO_ENABLED=0 GOOS=$$goos GOARCH=$$goarch go build $(LDFLAGS) -o $(SIDECAR_DIR)/quant-api-$${target}$${ext} $(API_MAIN); \
+		CGO_ENABLED=0 GOOS=$$goos GOARCH=$$goarch go build $(LDFLAGS) -o $(SIDECAR_DIR)/quant-cli-$${target}$${ext} $(CLI_MAIN); \
 	done
 	@echo "Done: all sidecar binaries in $(SIDECAR_DIR)/"
 
 release: clean sidecar
 	@cd app && bun run tauri build
 
-# ─── VERSIONING ────────────────────────────────────────────────────
-
-# Bump version across all config files. Usage: make version VERSION=0.2.0
 version:
 	@if [ -z "$(VERSION)" ]; then \
 		echo "Usage: make version VERSION=0.2.0"; \
@@ -90,17 +76,15 @@ version:
 	fi
 	@./scripts/bump-version.sh $(VERSION)
 
-# ─── UTILITIES ─────────────────────────────────────────────────────
-
 api-run:
 	@mkdir -p $(BIN_DIR)
-	@go build -o $(BIN_DIR)/summit $(API_MAIN)
-	@./$(BIN_DIR)/summit
+	@go build -o $(BIN_DIR)/quant $(API_MAIN)
+	@./$(BIN_DIR)/quant
 
 cli:
 	@mkdir -p $(BIN_DIR)
-	@go build -o $(BIN_DIR)/summit-cli $(CLI_MAIN)
-	@./$(BIN_DIR)/summit-cli
+	@go build -o $(BIN_DIR)/quant-cli $(CLI_MAIN)
+	@./$(BIN_DIR)/quant-cli
 
 test:
 	@go test ./...
@@ -119,6 +103,7 @@ help:
 	@echo "  make dev              DEV mode: external API + hot reload"
 	@echo "  make sidecar-dev      Build sidecar binary for current platform"
 	@echo "  make client-sidecar   SIDECAR mode: Tauri spawns embedded API"
+	@echo "  make prod-test        PROD simulation: build + run release binary"
 	@echo "  make release          RELEASE mode: build distributable artifacts"
 	@echo "  make clean            Remove all build artifacts"
 	@echo "  make api              Build and run API binary"
@@ -129,4 +114,5 @@ help:
 	@echo "Modes:"
 	@echo "  DEV      → make dev"
 	@echo "  SIDECAR  → make sidecar-dev && make client-sidecar"
+	@echo "  PROD     → make prod-test"
 	@echo "  RELEASE  → make release"

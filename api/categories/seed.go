@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/nnavales/summit/api/timeutils"
+	"github.com/nnavales/quant/api/timeutils"
 )
 
 func SeedDefaults(ctx context.Context, repo *SQLiteRepo, clock timeutils.Clock) error {

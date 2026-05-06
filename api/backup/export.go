@@ -6,8 +6,8 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/nnavales/summit/api/finance"
-	"github.com/nnavales/summit/api/networth"
+	"github.com/nnavales/quant/api/finance"
+	"github.com/nnavales/quant/api/networth"
 )
 
 func toTransaction(data []finance.TransactionRowDTO) []Transaction {

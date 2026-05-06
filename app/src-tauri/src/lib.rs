@@ -24,10 +24,10 @@ fn config_path() -> PathBuf {
 
     if is_dev {
         if let Ok(home) = std::env::var("HOME") {
-            return PathBuf::from(home).join(".summit").join("config.json");
+            return PathBuf::from(home).join(".quant").join("config.json");
         }
         if let Ok(home) = std::env::var("USERPROFILE") {
-            return PathBuf::from(home).join(".summit").join("config.json");
+            return PathBuf::from(home).join(".quant").join("config.json");
         }
         return PathBuf::from("./data/config.json");
     }
@@ -35,21 +35,21 @@ fn config_path() -> PathBuf {
     // Production: OS-specific app data directory
     if cfg!(target_os = "linux") {
         if let Ok(xdg) = std::env::var("XDG_DATA_HOME") {
-            return PathBuf::from(xdg).join("summit").join("config.json");
+            return PathBuf::from(xdg).join("quant").join("config.json");
         }
         if let Ok(home) = std::env::var("HOME") {
-            return PathBuf::from(home).join(".local").join("share").join("summit").join("config.json");
+            return PathBuf::from(home).join(".local").join("share").join("quant").join("config.json");
         }
     } else if cfg!(target_os = "macos") {
         if let Ok(home) = std::env::var("HOME") {
-            return PathBuf::from(home).join("Library").join("Application Support").join("summit").join("config.json");
+            return PathBuf::from(home).join("Library").join("Application Support").join("quant").join("config.json");
         }
     } else if cfg!(target_os = "windows") {
         if let Ok(localappdata) = std::env::var("LOCALAPPDATA") {
-            return PathBuf::from(localappdata).join("summit").join("config.json");
+            return PathBuf::from(localappdata).join("quant").join("config.json");
         }
         if let Ok(home) = std::env::var("HOME") {
-            return PathBuf::from(home).join("AppData").join("Local").join("summit").join("config.json");
+            return PathBuf::from(home).join("AppData").join("Local").join("quant").join("config.json");
         }
     }
 
@@ -79,7 +79,7 @@ fn wait_for_api(timeout: Duration) -> Result<u16, String> {
         let port = read_api_port();
         if port != last_port {
             last_port = port;
-            eprintln!("[summit] detected API port: {}", port);
+            eprintln!("[quant] detected API port: {}", port);
         }
 
         let addr = format!("127.0.0.1:{}", port);
@@ -112,7 +112,7 @@ fn wait_for_api_port(port: u16, timeout: Duration) -> Result<(), String> {
 
 fn spawn_sidecar(app: &tauri::App) -> Result<(), String> {
     let (_rx, child) = app.shell()
-        .sidecar("summit-api")
+        .sidecar("quant-api")
         .map_err(|e| format!("sidecar command: {}", e))?
         .spawn()
         .map_err(|e| format!("spawn: {}", e))?;
@@ -121,11 +121,11 @@ fn spawn_sidecar(app: &tauri::App) -> Result<(), String> {
 
     match wait_for_api(Duration::from_secs(30)) {
         Ok(port) => {
-            eprintln!("[summit] API ready on port {}", port);
+            eprintln!("[quant] API ready on port {}", port);
             Ok(())
         }
         Err(e) => {
-            eprintln!("[summit] warning: {}", e);
+            eprintln!("[quant] warning: {}", e);
             Err(e)
         }
     }
@@ -135,11 +135,11 @@ fn check_service_mode(app: &tauri::App) -> Result<(), String> {
     let port = read_api_port();
     match wait_for_api_port(port, Duration::from_secs(5)) {
         Ok(()) => {
-            eprintln!("[summit] API service running on port {}", port);
+            eprintln!("[quant] API service running on port {}", port);
             Ok(())
         }
         Err(_) => {
-            eprintln!("[summit] API service not running on port {}", port);
+            eprintln!("[quant] API service not running on port {}", port);
             // Emit event to frontend so it can show a toast
             let _ = app.emit("api-not-running", ());
             Err("API service not running".to_string())
@@ -189,7 +189,7 @@ pub fn run() {
                         if let Ok(mut guard) = state.0.lock() {
                             if let Some(child) = guard.take() {
                                 let _ = child.kill();
-                                eprintln!("[summit] sidecar killed on window close");
+                                eprintln!("[quant] sidecar killed on window close");
                             }
                         }
                     }

@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/nnavales/summit/api/cli"
-	"github.com/nnavales/summit/api/config"
-	"github.com/nnavales/summit/api/daemon"
+	"github.com/nnavales/quant/api/cli"
+	"github.com/nnavales/quant/api/config"
+	"github.com/nnavales/quant/api/daemon"
 )
 
 func main() {
@@ -103,7 +103,7 @@ func runDaemonCommand(args []string) {
 }
 
 func printDaemonHelp() {
-	fmt.Println("Usage: summit-cli daemon <command>")
+	fmt.Println("Usage: quant-cli daemon <command>")
 	fmt.Println("")
 	fmt.Println("Commands:")
 	fmt.Println("  install      Install and start the background service")

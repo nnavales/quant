@@ -3,7 +3,7 @@ package presets
 import (
 	"net/http"
 
-	"github.com/nnavales/summit/api/transport/httpx"
+	"github.com/nnavales/quant/api/transport/httpx"
 )
 
 type Handler struct {

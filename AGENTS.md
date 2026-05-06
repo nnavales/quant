@@ -1,8 +1,8 @@
-# AGENTS.md - Summit Development Guide
+# AGENTS.md - Quant Development Guide
 
 ## 1. Project Overview
 
-Summit is a local-first personal finances dashboard with a Go backend and SQLite database.
+Quant is a local-first personal finances dashboard with a Go backend and SQLite database.
 
 Focus:
 

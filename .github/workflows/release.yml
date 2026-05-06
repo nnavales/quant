@@ -68,8 +68,8 @@ jobs:
           mkdir -p app/src-tauri/binaries
           ext=""
           if [ "${{ matrix.goos }}" = "windows" ]; then ext=".exe"; fi
-          CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -ldflags="-s -w" -o app/src-tauri/binaries/summit-api-${{ matrix.target }}${ext} ./api/cmd/api/main.go
-          CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -ldflags="-s -w" -o app/src-tauri/binaries/summit-cli-${{ matrix.target }}${ext} ./api/cmd/cli/main.go
+          CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -ldflags="-s -w" -o app/src-tauri/binaries/quant-api-${{ matrix.target }}${ext} ./api/cmd/api/main.go
+          CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -ldflags="-s -w" -o app/src-tauri/binaries/quant-cli-${{ matrix.target }}${ext} ./api/cmd/cli/main.go
         shell: bash
 
       - name: Install frontend dependencies
@@ -81,7 +81,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: Summit ${{ github.ref_name }}
+          releaseName: Quant ${{ github.ref_name }}
           releaseBody: See the assets to download this version and install.
           releaseDraft: true
           prerelease: false

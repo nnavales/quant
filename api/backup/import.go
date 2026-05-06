@@ -9,14 +9,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/nnavales/summit/api/entries"
-	"github.com/nnavales/summit/api/finance"
-	"github.com/nnavales/summit/api/historical"
-	"github.com/nnavales/summit/api/installments"
-	"github.com/nnavales/summit/api/money"
-	"github.com/nnavales/summit/api/networth"
-	"github.com/nnavales/summit/api/timeutils"
-	"github.com/nnavales/summit/api/transactions"
+	"github.com/nnavales/quant/api/entries"
+	"github.com/nnavales/quant/api/finance"
+	"github.com/nnavales/quant/api/historical"
+	"github.com/nnavales/quant/api/installments"
+	"github.com/nnavales/quant/api/money"
+	"github.com/nnavales/quant/api/networth"
+	"github.com/nnavales/quant/api/timeutils"
+	"github.com/nnavales/quant/api/transactions"
 	"github.com/oklog/ulid/v2"
 )
 

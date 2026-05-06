@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/nnavales/summit/api/apperrors"
+	"github.com/nnavales/quant/api/apperrors"
 )
 
 type Repo struct {

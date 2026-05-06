@@ -89,7 +89,7 @@ export function BackupManager() {
     const handleExport = () => {
         exportMutation.mutate(undefined, {
             onSuccess: async (response) => {
-                const fileName = `summit-backup-${new Date().toISOString().split("T")[0]}.zip`;
+                const fileName = `quant-backup-${new Date().toISOString().split("T")[0]}.zip`;
 
                 try {
                     const downloads = await downloadDir();

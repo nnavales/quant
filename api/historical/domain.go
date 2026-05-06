@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nnavales/summit/api/apperrors"
-	"github.com/nnavales/summit/api/money"
-	"github.com/nnavales/summit/api/timeutils"
+	"github.com/nnavales/quant/api/apperrors"
+	"github.com/nnavales/quant/api/money"
+	"github.com/nnavales/quant/api/timeutils"
 )
 
 var (

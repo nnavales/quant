@@ -1,7 +1,7 @@
 package backup
 
 import (
-	"github.com/nnavales/summit/api/money"
+	"github.com/nnavales/quant/api/money"
 )
 
 type Data struct {

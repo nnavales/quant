@@ -7,27 +7,27 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/nnavales/summit/api/backup"
-	"github.com/nnavales/summit/api/categories"
-	"github.com/nnavales/summit/api/channels"
-	"github.com/nnavales/summit/api/config"
-	"github.com/nnavales/summit/api/dashboard"
-	"github.com/nnavales/summit/api/db"
-	"github.com/nnavales/summit/api/entries"
-	"github.com/nnavales/summit/api/finance"
-	"github.com/nnavales/summit/api/historical"
-	"github.com/nnavales/summit/api/installments"
-	"github.com/nnavales/summit/api/logger"
-	"github.com/nnavales/summit/api/macro"
-	"github.com/nnavales/summit/api/networth"
-	"github.com/nnavales/summit/api/presets"
-	"github.com/nnavales/summit/api/timeutils"
-	"github.com/nnavales/summit/api/transactions"
-	"github.com/nnavales/summit/api/transport"
-	"github.com/nnavales/summit/api/users"
+	"github.com/nnavales/quant/api/backup"
+	"github.com/nnavales/quant/api/categories"
+	"github.com/nnavales/quant/api/channels"
+	"github.com/nnavales/quant/api/config"
+	"github.com/nnavales/quant/api/dashboard"
+	"github.com/nnavales/quant/api/db"
+	"github.com/nnavales/quant/api/entries"
+	"github.com/nnavales/quant/api/finance"
+	"github.com/nnavales/quant/api/historical"
+	"github.com/nnavales/quant/api/installments"
+	"github.com/nnavales/quant/api/logger"
+	"github.com/nnavales/quant/api/macro"
+	"github.com/nnavales/quant/api/networth"
+	"github.com/nnavales/quant/api/presets"
+	"github.com/nnavales/quant/api/timeutils"
+	"github.com/nnavales/quant/api/transactions"
+	"github.com/nnavales/quant/api/transport"
+	"github.com/nnavales/quant/api/users"
 )
 
-// Run initializes and starts the Summit API server.
+// Run initializes and starts the Quant API server.
 // It blocks until the stop channel is closed or an interrupt signal is received.
 func Run(stopCh <-chan struct{}) error {
 	cfg, err := config.New()

@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/nnavales/summit/api/daemon"
+	"github.com/nnavales/quant/api/daemon"
 )
 
 func main() {

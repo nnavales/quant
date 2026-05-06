@@ -23,7 +23,7 @@ type Runtime struct {
 
 func defaultConfig() Config {
 	return Config{
-		Name: "summit",
+		Name:    "Quant",
 		Port: 43123,
 		Mode: "user",
 	}
@@ -112,7 +112,7 @@ func writeConfigFile(path string, cfg Config) error {
 }
 
 func AppDataDir() (string, error) {
-	const app = "summit"
+	const app = "quant"
 
 	if os.Getenv("APP_ENV") == "dev" {
 		homeDir, err := os.UserHomeDir()

@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"strings"
 
-	"github.com/nnavales/summit/api/apperrors"
-	"github.com/nnavales/summit/api/timeutils"
+	"github.com/nnavales/quant/api/apperrors"
+	"github.com/nnavales/quant/api/timeutils"
 )
 
 type SQLiteRepo struct {

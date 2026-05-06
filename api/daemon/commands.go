@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/kardianos/service"
-	"github.com/nnavales/summit/api/config"
+	"github.com/nnavales/quant/api/config"
 )
 
 func Install() error {
@@ -32,7 +32,7 @@ func Install() error {
 		return fmt.Errorf("service installed but failed to update config: %w", err)
 	}
 
-	fmt.Println("Summit service installed and started.")
+	fmt.Println("Quant service installed and started.")
 	fmt.Println("Mode set to 'service'.")
 	return nil
 }
@@ -50,7 +50,7 @@ func Uninstall() error {
 		return fmt.Errorf("failed to uninstall service: %w", err)
 	}
 
-	fmt.Println("Summit service uninstalled.")
+	fmt.Println("Quant service uninstalled.")
 	fmt.Println("Note: config and data were not removed.")
 	return nil
 }
@@ -65,7 +65,7 @@ func Start() error {
 		return fmt.Errorf("failed to start service: %w", err)
 	}
 
-	fmt.Println("Summit service started.")
+	fmt.Println("Quant service started.")
 	return nil
 }
 
@@ -79,7 +79,7 @@ func Stop() error {
 		return fmt.Errorf("failed to stop service: %w", err)
 	}
 
-	fmt.Println("Summit service stopped.")
+	fmt.Println("Quant service stopped.")
 	return nil
 }
 

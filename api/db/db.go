@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	_ "modernc.org/sqlite"
-	"github.com/nnavales/summit/api/config"
+	"github.com/nnavales/quant/api/config"
 	"github.com/pressly/goose/v3"
 )
 

@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nnavales/summit/api/config"
+	"github.com/nnavales/quant/api/config"
 )
 
 // TODO:
@@ -34,12 +34,12 @@ func backupExportRun(cfg config.Config, args []string) error {
 	url := fmt.Sprintf("http://127.0.0.1:%d/api/backup/export", cfg.Port)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Summit app (user mode)\n  - Run 'summit-cli daemon start' (service mode)\n  - Run 'summit-cli daemon install' to enable background service\n\n(%w)", url, err)
+		return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Quant app (user mode)\n  - Run 'quant-cli daemon start' (service mode)\n  - Run 'quant-cli daemon install' to enable background service\n\n(%w)", url, err)
 	}
 
 	res, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Summit app (user mode)\n  - Run 'summit-cli daemon start' (service mode)\n  - Run 'summit-cli daemon install' to enable background service\n\n(%w)", url, err)
+		return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Quant app (user mode)\n  - Run 'quant-cli daemon start' (service mode)\n  - Run 'quant-cli daemon install' to enable background service\n\n(%w)", url, err)
 	}
 	defer res.Body.Close()
 
@@ -69,7 +69,7 @@ func backupImportRun(cfg config.Config, args []string) error {
 	endpoint, args = extractArgs(endpoint, args)
 
 	if missing := unresolvedParams(endpoint); len(missing) > 0 {
-		return fmt.Errorf("Error: missing required parameter\n\nUsage:  summit backup import resource=<type> --file <csv>\n\nResources: transactions, historical, networth")
+		return fmt.Errorf("Error: missing required parameter\n\nUsage:  quant backup import resource=<type> --file <csv>\n\nResources: transactions, historical, networth")
 	}
 
 	fs := newFlagSet()
@@ -94,20 +94,20 @@ func backupImportRun(cfg config.Config, args []string) error {
 		return sendCSVImport(url, strings.NewReader(*body))
 
 	default:
-		return fmt.Errorf("Error: --file or --body is required\n\nUsage:  summit backup import resource=<type> --file <csv>\n\nOr:\n  summit backup import resource=<type> --body <csv>")
+		return fmt.Errorf("Error: --file or --body is required\n\nUsage:  quant backup import resource=<type> --file <csv>\n\nOr:\n  quant backup import resource=<type> --body <csv>")
 	}
 }
 
 func sendCSVImport(url string, reader io.Reader) error {
 	req, err := http.NewRequest(http.MethodPost, url, reader)
 	if err != nil {
-		return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Summit app (user mode)\n  - Run 'summit-cli daemon start' (service mode)\n  - Run 'summit-cli daemon install' to enable background service\n\n(%w)", url, err)
+		return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Quant app (user mode)\n  - Run 'quant-cli daemon start' (service mode)\n  - Run 'quant-cli daemon install' to enable background service\n\n(%w)", url, err)
 	}
 	req.Header.Set("Content-Type", "text/csv")
 
 	res, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Summit app (user mode)\n  - Run 'summit-cli daemon start' (service mode)\n  - Run 'summit-cli daemon install' to enable background service\n\n(%w)", url, err)
+		return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Quant app (user mode)\n  - Run 'quant-cli daemon start' (service mode)\n  - Run 'quant-cli daemon install' to enable background service\n\n(%w)", url, err)
 	}
 	defer res.Body.Close()
 

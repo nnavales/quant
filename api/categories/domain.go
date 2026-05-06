@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nnavales/summit/api/apperrors"
+	"github.com/nnavales/quant/api/apperrors"
 	"github.com/oklog/ulid/v2"
 )
 

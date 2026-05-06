@@ -9,11 +9,11 @@ import (
 	"io"
 	"time"
 
-	"github.com/nnavales/summit/api/categories"
-	"github.com/nnavales/summit/api/channels"
-	"github.com/nnavales/summit/api/finance"
-	"github.com/nnavales/summit/api/historical"
-	"github.com/nnavales/summit/api/networth"
+	"github.com/nnavales/quant/api/categories"
+	"github.com/nnavales/quant/api/channels"
+	"github.com/nnavales/quant/api/finance"
+	"github.com/nnavales/quant/api/historical"
+	"github.com/nnavales/quant/api/networth"
 )
 
 type Service struct {

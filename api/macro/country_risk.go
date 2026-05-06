@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nnavales/summit/api/timeutils"
+	"github.com/nnavales/quant/api/timeutils"
 )
 
 var riskURL = "https://mercados.ambito.com//riesgopais/variacion-ultimo"

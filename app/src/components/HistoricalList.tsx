@@ -38,7 +38,7 @@ const formatAmount = (amount: string | undefined): string => {
     return num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-const STORAGE_KEY = "summit-historical-month-format";
+const STORAGE_KEY = "quant-historical-month-format";
 
 const getStoredFormat = (): boolean => {
     try {
