@@ -29,11 +29,6 @@ jobs:
             goos: darwin
             goarch: arm64
             args: "--target aarch64-apple-darwin"
-          - platform: macos-13
-            target: x86_64-apple-darwin
-            goos: darwin
-            goarch: amd64
-            args: "--target x86_64-apple-darwin"
 
     runs-on: ${{ matrix.platform }}
     steps:
