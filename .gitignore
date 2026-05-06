@@ -50,6 +50,7 @@ yarn-error.*
 *.swp
 *.swo
 *~
+steps.md
 
 # --- OS artifacts ---
 *.orig.*
