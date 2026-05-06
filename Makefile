@@ -1,4 +1,4 @@
-.PHONY: all dev sidecar-dev client-sidecar release clean test api cli help
+.PHONY: all dev sidecar-dev client-sidecar release clean test api cli version help
 
 # Version and build flags
 APP_VERSION ?= 0.1.0
@@ -80,6 +80,16 @@ sidecar:
 release: clean sidecar
 	@cd app && bun run tauri build
 
+# ─── VERSIONING ────────────────────────────────────────────────────
+
+# Bump version across all config files. Usage: make version VERSION=0.2.0
+version:
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Usage: make version VERSION=0.2.0"; \
+		exit 1; \
+	fi
+	@./scripts/bump-version.sh $(VERSION)
+
 # ─── UTILITIES ─────────────────────────────────────────────────────
 
 api-run:
@@ -114,6 +124,7 @@ help:
 	@echo "  make api              Build and run API binary"
 	@echo "  make cli              Build and run CLI binary"
 	@echo "  make test             Run Go tests"
+	@echo "  make version VERSION=0.2.0  Bump version in all config files"
 	@echo ""
 	@echo "Modes:"
 	@echo "  DEV      → make dev"

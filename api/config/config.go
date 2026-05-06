@@ -9,10 +9,9 @@ import (
 )
 
 type Config struct {
-	Name    string `json:"name"`
-	Port    int    `json:"port"`
-	Version string `json:"version"`
-	Mode    string `json:"mode"`
+	Name string `json:"name"`
+	Port int    `json:"port"`
+	Mode string `json:"mode"`
 }
 
 type Runtime struct {
@@ -24,10 +23,9 @@ type Runtime struct {
 
 func defaultConfig() Config {
 	return Config{
-		Name:    "summit",
-		Port:    43123,
-		Mode:    "user",
-		Version: "dev",
+		Name: "summit",
+		Port: 43123,
+		Mode: "user",
 	}
 }
 
@@ -39,9 +37,6 @@ func merge(cfg Config) Config {
 	}
 	if cfg.Name == "" {
 		cfg.Name = def.Name
-	}
-	if cfg.Version == "" {
-		cfg.Version = def.Version
 	}
 
 	if cfg.Mode == "" {
