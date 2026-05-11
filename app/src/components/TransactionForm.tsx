@@ -38,6 +38,8 @@ export function TransactionForm() {
     const [expanded, setExpanded] = useState(false);
     const descRef = useRef<HTMLInputElement>(null);
 
+    const { data: userConfig } = useUserConfig();
+
     const [formData, setFormData] = useState<TransactionAggregateReq>({
         description: "",
         date: formatISODateInTimezone(getNowInTimezone(userConfig?.timezone), userConfig?.timezone),
@@ -57,7 +59,6 @@ export function TransactionForm() {
     const { data: subcategoriesData } = useSubcategories();
     const { data: channelsData } = useChannels();
     const { data: accountsData } = useAccounts();
-    const { data: userConfig } = useUserConfig();
     const { data: dollarBanks } = useDollarBanks(undefined, false);
 
     const categoriesList = categoriesData ?? [];
