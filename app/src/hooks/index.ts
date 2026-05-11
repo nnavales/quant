@@ -28,7 +28,7 @@ import {
 import { type HistoricalFilters } from "@/api_client";
 
 function invalidateKeys(queryClient: QueryClient, keys: string[]) {
-    keys.forEach((key) => queryClient.invalidateQueries({ queryKey: [key] }));
+    keys.forEach((key) => queryClient.invalidateQueries({ queryKey: [key], refetchType: "all" }));
 }
 
 export function useTransactionAggregates(filters: TransactionFilters) {

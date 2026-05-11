@@ -6,6 +6,7 @@ import (
 	"github.com/nnavales/quant/api/backup"
 	"github.com/nnavales/quant/api/categories"
 	"github.com/nnavales/quant/api/channels"
+	"github.com/nnavales/quant/api/chatbot"
 	"github.com/nnavales/quant/api/dashboard"
 	"github.com/nnavales/quant/api/entries"
 	"github.com/nnavales/quant/api/finance"
@@ -23,12 +24,16 @@ func addRoutes(mux *http.ServeMux,
 	h *finance.Handler, th *transactions.Handler, eh *entries.Handler,
 	ih *installments.Handler, ch *channels.Handler, cat *categories.Handler,
 	hm *macro.Handler, uh *users.Handler, hh *historical.Handler,
-	dh *dashboard.Handler,
-	nw *networth.Handler,
-	ph *presets.Handler,
-	bh *backup.Handler,
+	dh *dashboard.Handler, nw *networth.Handler, ph *presets.Handler,
+	bh *backup.Handler, cbh *chatbot.Handler,
 ) {
 	mux.HandleFunc("GET /healthz", handlerHealthz)
+
+	mux.HandleFunc("POST /users/config/agent", cbh.SetAgentCFG)
+	mux.HandleFunc("POST /users/config/chat", cbh.SetChatCFG)
+	mux.HandleFunc("GET /users/config", uh.GetConfig)
+	mux.HandleFunc("GET /users/config/{key}", uh.GetConfigByKey)
+	mux.HandleFunc("PATCH /users/config", uh.SetConfig)
 
 	mux.HandleFunc("GET /economic/ipc", hm.GetIPC)
 	mux.HandleFunc("GET /economic/inflation", hm.GetInflation)
@@ -39,10 +44,6 @@ func addRoutes(mux *http.ServeMux,
 	mux.HandleFunc("GET /economic/fixed-deposits", hm.GetFixedDeposits)
 	mux.HandleFunc("GET /economic/yield-accounts", hm.GetYieldAccounts)
 	mux.HandleFunc("GET /economic/loans", hm.GetLoanRates)
-
-	mux.HandleFunc("GET /users/config", uh.GetConfig)
-	mux.HandleFunc("GET /users/config/{key}", uh.GetConfigByKey)
-	mux.HandleFunc("PATCH /users/config", uh.SetConfig)
 
 	mux.HandleFunc("GET /transactions/{id}", th.GetTransaction)
 	mux.HandleFunc("GET /transactions", th.ListTransactions)

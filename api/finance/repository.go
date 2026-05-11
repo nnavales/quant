@@ -500,16 +500,13 @@ func (r *SQLiteRepo) UpdateTransactionAggregate(ctx context.Context, id string, 
 		finalGroupID = &newGroup.ID
 	}
 
-	minItems := len(oldItems)
-	if len(newItems) < minItems {
-		minItems = len(newItems)
-	}
-
-	for i := 0; i < minItems; i++ {
+	minItems := min(len(newItems), len(oldItems))
+	for i := range minItems {
 		newItems[i].Transaction.ID = oldItems[i].Transaction.ID
 		newItems[i].Entry.ID = oldItems[i].Entry.ID
 		newItems[i].Entry.TransactionID = oldItems[i].Transaction.ID
 		newItems[i].Transaction.InstallmentGroupID = finalGroupID
+		newItems[i].Transaction.IsPaid = oldItems[i].Transaction.IsPaid
 
 		if err := updateTransaction(ctx, tx, &newItems[i].Transaction); err != nil {
 			return mapDBError(err)
@@ -521,9 +518,9 @@ func (r *SQLiteRepo) UpdateTransactionAggregate(ctx context.Context, id string, 
 
 	if len(oldItems) > len(newItems) {
 		for i := len(newItems); i < len(oldItems); i++ {
-			if err := deleteEntry(ctx, tx, oldItems[i].Entry.ID); err != nil {
-				return mapDBError(err)
-			}
+			// Delete transaction first; entries are automatically deleted via ON DELETE CASCADE.
+			// Must do this before deleting the entry to avoid the
+			// `delete_transaction_if_no_entries` trigger double-deleting the transaction.
 			if err := deleteTransaction(ctx, tx, oldItems[i].Transaction.ID); err != nil {
 				return mapDBError(err)
 			}

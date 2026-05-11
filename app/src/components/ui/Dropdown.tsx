@@ -11,6 +11,7 @@ export interface DropdownOption {
     id: string;
     label: string;
     disabled?: boolean;
+    dotColor?: string;
 }
 
 export interface DropdownGroup {
@@ -85,11 +86,11 @@ export function Dropdown({
         return [];
     }, [groups, options]);
 
-    const selectedLabel = useMemo(() => {
+    const selectedOption = useMemo(() => {
         if (clearable && value === "") return null;
         for (const group of resolvedGroups) {
             const item = group.items.find((i) => i.id === value);
-            if (item) return item.label;
+            if (item) return item;
         }
         return null;
     }, [resolvedGroups, value, clearable]);
@@ -172,7 +173,7 @@ export function Dropdown({
                     backgroundColor: colors.bg.base,
                     border: `1px solid ${colors.fill}`,
                     borderRadius: radius.md,
-                    color: selectedLabel ? colors.fg.base : colors.fg.dim,
+                    color: selectedOption ? colors.fg.base : colors.fg.dim,
                     cursor: disabled ? "not-allowed" : "pointer",
                     fontSize: fonts.size.sm,
                     width: "100%",
@@ -187,10 +188,24 @@ export function Dropdown({
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
-                        fontWeight: selectedLabel ? 500 : 400,
+                        fontWeight: selectedOption ? 500 : 400,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: spacing[2],
                     }}
                 >
-                    {selectedLabel || placeholder}
+                    {selectedOption?.dotColor && (
+                        <span
+                            style={{
+                                width: "8px",
+                                height: "8px",
+                                borderRadius: "50%",
+                                backgroundColor: selectedOption.dotColor,
+                                flexShrink: 0,
+                            }}
+                        />
+                    )}
+                    {selectedOption?.label || placeholder}
                 </span>
                 <ChevronDown
                     size={14}
@@ -349,6 +364,9 @@ export function Dropdown({
                                             opacity: item.disabled ? 0.4 : 1,
                                             cursor: item.disabled ? "not-allowed" : "pointer",
                                             paddingLeft: group.label ? "16px" : spacing[2],
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: spacing[2],
                                         }}
                                         onMouseEnter={(e) => {
                                             if (!item.disabled && item.id !== value) {
@@ -361,6 +379,17 @@ export function Dropdown({
                                             }
                                         }}
                                     >
+                                        {item.dotColor && (
+                                            <span
+                                                style={{
+                                                    width: "8px",
+                                                    height: "8px",
+                                                    borderRadius: "50%",
+                                                    backgroundColor: item.dotColor,
+                                                    flexShrink: 0,
+                                                }}
+                                            />
+                                        )}
                                         {item.label}
                                     </div>
                                 ))}

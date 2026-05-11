@@ -1,10 +1,8 @@
 .PHONY: all dev sidecar-dev client-sidecar prod-test release clean test api cli version help
 
-# Version and build flags
 APP_VERSION ?= 0.1.0
 LDFLAGS = -ldflags="-s -w -X main.version=$(APP_VERSION)"
 
-# Paths
 BIN_DIR = bin
 API_MAIN = ./api/cmd/api/main.go
 CLI_MAIN = ./api/cmd/cli/main.go
@@ -16,10 +14,8 @@ SIDECAR_TARGETS = \
 	darwin/amd64:x86_64-apple-darwin \
 	darwin/arm64:aarch64-apple-darwin
 
-# Detect current platform target triple via rustc
 CURRENT_TARGET := $(shell rustc -vV 2>/dev/null | sed -n 's|host: ||p')
 
-# Linux display flags for Tauri/WebKit
 DISPLAY_FLAGS :=
 ifeq ($(shell uname -s),Linux)
 	DISPLAY_FLAGS = WEBKIT_DISABLE_COMPOSITING_MODE=1 GDK_BACKEND=x11
@@ -31,7 +27,6 @@ dev:
 	@bash -c "$(DISPLAY_FLAGS) APP_ENV=dev air & \
 		cd app && $(DISPLAY_FLAGS) APP_ENV=dev bun run tauri dev"
 
-# Build sidecar binaries for the CURRENT platform only.
 sidecar-dev:
 	@mkdir -p $(SIDECAR_DIR)
 	@if [ -z "$(CURRENT_TARGET)" ]; then \
@@ -46,28 +41,8 @@ sidecar-dev:
 		CGO_ENABLED=0 go build $(LDFLAGS) -o $(SIDECAR_DIR)/quant-cli-$$target$$ext $(CLI_MAIN)
 	@echo "Done: sidecar binaries in $(SIDECAR_DIR)/"
 
-# Run Tauri dev with sidecar spawn enabled (SIDECAR=1 forces sidecar in dev).
 client-sidecar:
 	@cd app && $(DISPLAY_FLAGS) APP_ENV=dev SIDECAR=1 bun run tauri dev
-
-# Build sidecar binaries for ALL platforms.
-sidecar:
-	@mkdir -p $(SIDECAR_DIR)
-	@for entry in $(SIDECAR_TARGETS); do \
-		goos_arch=$${entry%:*}; \
-		target=$${entry#*:}; \
-		goos=$${goos_arch%/*}; \
-		goarch=$${goos_arch#*/}; \
-		ext=""; \
-		if [ "$$goos" = "windows" ]; then ext=".exe"; fi; \
-		echo "Building sidecar for $${target}"; \
-		CGO_ENABLED=0 GOOS=$$goos GOARCH=$$goarch go build $(LDFLAGS) -o $(SIDECAR_DIR)/quant-api-$${target}$${ext} $(API_MAIN); \
-		CGO_ENABLED=0 GOOS=$$goos GOARCH=$$goarch go build $(LDFLAGS) -o $(SIDECAR_DIR)/quant-cli-$${target}$${ext} $(CLI_MAIN); \
-	done
-	@echo "Done: all sidecar binaries in $(SIDECAR_DIR)/"
-
-release: clean sidecar
-	@cd app && bun run tauri build
 
 version:
 	@if [ -z "$(VERSION)" ]; then \
@@ -76,7 +51,7 @@ version:
 	fi
 	@./scripts/bump-version.sh $(VERSION)
 
-api-run:
+api:
 	@mkdir -p $(BIN_DIR)
 	@go build -o $(BIN_DIR)/quant $(API_MAIN)
 	@./$(BIN_DIR)/quant
@@ -84,12 +59,14 @@ api-run:
 cli:
 	@mkdir -p $(BIN_DIR)
 	@go build -o $(BIN_DIR)/quant-cli $(CLI_MAIN)
-	@APP_ENV="dev" ./$(BIN_DIR)/quant-cli
+
+
+client:
+	@cd app && $(DISPLAY_FLAGS) bun run tauri dev
 
 test:
 	@go test ./...
 
-# Remove old binaries, stale sidecars, and previous bundles.
 clean:
 	rm -rf $(BIN_DIR)
 	rm -rf tmp

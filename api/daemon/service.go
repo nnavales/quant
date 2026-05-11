@@ -70,7 +70,7 @@ func newServiceConfig() *service.Config {
 		DisplayName: "Quant API",
 		Description: "Quant personal finance API background service",
 		Executable:  findAPIExecutable(),
-		Option:      make(map[string]interface{}),
+		Option:      make(map[string]any),
 	}
 	cfg.Option["UserService"] = true
 	cfg.Option["SystemdScript"] = systemdTemplate

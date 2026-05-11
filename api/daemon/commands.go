@@ -15,8 +15,9 @@ func Install() error {
 		return fmt.Errorf("daemon install is not available in dev mode")
 	}
 
-	if err := setMode("service"); err != nil {
-		return fmt.Errorf("failed to set service mode: %w", err)
+	updatedCfg := config.Config{Mode: "service"}
+	if err := config.EditConfigFile(updatedCfg); err != nil {
+		return fmt.Errorf("failed to update config file: %w", err)
 	}
 
 	svc, err := openService()

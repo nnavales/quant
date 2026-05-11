@@ -7,9 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
-	_ "modernc.org/sqlite"
 	"github.com/nnavales/quant/api/config"
 	"github.com/pressly/goose/v3"
+	_ "modernc.org/sqlite"
 )
 
 //go:embed migrations/*.sql
@@ -20,11 +20,13 @@ type DB struct {
 }
 
 func New(cfg config.Runtime) (*DB, error) {
-	if err := os.MkdirAll(filepath.Dir(cfg.DatabaseFile), 0755); err != nil {
+	dbFile := filepath.Join(cfg.AppDataDir, "db.sqlite")
+
+	if err := os.MkdirAll(filepath.Dir(dbFile), 0755); err != nil {
 		return nil, fmt.Errorf("mkdir: %w", err)
 	}
 
-	db, err := sql.Open("sqlite", cfg.DatabaseFile)
+	db, err := sql.Open("sqlite", dbFile)
 	if err != nil {
 		return nil, fmt.Errorf("sqlite3 conn: %w", err)
 	}

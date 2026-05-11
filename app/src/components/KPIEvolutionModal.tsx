@@ -185,7 +185,7 @@ interface KPIEvolutionModalProps {
 
 export function KPIEvolutionModal({ kpi, onClose }: KPIEvolutionModalProps) {
     const { data: dashboardData, isLoading, isError } = useDashboard();
-    const [viewMode, setViewMode] = useState<ViewMode>("ytd");
+    const [viewMode, setViewMode] = useState<ViewMode>("current_year");
     const [metricType, setMetricType] = useState<MetricType>("total");
     const kpiKey = KPI_MODAL_KPIS[kpi];
     const currentYear = new Date().getFullYear();
@@ -254,9 +254,14 @@ export function KPIEvolutionModal({ kpi, onClose }: KPIEvolutionModalProps) {
     const isIncomeOrExpense = config.key === "income_ytd" || config.key === "expenses_ytd";
     const monthlyData = dashboardData.monthlySeries.map((m) => ({
         month: m.month,
-        displayValue: (m[displayValueKey as keyof typeof m] as number) || 0,
+        displayValue: (m[dataKey as keyof typeof m] as number) || 0,
     }));
-    const currentYearData = monthlyData.filter((m) => m.month.startsWith(String(currentYear)));
+    const currentYearData = dashboardData.monthlySeries
+        .filter((m) => m.month.startsWith(String(currentYear)))
+        .map((m) => ({
+            month: m.month,
+            displayValue: (m[displayValueKey as keyof typeof m] as number) || 0,
+        }));
 
     const ytdData = (evolutionData?.data || []).map((d) => ({
         month: String(d.year),
@@ -313,14 +318,14 @@ export function KPIEvolutionModal({ kpi, onClose }: KPIEvolutionModalProps) {
                         </h2>
                         <div style={{ display: "flex", alignItems: "center", gap: spacing[3] }}>
                             <p style={{ fontSize: fonts.size.xs, color: colors.fg.dim }}>
-                                {viewMode === "ytd"
-                                    ? "Evolución anual"
-                                    : viewMode === "current_year"
-                                      ? "Año en curso"
-                                      : "Histórico completo"}
+                                {viewMode === "current_year"
+                                    ? "Año en curso (acumulado)"
+                                    : viewMode === "ytd"
+                                      ? "Comparativo año a año"
+                                      : "Histórico mensual completo"}
                             </p>
                             <div style={{ minHeight: "28px", display: "flex", alignItems: "center" }}>
-                                {isIncomeOrExpense && viewMode !== "ytd" && (
+                                {isIncomeOrExpense && viewMode === "current_year" && (
                                     <CustomSelect
                                         value={metricType}
                                         options={[
@@ -344,9 +349,9 @@ export function KPIEvolutionModal({ kpi, onClose }: KPIEvolutionModalProps) {
                 </div>
                 <div style={{ display: "flex", gap: spacing[1], marginBottom: spacing[4] }}>
                     {[
-                        { key: "ytd", label: "YTD" },
-                        { key: "current_year", label: "Año" },
-                        { key: "monthly", label: "Todo" },
+                        { key: "current_year", label: "YTD" },
+                        { key: "ytd", label: "Total (Año a Año)" },
+                        { key: "monthly", label: "Total (Mes a Mes)" },
                     ].map((m) => (
                         <Button
                             key={m.key}

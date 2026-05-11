@@ -109,79 +109,109 @@ export function formatShortDate(iso: string): string {
     return iso;
 }
 
-export function getTransactionDatePresets(): DatePreset[] {
-    const today = new Date();
-    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-    const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
-    const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, today.getDate());
+export function getTransactionDatePresets(timezone?: string): DatePreset[] {
+    const p = getPartsInTimezone(new Date(), timezone);
+    const year = p.year;
+    const month = p.month; // 1-based
+    const day = p.day;
+
+    const todayStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const startOfMonthStr = `${year}-${String(month).padStart(2, "0")}-01`;
+    const endOfMonthStr = formatISODateInTimezone(new Date(year, month, 0), timezone);
+
+    const lastMonth = month - 1;
+    const lastMonthYear = lastMonth < 1 ? year - 1 : year;
+    const lastMonthIndex = lastMonth < 1 ? 12 : lastMonth;
+    const lastMonthStartStr = `${lastMonthYear}-${String(lastMonthIndex).padStart(2, "0")}-01`;
+    const lastMonthEndStr = formatISODateInTimezone(new Date(lastMonthYear, lastMonthIndex, 0), timezone);
+
+    const startOfYearStr = `${year}-01-01`;
+    const endOfYearStr = `${year}-12-31`;
+
+    let threeMonthsAgoMonth = month - 3;
+    let threeMonthsAgoYear = year;
+    if (threeMonthsAgoMonth < 1) {
+        threeMonthsAgoMonth += 12;
+        threeMonthsAgoYear -= 1;
+    }
+    const threeMonthsAgoStr = `${threeMonthsAgoYear}-${String(threeMonthsAgoMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
     return [
-        { label: "Hoy", from: formatISODate(today), to: formatISODate(today) },
-        {
-            label: "Este mes",
-            from: formatISODate(new Date(today.getFullYear(), today.getMonth(), 1)),
-            to: formatISODate(endOfMonth),
-        },
-        {
-            label: "Mes anterior",
-            from: formatISODate(lastMonthStart),
-            to: formatISODate(lastMonthEnd),
-        },
-        {
-            label: "Este año",
-            from: formatISODate(new Date(today.getFullYear(), 0, 1)),
-            to: formatISODate(new Date(today.getFullYear(), 11, 31)),
-        },
-        {
-            label: "Últimos 3 meses",
-            from: formatISODate(threeMonthsAgo),
-            to: formatISODate(today),
-        },
+        { label: "Hoy", from: todayStr, to: todayStr },
+        { label: "Este mes", from: startOfMonthStr, to: endOfMonthStr },
+        { label: "Mes anterior", from: lastMonthStartStr, to: lastMonthEndStr },
+        { label: "Este año", from: startOfYearStr, to: endOfYearStr },
+        { label: "Últimos 3 meses", from: threeMonthsAgoStr, to: todayStr },
     ].sort((a, b) => b.from.localeCompare(a.from));
 }
 
-export function getHistoricalDatePresets(): DatePreset[] {
-    const today = new Date();
-    const startOfThisYear = new Date(today.getFullYear(), 0, 1);
-    const endOfThisYear = new Date(today.getFullYear(), 11, 31);
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+export function getHistoricalDatePresets(timezone?: string): DatePreset[] {
+    const p = getPartsInTimezone(new Date(), timezone);
+    const year = p.year;
+    const month = p.month; // 1-based
+
+    const startOfThisYearStr = `${year}-01-01`;
+    const endOfThisYearStr = `${year}-12-31`;
+    const startOfMonthStr = `${year}-${String(month).padStart(2, "0")}-01`;
+    const endOfMonthStr = formatISODateInTimezone(new Date(year, month, 0), timezone);
+
+    const prevYearStartStr = `${year - 1}-01-01`;
+    const prevYearEndStr = `${year - 1}-12-31`;
 
     return [
-        { label: "Este año", from: formatISODate(startOfThisYear), to: formatISODate(endOfThisYear) },
-        { label: "Este mes", from: formatISODate(startOfMonth), to: formatISODate(endOfMonth) },
-        {
-            label: "Año anterior",
-            from: formatISODate(new Date(today.getFullYear() - 1, 0, 1)),
-            to: formatISODate(new Date(today.getFullYear() - 1, 11, 31)),
-        },
+        { label: "Este año", from: startOfThisYearStr, to: endOfThisYearStr },
+        { label: "Este mes", from: startOfMonthStr, to: endOfMonthStr },
+        { label: "Año anterior", from: prevYearStartStr, to: prevYearEndStr },
     ].sort((a, b) => b.from.localeCompare(a.from));
 }
 
 /* ─── Timezone-aware helpers ─── */
 
-function getPartsInTimezone(date: Date, timezone?: string) {
-    const fmt = new Intl.DateTimeFormat("en-US", {
-        timeZone: timezone || undefined,
-        year: "numeric",
-        month: "numeric",
-        day: "numeric",
-        hour: "numeric",
-        minute: "numeric",
-        second: "numeric",
-        hour12: false,
-    });
-    const parts = fmt.formatToParts(date);
-    const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
-    return {
-        year: get("year"),
-        month: get("month"),
-        day: get("day"),
-        hour: get("hour"),
-        minute: get("minute"),
-        second: get("second"),
-    };
+export function getPartsInTimezone(date: Date, timezone?: string) {
+    try {
+        const fmt = new Intl.DateTimeFormat("en-US", {
+            timeZone: timezone || undefined,
+            year: "numeric",
+            month: "numeric",
+            day: "numeric",
+            hour: "numeric",
+            minute: "numeric",
+            second: "numeric",
+            hour12: false,
+        });
+        const parts = fmt.formatToParts(date);
+        const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+        return {
+            year: get("year"),
+            month: get("month"),
+            day: get("day"),
+            hour: get("hour"),
+            minute: get("minute"),
+            second: get("second"),
+        };
+    } catch {
+        return {
+            year: date.getFullYear(),
+            month: date.getMonth() + 1,
+            day: date.getDate(),
+            hour: date.getHours(),
+            minute: date.getMinutes(),
+            second: date.getSeconds(),
+        };
+    }
+}
+
+/** Create a local Date that represents a specific calendar day in the user's timezone. */
+export function createDateForDayInTimezone(year: number, month: number, day: number, timezone?: string): Date {
+    if (!timezone) return new Date(year, month, day);
+    let d = new Date(year, month, day);
+    for (let i = 0; i < 3; i++) {
+        const p = getPartsInTimezone(d, timezone);
+        const diff = day - p.day;
+        if (diff === 0) break;
+        d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff);
+    }
+    return d;
 }
 
 /** Return a local Date whose calendar day matches the user's timezone. */
@@ -194,10 +224,41 @@ export function getNowInTimezone(timezone?: string): Date {
 export function parseLocalDateInTimezone(dateStr: string, timezone?: string): Date {
     const datePart = dateStr.split("T")[0];
     const [year, month, day] = datePart.split("-").map(Number);
-    const d = new Date(year, month - 1, day);
-    if (!timezone) return d;
-    const p = getPartsInTimezone(d, timezone);
-    return new Date(p.year, p.month - 1, p.day);
+    return createDateForDayInTimezone(year, month - 1, day, timezone);
+}
+
+/** Format a Date as YYYY-MM-DD using the user's timezone. */
+export function formatISODateInTimezone(date: Date, timezone?: string): string {
+    const p = getPartsInTimezone(date, timezone);
+    const y = String(p.year);
+    const m = String(p.month).padStart(2, "0");
+    const d = String(p.day).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+}
+
+/** Format a Date using the user's timezone. */
+export function formatDateInTimezone(date: Date, format: DateFormat, timezone?: string): string {
+    const p = getPartsInTimezone(date, timezone);
+    const y = String(p.year);
+    const m = String(p.month).padStart(2, "0");
+    const d = String(p.day).padStart(2, "0");
+
+    switch (format) {
+        case "YYYY/MM/DD":
+            return `${y}/${m}/${d}`;
+        case "DD/MM/YYYY":
+            return `${d}/${m}/${y}`;
+        case "MM/DD/YYYY":
+            return `${m}/${d}/${y}`;
+        case "YYYY-MM-DD":
+            return `${y}-${m}-${d}`;
+        case "DD-MM-YYYY":
+            return `${d}-${m}-${y}`;
+        case "MM-DD-YYYY":
+            return `${m}-${d}-${y}`;
+        default:
+            return `${y}-${m}-${d}`;
+    }
 }
 
 /** Check if two dates represent the same calendar day in the user's timezone. */

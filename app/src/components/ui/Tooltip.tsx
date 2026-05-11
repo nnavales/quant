@@ -21,7 +21,8 @@ const tooltipBaseStyle: React.CSSProperties = {
     zIndex: 9999,
     wordBreak: "break-word",
     pointerEvents: "none",
-    visibility: "hidden",
+    opacity: 0,
+    transition: "opacity 0.15s",
     WebkitFontSmoothing: "antialiased",
     MozOsxFontSmoothing: "grayscale",
 };
@@ -72,7 +73,7 @@ export function Tooltip({ content, children, alwaysShow = false }: TooltipProps)
 
         tooltip.style.left = `${Math.round(left)}px`;
         tooltip.style.top = `${Math.round(top)}px`;
-        tooltip.style.visibility = "visible";
+        tooltip.style.opacity = "1";
     }, [alwaysShow]);
 
     const handleMouseEnter = () => {
@@ -122,7 +123,7 @@ export function Tooltip({ content, children, alwaysShow = false }: TooltipProps)
         setShow(false);
         const tooltip = tooltipRef.current;
         if (tooltip) {
-            tooltip.style.visibility = "hidden";
+            tooltip.style.opacity = "0";
         }
     };
 
@@ -137,13 +138,14 @@ export function Tooltip({ content, children, alwaysShow = false }: TooltipProps)
             {React.isValidElement(children)
                 ? React.cloneElement<{ ref?: React.Ref<HTMLElement> }>(children as React.ReactElement<{ ref?: React.Ref<HTMLElement> }>, { ref: textRef })
                 : <span ref={textRef}>{children}</span>}
-            {show && content && (
+            {content && (
                 <div
                     ref={tooltipRef}
                     style={{
                         ...tooltipBaseStyle,
                         maxWidth: Math.min(260, window.innerWidth - 24),
                         minWidth: alwaysShow ? 180 : undefined,
+                        opacity: show ? 1 : 0,
                     }}
                 >
                     {content}

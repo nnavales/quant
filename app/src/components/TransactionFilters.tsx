@@ -4,7 +4,7 @@ import type { TransactionFilters } from "@/api_client";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 import { filterContainerStyle, dropdownItemStyle, clearButtonStyle, chipTriggerStyle } from "@/styles/filters";
-import { useCategories, useSubcategories, useChannels, useAccounts, useClickOutside } from "@/hooks";
+import { useCategories, useSubcategories, useChannels, useAccounts, useClickOutside, useUserConfig, useCategoryGroups, useAccountGroups } from "@/hooks";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { DateDropdown } from "@/components/ui/DateDropdown";
@@ -64,11 +64,15 @@ export function TransactionFilters({
     const { data: subcategoriesData } = useSubcategories();
     const { data: channelsData } = useChannels();
     const { data: accountsData } = useAccounts();
+    const { data: userConfig } = useUserConfig();
 
     const categoriesList = categoriesData ?? [];
     const subcategoriesList = subcategoriesData ?? [];
     const channelsList = channelsData ?? [];
     const accountsList = accountsData ?? [];
+
+    const { groups: categoryGroups } = useCategoryGroups(categoriesList, subcategoriesList);
+    const { groups: accountGroups } = useAccountGroups(channelsList, accountsList);
 
     const toggleDropdown = (name: string) => {
         setOpenDropdown((prev) => (prev === name ? null : name));
@@ -197,7 +201,7 @@ export function TransactionFilters({
                         >
                             Todas las fechas
                         </div>
-                        {getTransactionDatePresets().map((preset) => (
+                        {getTransactionDatePresets(userConfig?.timezone).map((preset) => (
                             <div
                                 key={preset.label}
                                 style={{
@@ -281,7 +285,7 @@ export function TransactionFilters({
                         }
                         placeholder="Tipo"
                         clearable
-                        clearLabel="Todos"
+                        clearLabel="Todas"
                         triggerStyle={chipTriggerStyle(!!filters.type)}
                     />
                 </div>
@@ -392,7 +396,7 @@ export function TransactionFilters({
                 {/* Subcategory */}
                 <div style={filterWrapperStyle}>
                     <Dropdown
-                        options={subcategoriesList.map((s) => ({ id: s.id, label: s.name }))}
+                        groups={categoryGroups}
                         value={filters.subcategory ?? ""}
                         onChange={(id) =>
                             onChange({ ...filters, subcategory: id || undefined, page: 1 })
@@ -400,6 +404,7 @@ export function TransactionFilters({
                         placeholder="Subcategoría"
                         searchable
                         clearable
+                        clearLabel="Todas"
                         triggerStyle={chipTriggerStyle(!!filters.subcategory)}
                     />
                 </div>
@@ -415,7 +420,7 @@ export function TransactionFilters({
                         placeholder="Canal"
                         searchable
                         clearable
-                        clearLabel="Todos"
+                        clearLabel="Todas"
                         triggerStyle={chipTriggerStyle(!!filters.channel)}
                     />
                 </div>
@@ -423,7 +428,7 @@ export function TransactionFilters({
                 {/* Account */}
                 <div style={filterWrapperStyle}>
                     <Dropdown
-                        options={accountsList.map((a) => ({ id: a.id, label: a.name }))}
+                        groups={accountGroups}
                         value={filters.account ?? ""}
                         onChange={(id) =>
                             onChange({ ...filters, account: id || undefined, page: 1 })
@@ -431,6 +436,7 @@ export function TransactionFilters({
                         placeholder="Cuenta"
                         searchable
                         clearable
+                        clearLabel="Todas"
                         triggerStyle={chipTriggerStyle(!!filters.account)}
                     />
                 </div>

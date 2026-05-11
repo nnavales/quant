@@ -58,6 +58,13 @@ var Commands = map[string]CommandSpec{
 		Description: "Delete a transaction",
 		Endpoint:    "/transaction-aggregates/{id}", Method: http.MethodDelete,
 	},
+	"transaction:bulk": {
+		Resource: "transaction", Action: "bulk",
+		Description: "Bulk create transactions from JSON file or body",
+		Flags:       "--file <json> | --body <json>",
+		Endpoint:    "/transaction-aggregates/bulk", Method: http.MethodPost,
+		RunFunc: transactionBulkRun,
+	},
 	"transaction:cancel-installments": {
 		Resource: "transaction", Action: "cancel-installments",
 		Description: "Cancel installments from a given number",

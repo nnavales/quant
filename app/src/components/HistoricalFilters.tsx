@@ -4,7 +4,7 @@ import type { HistoricalFilters } from "@/api_client/endpoints";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 import { filterContainerStyle, filterWrapperStyle, dropdownItemStyle, clearButtonStyle, paginationButtonStyle, chipTriggerStyle } from "@/styles/filters";
-import { useClickOutside } from "@/hooks";
+import { useClickOutside, useUserConfig } from "@/hooks";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { DateDropdown } from "@/components/ui/DateDropdown";
 import { Dropdown } from "@/components/ui/Dropdown";
@@ -25,6 +25,7 @@ export function HistoricalFiltersComponent({ filters, onChange, total, page, lim
     const [dateTo, setDateTo] = useState("");
     const [goToPage, setGoToPage] = useState("");
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const { data: userConfig } = useUserConfig();
 
     const hasActiveFilters = !!filters.date_from || !!filters.date_to || !!filters.source;
 
@@ -112,7 +113,7 @@ export function HistoricalFiltersComponent({ filters, onChange, total, page, lim
                         >
                             Todas las fechas
                         </div>
-                        {getHistoricalDatePresets().map((preset) => (
+                        {getHistoricalDatePresets(userConfig?.timezone).map((preset) => (
                             <div
                                 key={preset.label}
                                 style={{ ...dropdownItemStyle, backgroundColor: "transparent" }}

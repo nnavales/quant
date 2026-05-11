@@ -10,6 +10,7 @@ import (
 	"github.com/nnavales/quant/api/backup"
 	"github.com/nnavales/quant/api/categories"
 	"github.com/nnavales/quant/api/channels"
+	"github.com/nnavales/quant/api/chatbot"
 	"github.com/nnavales/quant/api/config"
 	"github.com/nnavales/quant/api/dashboard"
 	"github.com/nnavales/quant/api/entries"
@@ -59,6 +60,7 @@ func NewServer(cfg config.Config, services *Services) *Server {
 	networthHandler := networth.NewHandler(services.NetWorthService)
 	presetsHandler := presets.NewHandler(services.PresetsService)
 	backupHandler := backup.NewHandler(services.BackupService)
+	chatbotHandler := chatbot.NewHandler()
 
 	api := http.NewServeMux()
 
@@ -66,7 +68,7 @@ func NewServer(cfg config.Config, services *Services) *Server {
 		financeHandler, transactionsHandler, entriesHandler,
 		installmentsHandler, channelsHandler, categoriesHandler,
 		macroHandler, usersHandler, historicalHandler, dashboardHandler,
-		networthHandler, presetsHandler, backupHandler,
+		networthHandler, presetsHandler, backupHandler, chatbotHandler,
 	)
 
 	var handler http.Handler = api
@@ -89,9 +91,8 @@ func (sv *Server) Run(ctx context.Context, addr string) error {
 	}
 
 	port := ln.Addr().(*net.TCPAddr).Port
-
-	if err := config.SavePort(port); err != nil {
-		return nil
+	if err := config.EditConfigFile(config.Config{Port: port}); err != nil {
+		return err
 	}
 
 	slog.Info("server.started", slog.String("addr", ln.Addr().String()))

@@ -5,6 +5,7 @@ import { useCreateTransaction, useCategories, useSubcategories, useChannels, use
 import { economic } from "@/api_client";
 import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
+import { formatISODateInTimezone, getNowInTimezone } from "@/utils/date";
 import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
@@ -39,7 +40,7 @@ export function TransactionForm() {
 
     const [formData, setFormData] = useState<TransactionAggregateReq>({
         description: "",
-        date: new Date().toISOString().split("T")[0],
+        date: formatISODateInTimezone(getNowInTimezone(userConfig?.timezone), userConfig?.timezone),
         type: "expense",
         frequency: "variable",
         installment_number: undefined,
@@ -102,7 +103,7 @@ export function TransactionForm() {
     const resetForm = () => {
         setFormData({
             description: "",
-            date: new Date().toISOString().split("T")[0],
+            date: formatISODateInTimezone(getNowInTimezone(userConfig?.timezone), userConfig?.timezone),
             type: "expense",
             frequency: "variable",
             installment_number: undefined,

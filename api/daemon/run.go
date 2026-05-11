@@ -10,6 +10,7 @@ import (
 	"github.com/nnavales/quant/api/backup"
 	"github.com/nnavales/quant/api/categories"
 	"github.com/nnavales/quant/api/channels"
+	"github.com/nnavales/quant/api/chatbot"
 	"github.com/nnavales/quant/api/config"
 	"github.com/nnavales/quant/api/dashboard"
 	"github.com/nnavales/quant/api/db"
@@ -93,6 +94,17 @@ func Run(stopCh <-chan struct{}) error {
 	if err := users.SeedDefaults(context.Background(), usersRepo, clock); err != nil {
 		slog.Warn("user.config.seed.error", "err", err)
 	}
+
+	go chatbot.Start(cfg.Config, &chatbot.ServiceTools{
+		FinanceSvc:    financeService,
+		CategorySvc:   categoriesService,
+		ChannelSvc:    channelsService,
+		MacroSvc:      macroService,
+		DashboardSvc:  dashboardService,
+		UserSvc:       usersService,
+		HistoricalSvc: historicalService,
+		NetWorthSvc:   networthService,
+	})
 
 	services := &transport.Services{
 		FinanceService:      financeService,

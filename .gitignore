@@ -5,6 +5,7 @@
 # --- Build outputs ---
 bin/
 tmp/
+./data/
 app/dist/
 app/src-tauri/target/
 app/src-tauri/binaries/

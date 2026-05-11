@@ -6,80 +6,81 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync"
 )
 
+var (
+	muListeners sync.Mutex
+	listeners   []chan struct{}
+)
+
+func Watch() <-chan struct{} {
+	ch := make(chan struct{}, 1)
+	muListeners.Lock()
+	listeners = append(listeners, ch)
+	muListeners.Unlock()
+	return ch
+}
+
 type Config struct {
-	Name string `json:"name"`
-	Port int    `json:"port"`
-	Mode string `json:"mode"`
+	Name          string `json:"name"`
+	Port          int    `json:"port"`
+	Mode          string `json:"mode"`
+	TelegramToken string `json:"telegram_token"`
+	TelegramID    int64  `json:"telegram_id"`
+	APIKeyAI      string `json:"api_key_ia"`
+	ModelID       string `json:"model_id"`
+	BaseURL       string `json:"base_url"`
 }
 
 type Runtime struct {
 	Config
-	Env          string
-	AppDataDir   string
-	DatabaseFile string
+	Env        string
+	AppDataDir string
 }
 
-func Default() Config {
-	return Config{
-		Name:    "Quant",
-		Port: 43123,
-		Mode: "user",
-	}
-}
-
-func merge(cfg Config) Config {
-	def := Default()
-
-	if cfg.Port == 0 {
-		cfg.Port = def.Port
-	}
-	if cfg.Name == "" {
-		cfg.Name = def.Name
-	}
-
-	if cfg.Mode == "" {
-		cfg.Mode = def.Mode
-	}
-
-	return cfg
-}
-
+// initializes new config
 func New() (Runtime, error) {
 	dir, err := AppDataDir()
 	if err != nil {
 		return Runtime{}, err
 	}
 
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return Runtime{}, err
-	}
-
-	path := filepath.Join(dir, "config.json")
-
-	cfg, err := ReadConfigFile(path)
+	cfg, err := ReadConfigFile()
 	if err != nil {
 		return Runtime{}, err
 	}
 
-	cfg = merge(cfg)
+	// set defaults
+	if cfg.Port == 0 {
+		cfg.Port = 43123
+	}
+	if cfg.Name == "" {
+		cfg.Name = "Quant"
+	}
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		if err := writeConfigFile(path, cfg); err != nil {
-			return Runtime{}, err
-		}
+	if cfg.Mode == "" {
+		cfg.Mode = "user"
+	}
+
+	if err := writeConfigFile(cfg); err != nil {
+		return Runtime{}, err
 	}
 
 	return Runtime{
-		Config:       cfg,
-		AppDataDir:   dir,
-		Env:          os.Getenv("APP_ENV"),
-		DatabaseFile: filepath.Join(dir, "db.sqlite"),
+		Config:     cfg,
+		AppDataDir: dir,
+		Env:        os.Getenv("APP_ENV"),
 	}, nil
 }
 
-func ReadConfigFile(path string) (Config, error) {
+// reads config and returns the new one
+func ReadConfigFile() (Config, error) {
+	path, err := configFilePath()
+	if err != nil {
+		return Config{}, err
+	}
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -96,7 +97,57 @@ func ReadConfigFile(path string) (Config, error) {
 	return cfg, nil
 }
 
-func writeConfigFile(path string, cfg Config) error {
+// edits configuration changing old values for new ones
+func EditConfigFile(newCfg Config) error {
+	cfg, err := ReadConfigFile()
+	if err != nil {
+		return err
+	}
+
+	if newCfg.Name != "" {
+		cfg.Name = newCfg.Name
+	}
+	if newCfg.Port != 0 {
+		cfg.Port = newCfg.Port
+	}
+	if newCfg.Mode != "" {
+		cfg.Mode = newCfg.Mode
+	}
+
+	if newCfg.TelegramToken != "" {
+		cfg.TelegramToken = newCfg.TelegramToken
+	}
+
+	if newCfg.TelegramID != 0 {
+		cfg.TelegramID = newCfg.TelegramID
+	}
+
+	if newCfg.APIKeyAI != "" {
+		cfg.APIKeyAI = newCfg.APIKeyAI
+	}
+
+	if newCfg.ModelID != "" {
+		cfg.ModelID = newCfg.ModelID
+	}
+
+	if newCfg.BaseURL != "" {
+		cfg.BaseURL = newCfg.BaseURL
+	}
+
+	return writeConfigFile(cfg)
+}
+
+// helper to write to config file
+func writeConfigFile(cfg Config) error {
+	path, err := configFilePath()
+	if err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+
 	tmp := path + ".tmp"
 
 	b, err := json.MarshalIndent(cfg, "", "  ")
@@ -108,9 +159,35 @@ func writeConfigFile(path string, cfg Config) error {
 		return err
 	}
 
-	return os.Rename(tmp, path)
+	if err := os.Rename(tmp, path); err != nil {
+		return err
+	}
+
+	notifyListeners()
+	return nil
 }
 
+func notifyListeners() {
+	muListeners.Lock()
+	defer muListeners.Unlock()
+	for _, ch := range listeners {
+		select {
+		case ch <- struct{}{}:
+		default:
+		}
+	}
+}
+
+// determines the path for the config.json (config file)
+func configFilePath() (string, error) {
+	dir, err := AppDataDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "config.json"), nil
+}
+
+// gets the AppData directory depending on running OS
 func AppDataDir() (string, error) {
 	const app = "quant"
 
@@ -148,22 +225,4 @@ func AppDataDir() (string, error) {
 	}
 
 	return "", fmt.Errorf("unsupported OS")
-}
-
-func SavePort(port int) error {
-	dir, err := AppDataDir()
-	if err != nil {
-		return err
-	}
-
-	path := filepath.Join(dir, "config.json")
-
-	cfg, err := ReadConfigFile(path)
-	if err != nil {
-		return err
-	}
-
-	cfg.Port = port
-
-	return writeConfigFile(path, cfg)
 }

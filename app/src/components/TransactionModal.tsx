@@ -1,10 +1,23 @@
 import { useState, useEffect, useRef } from "react";
 import { RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
 import type { TransactionAggregateReq, Preset } from "@/api_client/types";
-import { useCreateTransaction, useCategories, useSubcategories, useChannels, useAccounts, useUserConfig, useDollarBanks, useCategoryGroups, useAccountGroups, useDollarRate, usePresets } from "@/hooks";
+import {
+    useCreateTransaction,
+    useCategories,
+    useSubcategories,
+    useChannels,
+    useAccounts,
+    useUserConfig,
+    useDollarBanks,
+    useCategoryGroups,
+    useAccountGroups,
+    useDollarRate,
+    usePresets,
+} from "@/hooks";
 import { spacing, radius } from "@/styles/theme";
 import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
+import { formatISODateInTimezone, getNowInTimezone } from "@/utils/date";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { DatePicker } from "@/components/ui/DatePicker";
@@ -63,7 +76,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
 
     const [formData, setFormData] = useState<TransactionAggregateReq>({
         description: "",
-        date: new Date().toISOString().split("T")[0],
+        date: formatISODateInTimezone(getNowInTimezone(userConfig?.timezone), userConfig?.timezone),
         type: initialType,
         frequency: "variable",
         installment_number: undefined,
@@ -74,7 +87,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
         subcategory_id: "",
         channel_id: "",
         account_id: "",
-        is_paid: false,
+        is_paid: true,
     });
 
     const descRef = useRef<HTMLInputElement>(null);
@@ -119,7 +132,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
             subcategory_id: "",
             channel_id: "",
             account_id: "",
-            is_paid: false,
+            is_paid: true,
         }));
     };
 
@@ -149,7 +162,10 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
         }
     }, [isOpen, refreshRate]);
 
-    const { groups: categoryGroups, getCategoryId } = useCategoryGroups(categoriesList, subcategoriesList);
+    const { groups: categoryGroups, getCategoryId } = useCategoryGroups(
+        categoriesList,
+        subcategoriesList
+    );
     const { groups: accountGroups, getChannelId } = useAccountGroups(channelsList, accountsList);
 
     const handleCategorySelect = (subId: string) => {
@@ -163,7 +179,10 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
     const resetForm = () => {
         setFormData({
             description: "",
-            date: new Date().toISOString().split("T")[0],
+            date: formatISODateInTimezone(
+                getNowInTimezone(userConfig?.timezone),
+                userConfig?.timezone
+            ),
             type: initialType,
             frequency: "variable",
             installment_number: undefined,
@@ -174,7 +193,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
             subcategory_id: "",
             channel_id: "",
             account_id: "",
-            is_paid: false,
+            is_paid: true,
         });
     };
 
@@ -182,7 +201,9 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
         e.preventDefault();
         const dataToSend = {
             ...formData,
-            installment_number: formData.installment_number ? parseInt(String(formData.installment_number)) : undefined,
+            installment_number: formData.installment_number
+                ? parseInt(String(formData.installment_number))
+                : undefined,
         };
         createMutation.mutate(dataToSend, {
             onSuccess: () => {
@@ -222,7 +243,13 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                         >
                             Nueva Transacción
                         </h2>
-                        <p style={{ margin: `${spacing[1]} 0 0`, fontSize: fonts.size.xs, color: colors.fg.dim }}>
+                        <p
+                            style={{
+                                margin: `${spacing[1]} 0 0`,
+                                fontSize: fonts.size.xs,
+                                color: colors.fg.dim,
+                            }}
+                        >
                             {isExpense ? "Registrar egreso" : "Registrar ingreso"}
                         </p>
                     </div>
@@ -237,7 +264,8 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                                         options={[
                                             ...allPresets.map((p) => ({
                                                 id: p.id,
-                                                label: `${p.name} ${p.type === "income" ? "(Ingreso)" : "(Gasto)"}`,
+                                                label: `${p.name}`,
+                                                dotColor: p.type === "income" ? colors.accent.green : colors.accent.red,
                                             })),
                                         ]}
                                         value={selectedPresetId}
@@ -324,10 +352,10 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                                 value={formData.date}
                                 onChange={(value) => setFormData({ ...formData, date: value })}
                                 triggerStyle={{
-                                backgroundColor: colors.bg.base,
-                                border: `1px solid ${colors.border}`,
-                                borderRadius: radius.md,
-                                height: "40px",
+                                    backgroundColor: colors.bg.base,
+                                    border: `1px solid ${colors.border}`,
+                                    borderRadius: radius.md,
+                                    height: "40px",
                                     fontSize: fonts.size.sm,
                                     padding: `${spacing[2]} ${spacing[3]}`,
                                 }}
@@ -339,7 +367,9 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                                 ref={descRef}
                                 type="text"
                                 value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                onChange={(e) =>
+                                    setFormData({ ...formData, description: e.target.value })
+                                }
                                 placeholder="Ej: Supermercado, Sueldo, etc."
                                 style={inputStyle}
                                 required
@@ -357,14 +387,18 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                             >
                                 <button
                                     type="button"
-                                    onClick={() => setFormData((prev) => ({ ...prev, is_paid: !prev.is_paid }))}
+                                    onClick={() =>
+                                        setFormData((prev) => ({ ...prev, is_paid: !prev.is_paid }))
+                                    }
                                     style={{
                                         width: "44px",
                                         height: "24px",
                                         borderRadius: "12px",
                                         border: "none",
                                         cursor: "pointer",
-                                        backgroundColor: formData.is_paid ? colors.accent.teal : colors.fill,
+                                        backgroundColor: formData.is_paid
+                                            ? colors.accent.teal
+                                            : colors.fill,
                                         position: "relative",
                                         transition: "background-color 0.2s",
                                         padding: 0,
@@ -385,7 +419,11 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                                     />
                                 </button>
                                 <span style={{ fontSize: fonts.size.sm, color: colors.fg.base }}>
-                                    {formData.is_paid ? (formData.type === "income" ? "Recibido" : "Pagado") : "Pendiente"}
+                                    {formData.is_paid
+                                        ? formData.type === "income"
+                                            ? "Recibido"
+                                            : "Pagado"
+                                        : "Pendiente"}
                                 </span>
                             </div>
                         </div>
@@ -399,7 +437,9 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                                 type="number"
                                 step="0.01"
                                 value={formData.amount}
-                                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                                onChange={(e) =>
+                                    setFormData({ ...formData, amount: e.target.value })
+                                }
                                 placeholder="0.00"
                                 style={inputStyle}
                                 required
@@ -413,7 +453,9 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                                     { id: "USD", label: "USD" },
                                 ]}
                                 value={formData.currency}
-                                onChange={(c) => setFormData({ ...formData, currency: c as "ARS" | "USD" })}
+                                onChange={(c) =>
+                                    setFormData({ ...formData, currency: c as "ARS" | "USD" })
+                                }
                                 triggerStyle={{ height: "40px" }}
                             />
                         </div>
@@ -423,7 +465,12 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                                 <input
                                     type="number"
                                     value={formData.exchange_rate}
-                                    onChange={(e) => setFormData({ ...formData, exchange_rate: parseFloat(e.target.value) || 1 })}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            exchange_rate: parseFloat(e.target.value) || 1,
+                                        })
+                                    }
                                     style={{ ...inputStyle, paddingRight: "36px" }}
                                 />
                                 <Button
@@ -450,7 +497,12 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                                     { id: "fixed", label: "Fijo" },
                                 ]}
                                 value={formData.frequency}
-                                onChange={(f) => setFormData({ ...formData, frequency: f as "variable" | "fixed" })}
+                                onChange={(f) =>
+                                    setFormData({
+                                        ...formData,
+                                        frequency: f as "variable" | "fixed",
+                                    })
+                                }
                                 triggerStyle={{ height: "40px" }}
                             />
                         </div>
@@ -476,7 +528,9 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                     </div>
 
                     {/* Category + Account */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: spacing[3] }}>
+                    <div
+                        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: spacing[3] }}
+                    >
                         <div>
                             <label style={labelStyle}>Categoría</label>
                             <Dropdown
@@ -516,10 +570,18 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                         variant="primary"
                         type="submit"
                         onClick={handleSubmit}
-                        disabled={createMutation.isPending || !formData.description || !formData.amount}
+                        disabled={
+                            createMutation.isPending || !formData.description || !formData.amount
+                        }
                         loading={createMutation.isPending}
                         fullWidth
-                        iconLeft={createMutation.isPending ? undefined : (isExpense ? <TrendingDown size={14} /> : <TrendingUp size={14} />)}
+                        iconLeft={
+                            createMutation.isPending ? undefined : isExpense ? (
+                                <TrendingDown size={14} />
+                            ) : (
+                                <TrendingUp size={14} />
+                            )
+                        }
                     >
                         Registrar {isExpense ? "Gasto" : "Ingreso"}
                     </Button>
@@ -534,3 +596,4 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
         </Modal>
     );
 }
+

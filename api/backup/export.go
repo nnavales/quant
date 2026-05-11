@@ -41,11 +41,13 @@ func toTransaction(data []finance.TransactionRowDTO) []Transaction {
 		transaction.ExchangeRate = tx.ExchangeRate
 
 		transaction.Currency = string(tx.Currency)
-		if tx.Currency == "ARS" {
+
+		switch tx.Currency {
+		case "ARS":
 			transaction.AmountARS = tx.Amount
 			transaction.AmountUSD = tx.Amount.Div(int64(tx.ExchangeRate))
-		} else if tx.Currency == "USD" {
-			transaction.AmountUSD = tx.Amount
+		case "USD":
+
 			transaction.AmountARS = tx.Amount.Mul(int64(tx.ExchangeRate))
 		}
 

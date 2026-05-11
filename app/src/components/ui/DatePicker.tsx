@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from "react";
-import { format } from "date-fns";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
-import { parseLocalDateInTimezone, formatDate, getDateFormat, getNowInTimezone, isTodayInTimezone, isSameDayInTimezone } from "@/utils/date";
+import { parseLocalDateInTimezone, formatDateInTimezone, getDateFormat, getNowInTimezone, isTodayInTimezone, isSameDayInTimezone, formatISODateInTimezone, createDateForDayInTimezone, getPartsInTimezone } from "@/utils/date";
 import { useUserConfig, useClickOutside, useDropdownPosition } from "@/hooks";
 import { ChevronLeft, ChevronRight, X, ChevronDown, Calendar as CalendarIcon } from "lucide-react";
 
@@ -30,17 +29,18 @@ const MONTHS = [
     "Diciembre",
 ];
 
-function getDaysInMonth(year: number, month: number): (Date | null)[] {
+function getDaysInMonth(year: number, month: number, timezone?: string): (Date | null)[] {
     const days: (Date | null)[] = [];
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
+    const firstDay = timezone ? createDateForDayInTimezone(year, month, 1, timezone) : new Date(year, month, 1);
+    const firstDayOfWeek = firstDay.getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
 
-    for (let i = 0; i < firstDay.getDay(); i++) {
+    for (let i = 0; i < firstDayOfWeek; i++) {
         days.push(null);
     }
 
-    for (let i = 1; i <= lastDay.getDate(); i++) {
-        days.push(new Date(year, month, i));
+    for (let i = 1; i <= totalDays; i++) {
+        days.push(timezone ? createDateForDayInTimezone(year, month, i, timezone) : new Date(year, month, i));
     }
 
     return days;
@@ -169,6 +169,10 @@ export function DatePicker({
     const [isOpen, setIsOpen] = useState(false);
     const [viewDate, setViewDate] = useState(() => (value ? parseLocalDateInTimezone(value, tz) : getNowInTimezone(tz)));
     const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setViewDate(value ? parseLocalDateInTimezone(value, tz) : getNowInTimezone(tz));
+    }, [value, tz]);
     const panelRef = useRef<HTMLDivElement>(null);
     const selectedDate = value ? parseLocalDateInTimezone(value, tz) : undefined;
 
@@ -176,7 +180,7 @@ export function DatePicker({
     useDropdownPosition(containerRef, panelRef, isOpen, { maxHeight: 360 });
 
     const handleSelect = (date: Date) => {
-        onChange(format(date, "yyyy-MM-dd"));
+        onChange(formatISODateInTimezone(date, tz));
         setIsOpen(false);
     };
 
@@ -188,19 +192,22 @@ export function DatePicker({
 
     const handleClick = () => setIsOpen(!isOpen);
 
+    const viewParts = tz ? getPartsInTimezone(viewDate, tz) : null;
+    const year = viewParts?.year ?? viewDate.getFullYear();
+    const month = (viewParts?.month ?? viewDate.getMonth() + 1) - 1;
+    const days = getDaysInMonth(year, month, tz);
+
     const prevMonth = (e: React.MouseEvent) => {
         e.stopPropagation();
-        setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
+        setViewDate(tz ? createDateForDayInTimezone(year, month - 1, 1, tz) : new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
     };
     const nextMonth = (e: React.MouseEvent) => {
         e.stopPropagation();
-        setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
+        setViewDate(tz ? createDateForDayInTimezone(year, month + 1, 1, tz) : new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
     };
 
-    const year = viewDate.getFullYear();
-    const month = viewDate.getMonth();
-    const days = getDaysInMonth(year, month);
-    const currentYear = getNowInTimezone(tz).getFullYear();
+    const nowParts = tz ? getPartsInTimezone(getNowInTimezone(tz), tz) : null;
+    const currentYear = nowParts?.year ?? getNowInTimezone(tz).getFullYear();
     const yearOptions = Array.from({ length: 51 }, (_, i) => ({
         value: currentYear - 25 + i,
         label: String(currentYear - 25 + i),
@@ -211,7 +218,7 @@ export function DatePicker({
         e.stopPropagation();
         const today = getNowInTimezone(tz);
         setViewDate(today);
-        onChange(format(today, "yyyy-MM-dd"));
+        onChange(formatISODateInTimezone(today, tz));
         setIsOpen(false);
     };
 
@@ -244,7 +251,7 @@ export function DatePicker({
                     <CalendarIcon size={16} style={{ flexShrink: 0, color: colors.fg.dim }} />
                     <span style={{ flex: 1, fontSize: fonts.size.sm, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {selectedDate
-                            ? formatDate(selectedDate, userDateFormat)
+                            ? formatDateInTimezone(selectedDate, userDateFormat, tz)
                             : placeholder}
                     </span>
                 </span>
@@ -298,13 +305,13 @@ export function DatePicker({
                             <DropdownSelect
                                 value={month}
                                 options={monthOptions}
-                                onChange={(v) => setViewDate(new Date(year, v, 1))}
+                                onChange={(v) => setViewDate(tz ? createDateForDayInTimezone(year, v, 1, tz) : new Date(year, v, 1))}
                                 width="110px"
                             />
                             <DropdownSelect
                                 value={year}
                                 options={yearOptions}
-                                onChange={(v) => setViewDate(new Date(v, month, 1))}
+                                onChange={(v) => setViewDate(tz ? createDateForDayInTimezone(v, month, 1, tz) : new Date(v, month, 1))}
                                 width="70px"
                             />
                         </div>
@@ -374,7 +381,7 @@ export function DatePicker({
                                                 : 400,
                                     }}
                                 >
-                                    {day.getDate()}
+                                    {tz ? getPartsInTimezone(day, tz).day : day.getDate()}
                                 </div>
                             ) : (
                                 <div key={idx} style={{ width: "32px", height: "32px" }} />

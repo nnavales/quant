@@ -40,9 +40,19 @@ echo "Version bumped to $VERSION in:"
 echo "  - app/package.json"
 echo "  - app/src-tauri/Cargo.toml"
 echo "  - app/src-tauri/tauri.conf.json"
+echo "  - app/src/components/UpdateChecker.tsx"
 echo ""
 echo "Next steps:"
 echo "  git add ."
 echo "  git commit -m 'chore: bump version to $VERSION'"
 echo "  git tag v$VERSION"
 echo "  git push origin master && git push origin v$VERSION"
+
+# Update UpdateChecker.tsx
+node -e "
+const fs = require('fs');
+const path = 'app/src/components/UpdateChecker.tsx';
+let content = fs.readFileSync(path, 'utf8');
+content = content.replace(/CURRENT_VERSION = \"[^\"]*\"/, 'CURRENT_VERSION = \"$VERSION\"');
+fs.writeFileSync(path, content);
+"

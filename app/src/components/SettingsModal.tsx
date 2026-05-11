@@ -1,17 +1,18 @@
 import { useState } from "react";
-import { X, CreditCard, Tag, User, Layers, Database } from "lucide-react";
+import { X, CreditCard, Tag, User, Layers, Database, RefreshCw } from "lucide-react";
 import { ChannelAccountManager } from "@/components/ChannelAccountManager";
 import { CategoryManager } from "@/components/CategoryManager";
 import { UserSettings } from "@/components/UserSettings";
 import { PresetManager } from "@/components/PresetManager";
 import { BackupManager } from "@/components/BackupManager";
+import { UpdateChecker } from "@/components/UpdateChecker";
 import { Modal, ModalContent } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
 
-type SettingsTab = "user" | "channels" | "categories" | "presets" | "backup";
+type SettingsTab = "user" | "channels" | "categories" | "presets" | "backup" | "updates";
 
 const tabs: { id: SettingsTab; label: string; icon: React.ElementType }[] = [
     { id: "user", label: "Usuario", icon: User },
@@ -19,6 +20,7 @@ const tabs: { id: SettingsTab; label: string; icon: React.ElementType }[] = [
     { id: "categories", label: "Categorías", icon: Tag },
     { id: "presets", label: "Presets", icon: Layers },
     { id: "backup", label: "Backup", icon: Database },
+    { id: "updates", label: "Updates", icon: RefreshCw },
 ];
 
 interface SettingsModalProps {
@@ -161,6 +163,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                         {activeTab === "categories" && <CategoryManager />}
                         {activeTab === "presets" && <PresetManager />}
                         {activeTab === "backup" && <BackupManager />}
+                        {activeTab === "updates" && <UpdateChecker />}
                     </div>
                 </div>
             </ModalContent>

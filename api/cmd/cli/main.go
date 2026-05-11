@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 
 	"github.com/nnavales/quant/api/cli"
 	"github.com/nnavales/quant/api/config"
@@ -12,12 +11,7 @@ import (
 )
 
 func main() {
-	dir, err := config.AppDataDir()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	cfg, err := config.ReadConfigFile(filepath.Join(dir, "config.json"))
+	cfg, err := config.ReadConfigFile()
 	if err != nil {
 		log.Fatal(err)
 	}
