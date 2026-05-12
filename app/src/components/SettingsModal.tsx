@@ -16,11 +16,11 @@ type SettingsTab = "user" | "channels" | "categories" | "presets" | "backup" | "
 
 const tabs: { id: SettingsTab; label: string; icon: React.ElementType }[] = [
     { id: "user", label: "Usuario", icon: User },
-    { id: "channels", label: "Canales / Cuentas", icon: CreditCard },
+    { id: "channels", label: "Métodos de pago", icon: CreditCard },
     { id: "categories", label: "Categorías", icon: Tag },
     { id: "presets", label: "Presets", icon: Layers },
     { id: "backup", label: "Backup", icon: Database },
-    { id: "updates", label: "Updates", icon: RefreshCw },
+    { id: "updates", label: "Actualizaciones", icon: RefreshCw },
 ];
 
 interface SettingsModalProps {
@@ -56,8 +56,12 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                 >
                     <div
                         style={{
-                            padding: spacing[4],
+                            padding: `${spacing[3]} ${spacing[4]}`,
                             borderBottom: `1px solid ${colors.border}`,
+                            display: "flex",
+                            alignItems: "center",
+                            height: "44px",
+                            boxSizing: "border-box",
                         }}
                     >
                         <h3
@@ -69,7 +73,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                                 letterSpacing: "0.05em",
                             }}
                         >
-                            Configuración
+                            Opciones
                         </h3>
                     </div>
                     <div style={{ padding: spacing[2], display: "flex", flexDirection: "column", gap: spacing[1] }}>
@@ -83,7 +87,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                                         display: "flex",
                                         alignItems: "center",
                                         gap: spacing[3],
-                                        padding: `${spacing[3]} ${spacing[4]}`,
+                        padding: `${spacing[3]} ${spacing[4]}`,
                                         backgroundColor: isActive ? colors.fill : "transparent",
                                         border: "none",
                                         borderRadius: radius.md,
@@ -128,23 +132,14 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                     <div
                         style={{
                             display: "flex",
-                            justifyContent: "space-between",
+                            justifyContent: "flex-end",
                             alignItems: "center",
-                            padding: `${spacing[4]} ${spacing[6]}`,
+                            padding: `${spacing[3]} ${spacing[5]}`,
+                            height: "44px",
+                            boxSizing: "border-box",
                             borderBottom: `1px solid ${colors.border}`,
                         }}
                     >
-                        <h2
-                            style={{
-                                fontFamily: fonts.family.display,
-                                fontSize: fonts.size.lg,
-                                fontWeight: 600,
-                                margin: 0,
-                                color: colors.fg.base,
-                            }}
-                        >
-                            {tabs.find((t) => t.id === activeTab)?.label}
-                        </h2>
                         <Button variant="icon" onClick={onClose}>
                             <X size={20} />
                         </Button>
@@ -153,7 +148,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                     <div
                         style={{
                             padding: `${spacing[4]} ${spacing[6]}`,
-                            overflowY: "auto",
+                            overflowY: "scroll",
                             overscrollBehavior: "contain",
                             flex: 1,
                         }}

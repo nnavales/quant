@@ -148,6 +148,58 @@ function lightShadows(): ColorScheme["shadows"] {
 }
 
 export const presets: Record<string, ColorScheme> = {
+    /* ─── Light ─── */
+    light: buildScheme({
+        name: "Light",
+        mode: "light",
+        bg: "#EBEDF0",
+        fg: { base: "#161A1F", dim: "#7D8594" },
+        border: "#C8CDD4",
+        fill: "#DEE1E6",
+        accent: {
+            red: "#D92B4A", green: "#2B9E44", yellow: "#D9A817", blue: "#2B7FE0",
+            purple: "#8C5CE0", teal: "#1A9E7A", orange: "#D96B2B", cyan: "#159ABF",
+        },
+    }),
+
+    monochrome: {
+        ...buildScheme({
+            name: "Monochrome",
+            mode: "light",
+            bg: "#F2F2F2",
+            fg: { base: "#1A1A1A", dim: "#7A7A7A" },
+            border: "#D6D6D6",
+            fill: "#E6E6E6",
+            accent: {
+                red: "#4A4A4A", green: "#4A4A4A", yellow: "#4A4A4A", blue: "#4A4A4A",
+                purple: "#4A4A4A", teal: "#4A4A4A", orange: "#4A4A4A", cyan: "#4A4A4A",
+            },
+        }),
+        heatmap: {
+            green: { low: "#E8E8E8", mid: "#CCCCCC", high: "#999999" },
+            red: { low: "#E8E8E8", mid: "#CCCCCC", high: "#999999" },
+        },
+    },
+
+    "monochrome-dark": {
+        ...buildScheme({
+            name: "Monochrome Dark",
+            bg: "#0E0E0E",
+            fg: { base: "#EAEAEA", dim: "#6A6A6A" },
+            border: "#1E1E1E",
+            fill: "#141414",
+            accent: {
+                red: "#555555", green: "#555555", yellow: "#555555", blue: "#555555",
+                purple: "#555555", teal: "#555555", orange: "#555555", cyan: "#555555",
+            },
+        }),
+        heatmap: {
+            green: { low: "#141414", mid: "#282828", high: "#4A4A4A" },
+            red: { low: "#141414", mid: "#282828", high: "#4A4A4A" },
+        },
+    },
+
+    /* ─── Pure Dark / Minimal ─── */
     dark: buildScheme({
         name: "Dark",
         bg: "#181A1C",
@@ -160,18 +212,19 @@ export const presets: Record<string, ColorScheme> = {
         },
     }),
 
-    "rose-pine": buildScheme({
-        name: "Rose Pine",
-        bg: "#232136",
-        fg: { base: "#e0def4", dim: "#908caa" },
-        border: "#393552",
-        fill: "#2a283e",
+    "perfect-black": buildScheme({
+        name: "Perfect Black",
+        bg: "#111111",
+        fg: { base: "#F5F5F5", dim: "#888888" },
+        border: "#2A2A2A",
+        fill: "#1A1A1A",
         accent: {
-            red: "#eb6f92", green: "#9ccfd8", yellow: "#f6c177", blue: "#3e8fb0",
-            purple: "#c4a7e7", teal: "#9ccfd8", orange: "#ea9a97", cyan: "#9ccfd8",
+            red: "#E85D5D", green: "#5DC86D", yellow: "#E0C050", blue: "#5D9DE5",
+            purple: "#B080E0", teal: "#50C8A8", orange: "#E09050", cyan: "#50C0D8",
         },
     }),
 
+    /* ─── Cool Blue Dark ─── */
     "one-dark": buildScheme({
         name: "One Dark",
         bg: "#282c34",
@@ -184,6 +237,56 @@ export const presets: Record<string, ColorScheme> = {
         },
     }),
 
+    "tokyo-night": buildScheme({
+        name: "Tokyo Night",
+        bg: "#1A1B26",
+        fg: { base: "#A9B1D6", dim: "#565F89" },
+        border: "#24283B",
+        fill: "#1F2133",
+        accent: {
+            red: "#F7768E", green: "#9ECE6A", yellow: "#E0AF68", blue: "#7AA2F7",
+            purple: "#BB9AF7", teal: "#73DACA", orange: "#FF9E64", cyan: "#7DCFFF",
+        },
+    }),
+
+    "ayu-mirage": buildScheme({
+        name: "Ayu Mirage",
+        bg: "#1F2430",
+        fg: { base: "#CBD9E8", dim: "#8A919F" },
+        border: "#2D3340",
+        fill: "#242936",
+        accent: {
+            red: "#F28779", green: "#A6CC70", yellow: "#FFD173", blue: "#5CCFE6",
+            purple: "#D4BFFF", teal: "#95E6CB", orange: "#F29E74", cyan: "#5CCFE6",
+        },
+    }),
+
+    /* ─── Warm Dark ─── */
+    gruvbox: buildScheme({
+        name: "Gruvbox",
+        bg: "#282828",
+        fg: { base: "#EBDBB2", dim: "#928374" },
+        border: "#3C3836",
+        fill: "#2E2C2A",
+        accent: {
+            red: "#CC241D", green: "#98971A", yellow: "#D79921", blue: "#458588",
+            purple: "#B16286", teal: "#689D6A", orange: "#D65D0E", cyan: "#689D6A",
+        },
+    }),
+
+    charcoal: buildScheme({
+        name: "Charcoal",
+        bg: "#181715",
+        fg: { base: "#F4F3EE", dim: "#8A867E" },
+        border: "#2A2825",
+        fill: "#201E1B",
+        accent: {
+            red: "#C15F3C", green: "#6BBF8A", yellow: "#D4A84B", blue: "#6A9FBF",
+            purple: "#A080C0", teal: "#5AAB8A", orange: "#D07A40", cyan: "#5AA8A0",
+        },
+    }),
+
+    /* ─── Colorful / Vibrant Dark ─── */
     dracula: buildScheme({
         name: "Dracula",
         bg: "#282a36",
@@ -193,18 +296,6 @@ export const presets: Record<string, ColorScheme> = {
         accent: {
             red: "#ff5555", green: "#50fa7b", yellow: "#f1fa8c", blue: "#bd93f9",
             purple: "#bd93f9", teal: "#8be9fd", orange: "#ffb86c", cyan: "#8be9fd",
-        },
-    }),
-
-    monokai: buildScheme({
-        name: "Monokai",
-        bg: "#272822",
-        fg: { base: "#f8f8f2", dim: "#75715e" },
-        border: "#3e3d32",
-        fill: "#2e2f2a",
-        accent: {
-            red: "#f92672", green: "#a6e22e", yellow: "#e6db74", blue: "#66d9e8",
-            purple: "#ae81ff", teal: "#66d9e8", orange: "#fd971f", cyan: "#66d9e8",
         },
     }),
 
@@ -232,6 +323,7 @@ export const presets: Record<string, ColorScheme> = {
         },
     }),
 
+    /* ─── Green / Nature Dark ─── */
     everforest: buildScheme({
         name: "Everforest",
         bg: "#2d353b",
@@ -244,16 +336,28 @@ export const presets: Record<string, ColorScheme> = {
         },
     }),
 
-    light: buildScheme({
-        name: "Light",
-        mode: "light",
-        bg: "#E5E7EB",
-        fg: { base: "#1A1D23", dim: "#868E96" },
-        border: "#C4C9D0",
-        fill: "#D5D9DE",
+    jade: buildScheme({
+        name: "Jade",
+        bg: "#0F1A18",
+        fg: { base: "#D4E8E4", dim: "#6B8A85" },
+        border: "#1A2D29",
+        fill: "#14221F",
         accent: {
-            red: "#E0315B", green: "#2F9E44", yellow: "#E6A817", blue: "#3B7FE0",
-            purple: "#9C5CE0", teal: "#20A884", orange: "#E07B2C", cyan: "#15AABF",
+            red: "#D46575", green: "#5DB893", yellow: "#C9B870", blue: "#5A8FAA",
+            purple: "#9A7AB5", teal: "#4AA88A", orange: "#C98550", cyan: "#5AA8A0",
+        },
+    }),
+
+    /* ─── Pink / Sakura ─── */
+    sakura: buildScheme({
+        name: "Sakura",
+        bg: "#120E14",
+        fg: { base: "#E0D8E0", dim: "#8A7A8A" },
+        border: "#221E28",
+        fill: "#18151C",
+        accent: {
+            red: "#FF6B8A", green: "#8ABF6B", yellow: "#E0C04A", blue: "#7A8FBF",
+            purple: "#D080C0", teal: "#6AAB8A", orange: "#E08A5A", cyan: "#6AA8A0",
         },
     }),
 };

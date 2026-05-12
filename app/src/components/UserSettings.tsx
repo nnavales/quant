@@ -224,11 +224,13 @@ export function UserSettings() {
                     value={theme}
                     onChange={(id) => {
                         localStorage.setItem("theme", id);
+                        setTheme(id);
                         autoSave(getSaveData({ theme: id }));
                         setTimeout(() => window.location.reload(), 150);
                     }}
                     options={themeOptions}
                     placeholder="Seleccionar..."
+                    searchable
                     triggerStyle={{ height: "32px", fontSize: fonts.size.sm }}
                 />
             </div>

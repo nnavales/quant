@@ -28,11 +28,6 @@ export function SettingsPage() {
 
     return (
         <div style={{ padding: spacing[3], display: "flex", flexDirection: "column", gap: spacing[4], animation: "fadeIn 0.2s ease-out" }}>
-            <div>
-                <h1 style={{ fontFamily: fonts.family.display, fontSize: fonts.size.xl, fontWeight: fonts.weight.semibold, color: colors.fg.base, margin: 0, marginBottom: spacing[1] }}>Configuración</h1>
-                <p style={{ fontFamily: fonts.family.text, fontSize: fonts.size.sm, color: colors.fg.dim, margin: 0 }}>Gestiona tus categorías y cuentas</p>
-            </div>
-
             <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap" }}>
                 {tabs.map((tab) => {
                     const isActive = activeTab === tab.id;

@@ -7,10 +7,34 @@ import { Modal, ModalContent } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
-import { CustomSelect } from "@/components/ui/Select";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { Plus, X, Droplets, Package, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { Currency, AssetType, NetWorth } from "@/api_client/types";
+
+const labelStyle: React.CSSProperties = {
+    fontSize: fonts.size.xs,
+    color: colors.fg.dim,
+    fontWeight: 500,
+    marginBottom: spacing[2],
+    display: "block",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+};
+
+const inputStyle: React.CSSProperties = {
+    padding: `${spacing[2]} ${spacing[3]}`,
+    backgroundColor: colors.bg.base,
+    border: `1px solid ${colors.border}`,
+    borderRadius: radius.md,
+    color: colors.fg.base,
+    fontSize: fonts.size.sm,
+    width: "100%",
+    height: "40px",
+    boxSizing: "border-box",
+    outline: "none",
+    transition: "border-color 0.15s",
+};
 
 /* ──────────── AddAssetForm ──────────── */
 
@@ -44,15 +68,17 @@ function AddAssetForm({ onClose }: AddAssetFormProps) {
     };
 
     return (
-        <Modal isOpen onClose={onClose}>
+        <Modal isOpen onClose={onClose} opacity={0.8}>
             <ModalContent
                 onClick={(e) => e.stopPropagation()}
                 style={{
                     backgroundColor: colors.bg.surface,
-                    borderRadius: radius.lg,
-                    padding: spacing[4],
-                    width: "90%",
-                    maxWidth: "400px",
+                    borderRadius: radius.xl,
+                    padding: spacing[5],
+                    width: "92%",
+                    maxWidth: "500px",
+                    maxHeight: "80vh",
+                    overflow: "auto",
                     border: `1px solid ${colors.border}`,
                     outline: `1px solid ${colors.border}`,
                 }}
@@ -65,73 +91,61 @@ function AddAssetForm({ onClose }: AddAssetFormProps) {
                         marginBottom: spacing[4],
                     }}
                 >
-                    <h2 style={{ fontSize: fonts.size.lg, fontWeight: 600, color: colors.fg.base }}>
+                    <h2 style={{ fontSize: fonts.size.lg, fontWeight: 600, color: colors.fg.base, margin: 0 }}>
                         Nuevo Activo
                     </h2>
-                    <Button
-                        variant="plain"
-                        onClick={onClose}
-                    >
+                    <Button variant="plain" onClick={onClose}>
                         <X size={20} />
                     </Button>
                 </div>
 
-                <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: spacing[3] }}>
+                <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: spacing[4] }}>
                     <div>
-                        <label style={{ fontSize: fonts.size.xs, color: colors.fg.dim, display: "block", marginBottom: spacing[1] }}>Nombre</label>
+                        <label style={labelStyle}>Nombre</label>
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Ej: Cuenta banco"
-                            style={{
-                                width: "100%",
-                                padding: spacing[2],
-                                backgroundColor: colors.bg.base,
-                                border: `1px solid ${colors.border}`,
-                                borderRadius: radius.md,
-                                color: colors.fg.base,
-                                fontSize: fonts.size.sm,
-                                outline: "none",
-                            }}
+                            style={inputStyle}
+                            autoFocus
                         />
                     </div>
 
                     <div>
-                        <label style={{ fontSize: fonts.size.xs, color: colors.fg.dim, display: "block", marginBottom: spacing[1] }}>Monto</label>
+                        <label style={labelStyle}>Monto</label>
                         <input
                             type="text"
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
                             placeholder="1000"
-                            style={{
-                                width: "100%",
-                                padding: spacing[2],
-                                backgroundColor: colors.bg.base,
-                                border: `1px solid ${colors.border}`,
-                                borderRadius: radius.md,
-                                color: colors.fg.base,
-                                fontSize: fonts.size.sm,
-                                outline: "none",
-                            }}
+                            style={inputStyle}
                         />
                     </div>
 
-                    <div style={{ display: "flex", gap: spacing[3] }}>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ fontSize: fonts.size.xs, color: colors.fg.dim, display: "block", marginBottom: spacing[1] }}>Moneda</label>
-                            <CustomSelect
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: spacing[3] }}>
+                        <div>
+                            <label style={labelStyle}>Moneda</label>
+                            <Dropdown
+                                options={[
+                                    { id: "USD", label: "USD" },
+                                    { id: "ARS", label: "ARS" },
+                                ]}
                                 value={currency}
-                                options={[{ value: "USD", label: "USD" }, { value: "ARS", label: "ARS" }]}
                                 onChange={(v) => setCurrency(v as Currency)}
+                                triggerStyle={{ height: "40px" }}
                             />
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ fontSize: fonts.size.xs, color: colors.fg.dim, display: "block", marginBottom: spacing[1] }}>Tipo</label>
-                            <CustomSelect
+                        <div>
+                            <label style={labelStyle}>Tipo</label>
+                            <Dropdown
+                                options={[
+                                    { id: "liquid", label: "Líquido" },
+                                    { id: "physical", label: "Físico" },
+                                ]}
                                 value={type}
-                                options={[{ value: "liquid", label: "Líquido" }, { value: "physical", label: "Físico" }]}
                                 onChange={(v) => setType(v as AssetType)}
+                                triggerStyle={{ height: "40px" }}
                             />
                         </div>
                     </div>
@@ -139,9 +153,9 @@ function AddAssetForm({ onClose }: AddAssetFormProps) {
                     <Button
                         type="submit"
                         variant="primary"
-                        color="cyan"
                         disabled={createAsset.isPending || !name.trim() || !amount.trim()}
                         loading={createAsset.isPending}
+                        fullWidth
                     >
                         Agregar Activo
                     </Button>

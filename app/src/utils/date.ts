@@ -128,6 +128,7 @@ export function getTransactionDatePresets(timezone?: string): DatePreset[] {
     const startOfYearStr = `${year}-01-01`;
     const endOfYearStr = `${year}-12-31`;
 
+    const weekStartStr = formatISODateInTimezone(new Date(year, month - 1, day - 7), timezone);
     let threeMonthsAgoMonth = month - 3;
     let threeMonthsAgoYear = year;
     if (threeMonthsAgoMonth < 1) {
@@ -138,6 +139,7 @@ export function getTransactionDatePresets(timezone?: string): DatePreset[] {
 
     return [
         { label: "Hoy", from: todayStr, to: todayStr },
+        { label: "Esta semana", from: weekStartStr, to: todayStr },
         { label: "Este mes", from: startOfMonthStr, to: endOfMonthStr },
         { label: "Mes anterior", from: lastMonthStartStr, to: lastMonthEndStr },
         { label: "Este año", from: startOfYearStr, to: endOfYearStr },

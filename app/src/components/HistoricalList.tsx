@@ -91,7 +91,7 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
     const tdStyle: React.CSSProperties = {
         padding: `${spacing[1]} ${spacing[3]}`,
         verticalAlign: "middle",
-        height: "46px",
+        height: "48px",
         border: `1px solid ${colors.fill}`,
     };
 
@@ -137,23 +137,23 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
             <table style={tableStyle}>
             <thead style={theadStyle}>
                 <tr>
-                    <th style={{ ...thStyle(!!onSort, sort === "month"), width: "110px" }} onClick={() => onSort && onSort("month")}>
+                    <th style={{ ...thStyle(!!onSort, sort === "month", "left"), width: "10%" }} onClick={() => onSort && onSort("month")}>
                         <span style={sortableThStyle}>Mes{renderSortIcon("month")}</span>
                     </th>
-                    <th style={{ ...thStyle(!!onSort, sort === "income"), width: "100px" }} onClick={() => handleSortClick("income")}>
+                    <th style={{ ...thStyle(!!onSort, sort === "income", "right"), width: "10%" }} onClick={() => handleSortClick("income")}>
                         <span style={sortableThStyle}>Ingreso{renderSortIcon("income")}</span>
                     </th>
-                    <th style={{ ...thStyle(false, false), width: "100px" }}>Ing. Fijo</th>
-                    <th style={{ ...thStyle(false, false), width: "100px" }}>Ing. Variable</th>
-                    <th style={{ ...thStyle(!!onSort, sort === "expense"), width: "100px" }} onClick={() => handleSortClick("expense")}>
+                    <th style={{ ...thStyle(false, false, "right"), width: "9%" }}>Ing. Fijo</th>
+                    <th style={{ ...thStyle(false, false, "right"), width: "9%" }}>Ing. Variable</th>
+                    <th style={{ ...thStyle(!!onSort, sort === "expense", "right"), width: "10%" }} onClick={() => handleSortClick("expense")}>
                         <span style={sortableThStyle}>Gasto{renderSortIcon("expense")}</span>
                     </th>
-                    <th style={{ ...thStyle(false, false), width: "100px" }}>Gas. Fijo</th>
-                    <th style={{ ...thStyle(false, false), width: "100px" }}>Gas. Variable</th>
-                    <th style={{ ...thStyle(false, false), width: "90px" }}>Ahorro</th>
-                    <th style={{ ...thStyle(false, false), width: "70px" }}>T.C.</th>
-                    <th style={{ ...thStyle(false, false), width: "100px" }}>Fuente</th>
-                    <th style={{ ...thStyle(false, false, "right"), width: "110px", minWidth: "110px", maxWidth: "110px" }}>Opciones</th>
+                    <th style={{ ...thStyle(false, false, "right"), width: "9%" }}>Gas. Fijo</th>
+                    <th style={{ ...thStyle(false, false, "right"), width: "9%" }}>Gas. Variable</th>
+                    <th style={{ ...thStyle(false, false, "right"), width: "8%" }}>Ahorro</th>
+                    <th style={{ ...thStyle(false, false), width: "7%" }}>T.C.</th>
+                    <th style={{ ...thStyle(false, false), width: "10%" }}>Fuente</th>
+                    <th style={{ ...thStyle(false, false), width: "9%" }}>Opciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -166,50 +166,50 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
                         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.bg.hover)}
                         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = zebraBg)}
                     >
-                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("110px"), whiteSpace: "nowrap", cursor: "pointer" }} onClick={toggleMonthFormat}>
+                        <td style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("10%"), whiteSpace: "nowrap", cursor: "pointer" }} onClick={toggleMonthFormat}>
                             {formatMonth(entry.month, useFullMonthFormat, userDateFormat)}
                         </td>
-                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("100px") }}>
+                        <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("10%") }}>
                             <Tooltip content={formatAmount(entry.income)}>
                                 <span style={incomeStyle}>{formatAmount(entry.income)}</span>
                             </Tooltip>
                         </td>
-                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("100px") }}>
+                        <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("9%") }}>
                             <Tooltip content={formatAmount(entry.income_fixed)}>
                                 <span style={moneyAltStyle}>{formatAmount(entry.income_fixed)}</span>
                             </Tooltip>
                         </td>
-                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("100px") }}>
+                        <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("9%") }}>
                             <Tooltip content={formatAmount(entry.income_variable)}>
                                 <span style={moneyAltStyle}>{formatAmount(entry.income_variable)}</span>
                             </Tooltip>
                         </td>
-                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("100px") }}>
+                        <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("10%") }}>
                             <Tooltip content={formatAmount(entry.expense)}>
                                 <span style={expenseStyle}>{formatAmount(entry.expense)}</span>
                             </Tooltip>
                         </td>
-                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("100px") }}>
+                        <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("9%") }}>
                             <Tooltip content={formatAmount(entry.expense_fixed)}>
                                 <span style={moneyAltStyle}>{formatAmount(entry.expense_fixed)}</span>
                             </Tooltip>
                         </td>
-                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("100px") }}>
+                        <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("9%") }}>
                             <Tooltip content={formatAmount(entry.expense_variable)}>
                                 <span style={moneyAltStyle}>{formatAmount(entry.expense_variable)}</span>
                             </Tooltip>
                         </td>
-                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("90px") }}>
+                        <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("8%") }}>
                             <Tooltip content={formatAmount(entry.savings)}>
                                 <span style={moneyStyle}>{formatAmount(entry.savings)}</span>
                             </Tooltip>
                         </td>
-                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("70px") }}>
+                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("7%") }}>
                             <Tooltip content={entry.exchange_rate % 1 === 0 ? String(entry.exchange_rate) : entry.exchange_rate.toFixed(2)}>
                                 <span style={{ fontFamily: fonts.family.display, fontSize: fonts.table.meta, color: colors.fg.dim, opacity: 0.7, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{entry.exchange_rate % 1 === 0 ? String(entry.exchange_rate) : entry.exchange_rate.toFixed(2)}</span>
                             </Tooltip>
                         </td>
-                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("100px") }}>
+                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("10%") }}>
                             <span style={{
                                 fontSize: fonts.table.badge,
                                 padding: `${spacing[1]} ${spacing[2]}`,
@@ -222,8 +222,8 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
                                 {entry.source === "historical" ? "Histórico" : "Transacciones"}
                             </span>
                         </td>
-                        <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("110px") }}>
-                            <span style={{ display: "flex", gap: spacing[1], justifyContent: "flex-end" }}>
+                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("9%") }}>
+                            <span style={{ display: "flex", gap: spacing[1], justifyContent: "center" }}>
                                 {entry.source === "historical" && onEdit && (
                                     <Button variant="icon" onClick={() => onEdit(entry)} title="Editar">
                                         <Pencil size={14} />

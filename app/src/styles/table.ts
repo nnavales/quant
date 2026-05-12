@@ -4,6 +4,7 @@ import { fonts } from "@/styles/fonts";
 
 export const tableStyle: React.CSSProperties = {
     width: "100%",
+    tableLayout: "fixed",
     borderCollapse: "collapse",
     fontSize: fonts.table.body,
     backgroundColor: colors.bg.surface,

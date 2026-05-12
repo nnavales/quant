@@ -35,6 +35,7 @@ const tdStyle: React.CSSProperties = {
     verticalAlign: "middle",
     textAlign: "center",
     border: `1px solid ${colors.fill}`,
+    height: "48px",
 };
 
 const fixedWidthStyle = (width: string): React.CSSProperties => ({
@@ -52,12 +53,6 @@ const badgeStyle: React.CSSProperties = {
     textTransform: "uppercase",
     fontWeight: 500,
 };
-
-const currencyBadgeStyle = (currency: string): React.CSSProperties => ({
-    ...badgeStyle,
-    backgroundColor: currency === "ARS" ? `${colors.accent.cyan}26` : `${colors.accent.green}26`,
-    color: currency === "ARS" ? colors.accent.cyan : colors.accent.green,
-});
 
 type DateTextFormat = "default" | "full";
 
@@ -174,14 +169,16 @@ export function TransactionRow({
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.bg.hover)}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = zebraBg)}
             >
+                {/* Fecha */}
                 <td
-                    style={{ ...tdStyle, ...fixedWidthStyle("110px"), cursor: "pointer" }}
+                    style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("9%"), cursor: "pointer" }}
                     onClick={handleFormatClick}
                     title="Cambiar formato"
                 >
                     {formatDateCell(transaction.date, textFormat, userDateFormat)}
                 </td>
-                <td style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("250px"), overflow: "hidden" }}>
+                {/* Descripción */}
+                <td style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("18%"), overflow: "hidden" }}>
                     <Tooltip content={transaction.description || "Sin descripción"}>
                         <span
                             style={{
@@ -203,45 +200,20 @@ export function TransactionRow({
                         </div>
                     )}
                 </td>
-                <td style={{ ...tdStyle, ...fixedWidthStyle("80px") }}>
+                {/* Tipo */}
+                <td style={{ ...tdStyle, ...fixedWidthStyle("6%") }}>
                     <span
                         style={{
                             ...badgeStyle,
-                            backgroundColor: isExpense
-                                ? `${colors.accent.red}26`
-                                : `${colors.accent.green}26`,
+                            backgroundColor: colors.fill,
                             color: isExpense ? colors.accent.red : colors.accent.green,
                         }}
                     >
                         {transaction.type === "expense" ? "Egreso" : "Ingreso"}
                     </span>
                 </td>
-                <td style={{ ...tdStyle, ...fixedWidthStyle("60px") }}>
-                    {transaction.frequency === "fixed" ? (
-                        <span
-                            style={{
-                                ...badgeStyle,
-                                backgroundColor: `${colors.accent.teal}26`,
-                                color: colors.accent.teal,
-                            }}
-                        >
-                            Fijo
-                        </span>
-                    ) : transaction.frequency === "variable" ? (
-                        <span
-                            style={{
-                                ...badgeStyle,
-                                backgroundColor: `${colors.fg.dim}26`,
-                                color: colors.fg.dim,
-                            }}
-                        >
-                            Var
-                        </span>
-                    ) : (
-                        <span style={{ color: colors.fg.dim }}>-</span>
-                    )}
-                </td>
-                <td style={{ ...tdStyle, ...fixedWidthStyle("120px"), overflow: "hidden" }}>
+                {/* Categoría */}
+                <td style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("12%"), overflow: "hidden" }}>
                     <Tooltip content={transaction.category_name || "-"}>
                         <span
                             style={{
@@ -269,7 +241,8 @@ export function TransactionRow({
                         </Tooltip>
                     )}
                 </td>
-                <td style={{ ...tdStyle, ...fixedWidthStyle("100px"), overflow: "hidden" }}>
+                {/* Canal */}
+                <td style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("12%"), overflow: "hidden" }}>
                     <Tooltip content={transaction.channel_name}>
                         <span
                             style={{
@@ -297,12 +270,8 @@ export function TransactionRow({
                         </Tooltip>
                     )}
                 </td>
-                <td style={{ ...tdStyle, ...fixedWidthStyle("60px") }}>
-                    <span style={currencyBadgeStyle(transaction.currency)}>
-                        {transaction.currency}
-                    </span>
-                </td>
-                <td style={{ ...tdStyle, ...fixedWidthStyle("140px") }}>
+                {/* Monto */}
+                <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("12%"), overflow: "hidden" }}>
                     <Tooltip content={`${transaction.currency} ${formatNumber(amount, { dynamic: true })}`}>
                         <span
                             style={{
@@ -339,7 +308,18 @@ export function TransactionRow({
                         </span>
                     </Tooltip>
                 </td>
-                <td style={{ ...tdStyle, ...fixedWidthStyle("70px") }}>
+                {/* Moneda */}
+                <td style={{ ...tdStyle, ...fixedWidthStyle("5%") }}>
+                    <span style={{
+                        ...badgeStyle,
+                        backgroundColor: colors.fill,
+                        color: transaction.currency === "ARS" ? colors.accent.cyan : colors.accent.green,
+                    }}>
+                        {transaction.currency}
+                    </span>
+                </td>
+                {/* TC */}
+                <td style={{ ...tdStyle, ...fixedWidthStyle("6%"), overflow: "hidden" }}>
                     <Tooltip
                         content={
                             transaction.exchange_rate % 1 === 0
@@ -365,23 +345,64 @@ export function TransactionRow({
                         </span>
                     </Tooltip>
                 </td>
-                <td style={{ ...tdStyle, ...fixedWidthStyle("90px") }}>
-                    <Button
-                        variant="badge"
-                        active={transaction.is_paid}
+                {/* Frecuencia */}
+                <td style={{ ...tdStyle, ...fixedWidthStyle("5%") }}>
+                    {transaction.frequency === "fixed" ? (
+                        <span
+                            style={{
+                                ...badgeStyle,
+                                backgroundColor: colors.fill,
+                                color: colors.accent.blue,
+                            }}
+                        >
+                            Fijo
+                        </span>
+                    ) : transaction.frequency === "variable" ? (
+                        <span
+                            style={{
+                                ...badgeStyle,
+                                backgroundColor: colors.fill,
+                                color: colors.accent.purple,
+                            }}
+                        >
+                            Var
+                        </span>
+                    ) : (
+                        <span style={{ color: colors.fg.dim }}>-</span>
+                    )}
+                </td>
+                {/* Estado */}
+                <td style={{ ...tdStyle, ...fixedWidthStyle("7%") }}>
+                    <span
                         onClick={handleTogglePaid}
-                        title={transaction.is_paid ? "Marcar como pendiente" : `Marcar como ${transaction.type === "income" ? "recibido" : "pagado"}`}
+                        style={{
+                            ...badgeStyle,
+                            backgroundColor: colors.fill,
+                            color: transaction.is_paid
+                                ? colors.accent.teal
+                                : colors.accent.orange,
+                            cursor: "pointer",
+                            display: "inline-block",
+                            userSelect: "none",
+                        }}
                     >
                         {transaction.is_paid ? (transaction.type === "income" ? "Recibido" : "Pagado") : "Pendiente"}
-                    </Button>
+                    </span>
                 </td>
-                <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap", ...fixedWidthStyle("110px") }}>
-                    <span style={{ display: "flex", gap: spacing[2], justifyContent: "flex-end" }}>
-                        {transaction.installment_group_id && !transaction.is_canceled && (
-                            <Button variant="icon" title="Cancelar cuotas" onClick={handleCancelInstallments}>
-                                <CreditCard size={14} />
-                            </Button>
-                        )}
+                {/* Acciones */}
+                <td style={{ ...tdStyle, ...fixedWidthStyle("8%") }}>
+                    <span style={{ display: "flex", gap: spacing[2], justifyContent: "center" }}>
+                        <Button
+                            variant="icon"
+                            title="Cancelar cuotas"
+                            onClick={handleCancelInstallments}
+                            disabled={!transaction.installment_group_id || transaction.is_canceled === true}
+                            style={{
+                                opacity: transaction.installment_group_id && !transaction.is_canceled ? 1 : 0.2,
+                            }}
+                        >
+                            <CreditCard size={14} />
+                        </Button>
                         <Button variant="icon" title="Editar" onClick={handleEdit}>
                             <Pencil size={14} />
                         </Button>

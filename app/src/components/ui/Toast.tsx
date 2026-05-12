@@ -109,7 +109,7 @@ export function ToastContainer() {
 
     useEffect(() => {
         const unsub = addToastListener((t: Toast) => {
-            setToasts((prev) => [...prev, t].slice(-4)); // keep last 4
+            setToasts((prev) => [...prev, t].slice(-3)); // keep last 3
         });
         return () => { unsub(); };
     }, []);

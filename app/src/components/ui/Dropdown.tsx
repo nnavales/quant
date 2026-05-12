@@ -36,6 +36,8 @@ export interface DropdownProps {
 
 const PANEL_BASE: React.CSSProperties = {
     position: "fixed",
+    top: 0,
+    left: 0,
     backgroundColor: colors.bg.surface,
     border: `1px solid ${colors.border}`,
     borderRadius: radius.md,
@@ -43,7 +45,7 @@ const PANEL_BASE: React.CSSProperties = {
     zIndex: 1001,
     display: "flex",
     flexDirection: "column",
-    gap: "1px",
+    gap: spacing[1],
     overflow: "hidden",
 };
 
@@ -55,6 +57,7 @@ const ITEM_BASE: React.CSSProperties = {
     color: colors.fg.base,
     transition: "background-color 0.1s",
     userSelect: "none",
+    marginRight: spacing[1],
 };
 
 export function Dropdown({
@@ -287,11 +290,12 @@ export function Dropdown({
                         style={{
                             display: "flex",
                             flexDirection: "column",
-                            gap: "1px",
+                            gap: spacing[1],
                             overflowY: "auto",
                             overflowX: "hidden",
                             flex: 1,
                             minHeight: 0,
+                            scrollbarGutter: "stable",
                         }}
                     >
                         {!hasResults && (
@@ -332,7 +336,7 @@ export function Dropdown({
                         )}
 
                         {filteredGroups.map((group, groupIdx) => (
-                            <div key={group.label || `__g${groupIdx}`}>
+                            <div key={group.label || `__g${groupIdx}`} style={{ display: "flex", flexDirection: "column", gap: spacing[1] }}>
                                 {group.label && (
                                     <div
                                         style={{

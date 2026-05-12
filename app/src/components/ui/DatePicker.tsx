@@ -11,6 +11,7 @@ interface DatePickerProps {
     onChange: (value: string) => void;
     placeholder?: string;
     triggerStyle?: React.CSSProperties;
+    showIcon?: boolean;
 }
 
 const WEEKDAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -161,6 +162,7 @@ export function DatePicker({
     onChange,
     placeholder = "Seleccionar fecha",
     triggerStyle,
+    showIcon = true,
 }: DatePickerProps) {
     const { data: userConfig } = useUserConfig();
     const tz = userConfig?.timezone;
@@ -248,14 +250,14 @@ export function DatePicker({
 
             >
                 <span style={{ display: "flex", alignItems: "center", gap: spacing[2], flex: 1, overflow: "hidden" }}>
-                    <CalendarIcon size={16} style={{ flexShrink: 0, color: colors.fg.dim }} />
+                    {showIcon && <CalendarIcon size={16} style={{ flexShrink: 0, color: colors.fg.dim }} />}
                     <span style={{ flex: 1, fontSize: fonts.size.sm, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {selectedDate
                             ? formatDateInTimezone(selectedDate, userDateFormat, tz)
                             : placeholder}
                     </span>
                 </span>
-                {selectedDate ? (
+                {showIcon && (selectedDate ? (
                     <X
                         size={14}
                         style={{ color: colors.fg.dim, cursor: "pointer", flexShrink: 0 }}
@@ -263,7 +265,7 @@ export function DatePicker({
                     />
                 ) : (
                     <ChevronDown size={14} style={{ flexShrink: 0, opacity: 0.6 }} />
-                )}
+                ))}
             </div>
             {isOpen && (
                 <div

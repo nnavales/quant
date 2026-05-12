@@ -32,6 +32,7 @@ const tdStyle: React.CSSProperties = {
     verticalAlign: "middle",
     textAlign: "center",
     border: `1px solid ${colors.fill}`,
+    height: "48px",
 };
 
 const fixedWidthStyle = (width: string): React.CSSProperties => ({
@@ -40,7 +41,13 @@ const fixedWidthStyle = (width: string): React.CSSProperties => ({
     maxWidth: width,
 });
 
-const subStyle: React.CSSProperties = { fontSize: fonts.table.meta, color: colors.fg.dim };
+const badgeStyle: React.CSSProperties = {
+    fontSize: fonts.table.badge,
+    padding: `${spacing[1]} ${spacing[2]}`,
+    borderRadius: radius.md,
+    textTransform: "uppercase",
+    fontWeight: 500,
+};
 
 const EDIT_ROW_FONT_SIZE = fonts.size.sm;
 
@@ -125,6 +132,23 @@ export function TransactionRowEdit({ transaction, onSave, onCancel }: Transactio
         setInstallmentInput(String(installments));
     }, [transaction]);
 
+    const originalData: TransactionAggregateReq = {
+        description: transaction.description || "",
+        date: dateValue,
+        type: transaction.type as "expense" | "income",
+        frequency: transaction.frequency as "fixed" | "variable",
+        installment_number: transaction.total_installments ?? 1,
+        amount: transaction.original_amount ?? transaction.amount,
+        currency: transaction.currency as "ARS" | "USD",
+        exchange_rate: transaction.exchange_rate,
+        category_id: transaction.category_id || "",
+        subcategory_id: transaction.subcategory_id || "",
+        channel_id: transaction.channel_id || "",
+        account_id: transaction.account_id || "",
+    };
+
+    const hasChanges = JSON.stringify(formData) !== JSON.stringify(originalData);
+
     const { groups: categoryGroups, getCategoryId } = useCategoryGroups(categoriesList, subcategoriesList);
     const { groups: accountGroups, getChannelId } = useAccountGroups(channelsList, accountsList);
 
@@ -149,9 +173,9 @@ export function TransactionRowEdit({ transaction, onSave, onCancel }: Transactio
         );
     };
 
-    const handleTogglePaid = () => {
+    const handleTogglePaid = (newPaid: boolean) => {
         updatePaidMutation.mutate(
-            { id: transaction.id, isPaid: !transaction.is_paid },
+            { id: transaction.id, isPaid: newPaid },
             {
                 onSuccess: () => toast("Estado actualizado", "success"),
                 onError: (err) => toast(getApiErrorMessage(err)),
@@ -161,86 +185,80 @@ export function TransactionRowEdit({ transaction, onSave, onCancel }: Transactio
 
     return (
         <tr style={{ ...trStyle, backgroundColor: colors.bg.surface }}>
-            <td style={{ ...tdStyle, ...fixedWidthStyle("110px") }}>
+            {/* Fecha */}
+            <td style={{ ...tdStyle, ...fixedWidthStyle("9%"), borderLeft: `3px solid ${colors.accent.cyan}` }}>
                 <DatePicker
                     value={formData.date}
                     onChange={(value) => setFormData({ ...formData, date: value })}
-                    triggerStyle={{ height: "28px" }}
+                    triggerStyle={{ height: "28px", fontSize: EDIT_ROW_FONT_SIZE }}
+                    showIcon={false}
                 />
             </td>
-            <td style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("250px") }}>
-                <input
-                    type="text"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Descripción"
-                    style={{ ...formInputStyle, textAlign: "left" }}
-                    required
-                />
-                <div
-                    style={{
-                        ...subStyle,
-                        marginTop: "4px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                    }}
-                >
+            {/* Descripción */}
+            <td style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("18%"), overflow: "hidden" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: spacing[2] }}>
                     <input
-                        type="number"
-                        inputMode="numeric"
-                        min="1"
-                        value={installmentInput}
-                        onChange={(e) => {
-                            const val = e.target.value;
-                            setInstallmentInput(val);
-                            if (val !== "") {
-                                const num = parseInt(val, 10);
-                                if (!isNaN(num) && num >= 1) {
-                                    setFormData({ ...formData, installment_number: num });
-                                }
-                            }
-                        }}
-                        onBlur={() => {
-                            if (installmentInput === "" || parseInt(installmentInput, 10) < 1) {
-                                setInstallmentInput("1");
-                                setFormData({ ...formData, installment_number: 1 });
-                            }
-                        }}
-                        style={{
-                            ...formInputStyle,
-                            fontSize: EDIT_ROW_FONT_SIZE,
-                            width: "50px",
-                            height: "20px",
-                            padding: "2px 4px",
-                        }}
+                        type="text"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder="Descripción"
+                        style={{ ...formInputStyle, textAlign: "left", flex: 1 }}
+                        required
                     />
-                    <span style={{ fontSize: EDIT_ROW_FONT_SIZE, color: colors.fg.dim }}>cuotas</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+                        <input
+                            type="number"
+                            inputMode="numeric"
+                            min="1"
+                            value={installmentInput}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setInstallmentInput(val);
+                                if (val !== "") {
+                                    const num = parseInt(val, 10);
+                                    if (!isNaN(num) && num >= 1) {
+                                        setFormData({ ...formData, installment_number: num });
+                                    }
+                                }
+                            }}
+                            onBlur={() => {
+                                if (installmentInput === "" || parseInt(installmentInput, 10) < 1) {
+                                    setInstallmentInput("1");
+                                    setFormData({ ...formData, installment_number: 1 });
+                                }
+                            }}
+                            style={{
+                                ...formInputStyle,
+                                fontSize: fonts.table.badge,
+                                width: "32px",
+                                height: "20px",
+                                padding: "0 4px",
+                            }}
+                        />
+                        <span style={{ fontSize: fonts.table.badge, color: colors.fg.dim }}>cuotas</span>
+                    </div>
                 </div>
             </td>
-            <td style={{ ...tdStyle, ...fixedWidthStyle("80px") }}>
-                <Dropdown
-                    options={[
-                        { id: "expense", label: "Egreso" },
-                        { id: "income", label: "Ingreso" },
-                    ]}
-                    value={formData.type}
-                    onChange={(t) => setFormData({ ...formData, type: t as "expense" | "income" })}
-                    triggerStyle={{ height: "28px", fontSize: EDIT_ROW_FONT_SIZE, width: "100%" }}
-                />
+            {/* Tipo */}
+            <td style={{ ...tdStyle, ...fixedWidthStyle("6%") }}>
+                <span
+                    onClick={() => setFormData({ ...formData, type: formData.type === "expense" ? "income" : "expense" })}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.bg.hover; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
+                    style={{
+                        ...badgeStyle,
+                        backgroundColor: colors.fill,
+                        color: colors.fg.base,
+                        cursor: "pointer",
+                        display: "inline-block",
+                        userSelect: "none",
+                    }}
+                >
+                    {formData.type === "expense" ? "Egreso" : "Ingreso"}
+                </span>
             </td>
-            <td style={{ ...tdStyle, ...fixedWidthStyle("60px") }}>
-                <Dropdown
-                    options={[
-                        { id: "fixed", label: "Fijo" },
-                        { id: "variable", label: "Var" },
-                    ]}
-                    value={formData.frequency}
-                    onChange={(f) => setFormData({ ...formData, frequency: f as "fixed" | "variable" })}
-                    triggerStyle={{ height: "28px", fontSize: EDIT_ROW_FONT_SIZE, width: "100%" }}
-                />
-            </td>
-            <td style={{ ...tdStyle, ...fixedWidthStyle("120px") }}>
+            {/* Categoría */}
+            <td style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("12%"), overflow: "hidden" }}>
                 <Dropdown
                     groups={categoryGroups}
                     value={formData.subcategory_id}
@@ -250,7 +268,8 @@ export function TransactionRowEdit({ transaction, onSave, onCancel }: Transactio
                     triggerStyle={{ height: "28px", fontSize: EDIT_ROW_FONT_SIZE }}
                 />
             </td>
-            <td style={{ ...tdStyle, ...fixedWidthStyle("100px") }}>
+            {/* Canal */}
+            <td style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("12%"), overflow: "hidden" }}>
                 <Dropdown
                     groups={accountGroups}
                     value={formData.account_id}
@@ -260,18 +279,8 @@ export function TransactionRowEdit({ transaction, onSave, onCancel }: Transactio
                     triggerStyle={{ height: "28px", fontSize: EDIT_ROW_FONT_SIZE }}
                 />
             </td>
-            <td style={{ ...tdStyle, ...fixedWidthStyle("60px") }}>
-                <Dropdown
-                    options={[
-                        { id: "ARS", label: "ARS" },
-                        { id: "USD", label: "USD" },
-                    ]}
-                    value={formData.currency}
-                    onChange={(c) => setFormData({ ...formData, currency: c as "ARS" | "USD" })}
-                    triggerStyle={{ height: "28px", fontSize: EDIT_ROW_FONT_SIZE, width: "100%", justifyContent: "center" }}
-                />
-            </td>
-            <td style={{ ...tdStyle, ...fixedWidthStyle("140px") }}>
+            {/* Monto */}
+            <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("12%"), overflow: "hidden" }}>
                 <input
                     type="text"
                     inputMode="decimal"
@@ -279,15 +288,30 @@ export function TransactionRowEdit({ transaction, onSave, onCancel }: Transactio
                     onChange={(e) => {
                         setFormData({ ...formData, amount: e.target.value });
                     }}
-                    style={{
-                        ...formInputStyle,
-                        fontFamily: fonts.family.display,
-                        fontWeight: 600,
-                    }}
+                    style={{ ...formInputStyle, textAlign: "right" }}
                     required
                 />
             </td>
-            <td style={{ ...tdStyle, ...fixedWidthStyle("70px") }}>
+            {/* Moneda */}
+            <td style={{ ...tdStyle, ...fixedWidthStyle("5%") }}>
+                <span
+                    onClick={() => setFormData({ ...formData, currency: formData.currency === "ARS" ? "USD" : "ARS" })}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.bg.hover; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
+                    style={{
+                        ...badgeStyle,
+                        backgroundColor: colors.fill,
+                        color: colors.fg.base,
+                        cursor: "pointer",
+                        display: "inline-block",
+                        userSelect: "none",
+                    }}
+                >
+                    {formData.currency}
+                </span>
+            </td>
+            {/* TC */}
+            <td style={{ ...tdStyle, ...fixedWidthStyle("6%"), overflow: "hidden" }}>
                 <div style={{ position: "relative" }}>
                     <input
                         type="text"
@@ -301,7 +325,6 @@ export function TransactionRowEdit({ transaction, onSave, onCancel }: Transactio
                         }
                         style={{
                             ...formInputStyle,
-                            fontFamily: fonts.family.display,
                             paddingRight: "28px",
                         }}
                     />
@@ -344,19 +367,46 @@ export function TransactionRowEdit({ transaction, onSave, onCancel }: Transactio
                     </Button>
                 </div>
             </td>
-            <td style={{ ...tdStyle, ...fixedWidthStyle("90px") }}>
-                <Button
-                    variant="badge"
-                    active={transaction.is_paid}
-                    onClick={handleTogglePaid}
-                    title={transaction.is_paid ? "Marcar como pendiente" : `Marcar como ${transaction.type === "income" ? "recibido" : "pagado"}`}
+            {/* Frecuencia */}
+            <td style={{ ...tdStyle, ...fixedWidthStyle("5%") }}>
+                <span
+                    onClick={() => setFormData({ ...formData, frequency: formData.frequency === "fixed" ? "variable" : "fixed" })}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.bg.hover; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
+                    style={{
+                        ...badgeStyle,
+                        backgroundColor: colors.fill,
+                        color: colors.fg.base,
+                        cursor: "pointer",
+                        display: "inline-block",
+                        userSelect: "none",
+                    }}
+                >
+                    {formData.frequency === "fixed" ? "Fijo" : "Var"}
+                </span>
+            </td>
+            {/* Estado */}
+            <td style={{ ...tdStyle, ...fixedWidthStyle("7%"), overflow: "hidden" }}>
+                <span
+                    onClick={() => handleTogglePaid(!transaction.is_paid)}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.bg.hover; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
+                    style={{
+                        ...badgeStyle,
+                        backgroundColor: colors.fill,
+                        color: colors.fg.base,
+                        cursor: "pointer",
+                        display: "inline-block",
+                        userSelect: "none",
+                    }}
                 >
                     {transaction.is_paid ? (transaction.type === "income" ? "Recibido" : "Pagado") : "Pendiente"}
-                </Button>
+                </span>
             </td>
-            <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap", ...fixedWidthStyle("110px") }}>
-                <span style={{ display: "flex", gap: spacing[2], justifyContent: "flex-end" }}>
-                    <Button variant="icon" onClick={handleSave} disabled={updateMutation.isPending} title="Guardar">
+            {/* Acciones */}
+            <td style={{ ...tdStyle, ...fixedWidthStyle("8%") }}>
+                <span style={{ display: "flex", gap: spacing[2], justifyContent: "center" }}>
+                    <Button variant="icon" onClick={handleSave} disabled={updateMutation.isPending || !hasChanges} title="Guardar">
                         {updateMutation.isPending ? "..." : <Check size={14} />}
                     </Button>
                     <Button variant="icon" onClick={onCancel} title="Cancelar">

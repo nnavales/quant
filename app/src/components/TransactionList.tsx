@@ -53,21 +53,21 @@ export function TransactionList({ transactions, sort, order, onSort, onDelete, o
             <table style={tableStyle}>
             <thead style={theadStyle}>
                 <tr>
-                    <th style={{ ...thStyle(!!onSort, sort === "date"), width: "110px" }} onClick={() => handleSortClick("date")}>
+                    <th style={{ ...thStyle(!!onSort, sort === "date", "left"), width: "9%" }} onClick={() => handleSortClick("date")}>
                         <span style={sortableThStyle}>Fecha{renderSortIcon("date")}</span>
                     </th>
-                    <th style={{ ...thStyle(false, false, "left"), width: "250px" }}>Descripción</th>
-                    <th style={{ ...thStyle(false, false), width: "80px" }}>Tipo</th>
-                    <th style={{ ...thStyle(false, false), width: "60px" }}>Frec.</th>
-                    <th style={{ ...thStyle(false, false), width: "120px" }}>Categoría</th>
-                    <th style={{ ...thStyle(false, false), width: "100px" }}>Canal</th>
-                    <th style={{ ...thStyle(false, false), width: "60px" }}>Mon.</th>
-                    <th style={{ ...thStyle(!!onSort, sort === "amount"), width: "140px" }} onClick={() => handleSortClick("amount")}>
+                    <th style={{ ...thStyle(false, false, "left"), width: "18%" }}>Descripción</th>
+                    <th style={{ ...thStyle(false, false), width: "6%" }}>Tipo</th>
+                    <th style={{ ...thStyle(false, false, "left"), width: "12%" }}>Categoría</th>
+                    <th style={{ ...thStyle(false, false, "left"), width: "12%" }}>Canal</th>
+                    <th style={{ ...thStyle(!!onSort, sort === "amount", "right"), width: "12%" }} onClick={() => handleSortClick("amount")}>
                         <span style={sortableThStyle}>Monto{renderSortIcon("amount")}</span>
                     </th>
-                    <th style={{ ...thStyle(false, false), width: "70px" }}>T.C.</th>
-                    <th style={{ ...thStyle(false, false), width: "90px" }}>Estado</th>
-                    <th style={{ ...thStyle(false, false, "right"), width: "110px", minWidth: "110px", maxWidth: "110px" }}>Opciones</th>
+                    <th style={{ ...thStyle(false, false), width: "5%" }}>Mon.</th>
+                    <th style={{ ...thStyle(false, false), width: "6%" }}>T.C.</th>
+                    <th style={{ ...thStyle(false, false), width: "5%" }}>Frec.</th>
+                    <th style={{ ...thStyle(false, false), width: "7%" }}>Estado</th>
+                    <th style={{ ...thStyle(false, false), width: "8%" }}>Opciones</th>
                 </tr>
             </thead>
             <tbody>

@@ -26,7 +26,7 @@ import { getApiErrorMessage } from "@/utils/apiErrors";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
-import { cardStyle } from "@/styles/layout";
+import { cardStyle, rowStyle } from "@/styles/layout";
 
 const instrumentLabels: Record<Instrument, string> = {
     credit_card: "Crédito",
@@ -239,6 +239,12 @@ export function ChannelAccountManager() {
             setEditingChannelId(null);
             return;
         }
+        const originalChan = channelGroups.find((g) => g.channel.id === editingChannelId)?.channel;
+        if (originalChan && originalChan.name === name) {
+            setEditingChannelId(null);
+            setEditingChannelName("");
+            return;
+        }
         const exists = channelGroups.some(
             (g) => g.channel.id !== editingChannelId && g.channel.name.toLowerCase() === name.toLowerCase()
         );
@@ -270,6 +276,14 @@ export function ChannelAccountManager() {
         const name = editingAccountName.trim();
         if (!editingAccountId || !name) {
             setEditingAccountId(null);
+            return;
+        }
+        const allAccs = channelGroups.flatMap((g) => g.accounts);
+        const originalAcc = allAccs.find((a) => a.id === editingAccountId);
+        if (originalAcc && originalAcc.name === name && originalAcc.instrument === editingAccountInstrument) {
+            setEditingAccountId(null);
+            setEditingAccountName("");
+            setEditingAccountInstrument("debit_card");
             return;
         }
         const parentGroup = channelGroups.find((g) => g.accounts.some((a) => a.id === editingAccountId));
@@ -323,7 +337,7 @@ export function ChannelAccountManager() {
                         style={cardStyle}
                     >
                         {editingChannelId === group.channel.id ? (
-                            <div style={{ display: "flex", gap: spacing[2], marginBottom: spacing[3] }}>
+                            <div style={{ display: "flex", gap: spacing[2], alignItems: "center" }}>
                                 <input
                                     type="text"
                                     value={editingChannelName}
@@ -336,6 +350,12 @@ export function ChannelAccountManager() {
                                     autoFocus
                                     style={{ ...inputStyle, flex: 1 }}
                                 />
+                                <Button variant="icon" onClick={saveEditChannel}>
+                                    <Check size={14} />
+                                </Button>
+                                <Button variant="icon" onClick={() => setEditingChannelId(null)}>
+                                    <X size={14} />
+                                </Button>
                             </div>
                         ) : (
                             <div
@@ -343,6 +363,7 @@ export function ChannelAccountManager() {
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "space-between",
+                                    gap: spacing[5],
                                     marginBottom: expandedChannels.has(group.channel.id) ? spacing[3] : 0,
                                 }}
                             >
@@ -352,32 +373,43 @@ export function ChannelAccountManager() {
                                         alignItems: "center",
                                         gap: spacing[2],
                                         cursor: "pointer",
+                                        flex: 1,
+                                        minWidth: 0,
                                     }}
                                     onClick={() => toggleExpandChannel(group.channel.id)}
-                                    onDoubleClick={() => startEditChannel(group.channel)}
                                 >
                                     <ChevronRight
                                         size={16}
                                         style={{
                                             color: colors.fg.dim,
+                                            flexShrink: 0,
                                             transition: "transform 0.15s",
                                             transform: expandedChannels.has(group.channel.id) ? "rotate(90deg)" : "rotate(0deg)",
                                         }}
                                     />
-                                    <span style={{ fontWeight: 600, color: colors.fg.base, fontSize: fonts.size.sm }}>
+                                    <span style={{
+                                        fontWeight: 600,
+                                        color: colors.fg.base,
+                                        fontSize: fonts.size.sm,
+                                        flex: 1,
+                                        minWidth: 0,
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        whiteSpace: "nowrap",
+                                        paddingRight: spacing[2],
+                                    }}>
                                         {group.channel.name}
-                                    </span>
-                                    <span style={{ fontSize: fonts.size.xs, color: colors.fg.dim }}>
-                                        ({group.accounts.length})
                                     </span>
                                 </div>
                                 {group.channel.id !== "__uncategorized__" && (
-                                    <Button
-                                        variant="icon"
-                                        onClick={() => handleDeleteChannel(group.channel.id)}
-                                    >
-                                        <Trash2 size={14} />
-                                    </Button>
+                                    <span style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
+                                        <Button variant="icon" onClick={() => startEditChannel(group.channel)} title="Editar">
+                                            <Pencil size={14} />
+                                        </Button>
+                                        <Button variant="icon" onClick={() => handleDeleteChannel(group.channel.id)}>
+                                            <Trash2 size={14} />
+                                        </Button>
+                                    </span>
                                 )}
                             </div>
                         )}
@@ -385,20 +417,9 @@ export function ChannelAccountManager() {
                         {expandedChannels.has(group.channel.id) && (
                             <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
                                 {group.accounts.filter(a => !a.deleted_at).map((acc) => (
-                                    <div
-                                        key={acc.id}
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "space-between",
-                                            padding: editingAccountId === acc.id ? 0 : `${spacing[2]} ${spacing[3]}`,
-                                            backgroundColor: editingAccountId === acc.id ? "transparent" : colors.bg.base,
-                                            border: editingAccountId === acc.id ? "none" : "1px solid transparent",
-                                            borderRadius: radius.md,
-                                        }}
-                                    >
+                                    <div key={acc.id}>
                                         {editingAccountId === acc.id ? (
-                                            <div style={{ display: "flex", gap: spacing[2], flexWrap: "nowrap", alignItems: "center", padding: spacing[2], backgroundColor: colors.fill, borderRadius: radius.md, border: `1px solid ${colors.border}`, width: "100%" }}>
+                                            <div style={{ display: "flex", gap: spacing[2], flexWrap: "nowrap", alignItems: "center", padding: spacing[2], backgroundColor: colors.fill, borderRadius: radius.md, border: `1px solid ${colors.border}` }}>
                                                 <input
                                                     type="text"
                                                     value={editingAccountName}
@@ -409,7 +430,7 @@ export function ChannelAccountManager() {
                                                     }}
                                                     autoFocus
                                                     placeholder="Nombre"
-                                                    style={{ ...inputStyle, flex: "1 1 0", minWidth: 0 }}
+                                                    style={{ ...inputStyle, flex: 1, minWidth: 0 }}
                                                 />
                                                 <div style={{ flex: "0 0 130px", minWidth: 0 }}>
                                                     <Dropdown
@@ -435,83 +456,58 @@ export function ChannelAccountManager() {
                                                 </div>
                                             </div>
                                         ) : (
-                                            <>
-                                                <div
-                                                    style={{ display: "flex", alignItems: "center", gap: spacing[2], cursor: "pointer" }}
-                                                    onDoubleClick={() => startEditAccount(acc)}
-                                                >
-                                                    <span style={{ color: colors.fg.dim, display: "flex" }}>
+                                            <div style={{ ...rowStyle, gap: spacing[5] }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: spacing[2], flex: 1, minWidth: 0, overflow: "hidden" }}>
+                                                    <span style={{ color: colors.fg.dim, display: "flex", flexShrink: 0 }}>
                                                         {(() => {
                                                             const Icon = instrumentIcons[acc.instrument];
                                                             return <Icon size={14} />;
                                                         })()}
                                                     </span>
-                                                    <span style={{ fontSize: fonts.size.sm, color: colors.fg.base }}>
+                                                    <span style={{
+                                                        fontSize: fonts.size.sm,
+                                                        color: colors.fg.base,
+                                                        overflow: "hidden",
+                                                        textOverflow: "ellipsis",
+                                                        whiteSpace: "nowrap",
+                                                    }}>
                                                         {acc.name}
                                                     </span>
-                                                    <span style={{ fontSize: fonts.size.xs, color: colors.fg.dim }}>
+                                                    <span style={{ fontSize: fonts.size.xs, color: colors.fg.dim, flexShrink: 0 }}>
                                                         {instrumentLabels[acc.instrument]}
                                                     </span>
                                                 </div>
-                                                <div style={{ display: "flex", gap: spacing[1] }}>
-                                                    <Button
-                                                        variant="icon"
-                                                        title="Editar"
-                                                        onClick={() => startEditAccount(acc)}
-                                                    >
+                                                <div style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
+                                                    <Button variant="icon" title="Editar" onClick={() => startEditAccount(acc)}>
                                                         <Pencil size={12} />
                                                     </Button>
-                                                <Button
-                                                    variant="icon"
-                                                    title="Eliminar"
-                                                    onClick={() => handleDeleteAccount(acc.id)}
-                                                >
-                                                    <Trash2 size={12} />
-                                                </Button>
+                                                    <Button variant="icon" title="Eliminar" onClick={() => handleDeleteAccount(acc.id)}>
+                                                        <Trash2 size={12} />
+                                                    </Button>
                                                 </div>
-                                            </>
+                                            </div>
                                         )}
                                     </div>
                                 ))}
 
                                 {group.accounts.filter(a => a.deleted_at).map((acc) => (
-                                    <div
-                                        key={acc.id}
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "space-between",
-                                            padding: `${spacing[2]} ${spacing[3]}`,
-                                            backgroundColor: colors.bg.surface,
-                                            border: `1px dashed ${colors.fill}`,
-                                            borderRadius: radius.md,
-                                            opacity: 0.6,
-                                        }}
-                                    >
-                                        <div style={{ display: "flex", alignItems: "center", gap: spacing[2] }}>
-                                            <span style={{ color: colors.fg.dim, display: "flex" }}>
+                                    <div key={acc.id} style={{ ...rowStyle, opacity: 0.6, backgroundColor: colors.bg.surface, gap: spacing[5] }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: spacing[2], flex: 1, minWidth: 0, overflow: "hidden" }}>
+                                            <span style={{ color: colors.fg.dim, display: "flex", flexShrink: 0 }}>
                                                 {(() => {
                                                     const Icon = instrumentIcons[acc.instrument];
                                                     return <Icon size={14} />;
                                                 })()}
                                             </span>
-                                            <span style={{ fontSize: fonts.size.sm, color: colors.fg.base }}>
+                                            <span style={{ fontSize: fonts.size.sm, color: colors.fg.dim, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                                 {acc.name}
                                             </span>
                                         </div>
-                                        <span style={{ display: "flex", gap: 0 }}>
-                                            <Button
-                                                variant="icon"
-                                                onClick={() => handleRestoreAccount(acc.id)}
-                                                title="Restaurar"
-                                            >
+                                        <span style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
+                                            <Button variant="icon" onClick={() => handleRestoreAccount(acc.id)} title="Restaurar">
                                                 <RotateCcw size={12} />
                                             </Button>
-                                            <Button
-                                                variant="icon"
-                                                onClick={() => setHardDeleteConfirm({ id: acc.id, type: "account" })}
-                                                title="Eliminar permanentemente"
-                                            >
+                                            <Button variant="icon" onClick={() => setHardDeleteConfirm({ id: acc.id, type: "account" })} title="Eliminar permanentemente">
                                                 <Trash2 size={12} style={{ color: colors.accent.red }} />
                                             </Button>
                                         </span>
@@ -526,7 +522,7 @@ export function ChannelAccountManager() {
                                             value={newAccountName}
                                             onChange={(e) => setNewAccountName(e.target.value)}
                                             onKeyDown={(e) => e.key === "Enter" && handleAddAccount(group.channel.id)}
-                                            style={{ ...inputStyle, flex: "1 1 0", minWidth: 0 }}
+                                            style={{ ...inputStyle, flex: 1, minWidth: 0 }}
                                             autoFocus
                                         />
                                         <div style={{ flex: "0 0 130px", minWidth: 0 }}>
@@ -560,7 +556,6 @@ export function ChannelAccountManager() {
                                             style={{
                                                 display: "inline-flex",
                                                 alignItems: "center",
-                                                justifyContent: "center",
                                                 gap: spacing[1],
                                                 padding: `${spacing[1]} ${spacing[2]}`,
                                                 fontSize: fonts.size.xs,

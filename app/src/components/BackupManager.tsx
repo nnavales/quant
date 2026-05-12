@@ -182,12 +182,14 @@ export function BackupManager() {
                             style={{
                                 padding: `${spacing[2]} ${spacing[3]}`,
                                 borderRadius: radius.md,
-                                border: `1px solid ${selectedResource === opt.id ? colors.border : colors.fill}`,
-                                backgroundColor: selectedResource === opt.id ? colors.bg.surface : "transparent",
-                                color: selectedResource === opt.id ? colors.fg.base : colors.fg.dim,
+                                border: `1px solid ${selectedResource === opt.id ? colors.accent.cyan : colors.fill}`,
+                                backgroundColor: selectedResource === opt.id ? `${colors.accent.cyan}18` : "transparent",
+                                color: selectedResource === opt.id ? colors.accent.cyan : colors.fg.dim,
                                 fontSize: fonts.size.sm,
+                                fontWeight: selectedResource === opt.id ? 600 : 500,
                                 cursor: "pointer",
                                 fontFamily: fonts.family.text,
+                                transition: "all 0.15s",
                             }}
                         >
                             {opt.label}
@@ -247,13 +249,14 @@ export function BackupManager() {
                                     flex: 1,
                                     padding: `${spacing[2]} ${spacing[3]}`,
                                     borderRadius: radius.md,
-                                    border: `1px solid ${docTab === opt.id ? colors.border : colors.fill}`,
-                                    backgroundColor: docTab === opt.id ? colors.bg.surface : "transparent",
-                                    color: docTab === opt.id ? colors.fg.base : colors.fg.dim,
+                                    border: `1px solid ${docTab === opt.id ? colors.accent.cyan : colors.fill}`,
+                                    backgroundColor: docTab === opt.id ? `${colors.accent.cyan}18` : "transparent",
+                                    color: docTab === opt.id ? colors.accent.cyan : colors.fg.dim,
                                     fontSize: fonts.size.sm,
+                                    fontWeight: docTab === opt.id ? 600 : 500,
                                     cursor: "pointer",
                                     fontFamily: fonts.family.text,
-                                    fontWeight: docTab === opt.id ? 500 : 400,
+                                    transition: "all 0.15s",
                                 }}
                             >
                                 {opt.label}

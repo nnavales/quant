@@ -56,6 +56,9 @@ const fieldValueStyle: React.CSSProperties = {
     flex: 1,
     color: colors.fg.base,
     fontSize: fonts.size.sm,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
 };
 
 const fieldLabelAbove: React.CSSProperties = {
@@ -119,12 +122,12 @@ const detailFields: { key: StringField | BooleanField; label: string }[] = [
     { key: "name", label: "Nombre" },
     { key: "description", label: "Descripción" },
     { key: "frequency", label: "Frecuencia" },
-    { key: "category_id", label: "Categoría" },
-    { key: "subcategory_id", label: "Subcategoría" },
-    { key: "channel_id", label: "Canal" },
-    { key: "account_id", label: "Cuenta" },
     { key: "currency", label: "Moneda" },
     { key: "is_paid", label: "Pagado" },
+    { key: "category_id", label: "Categoría" },
+    { key: "subcategory_id", label: "Subcategoría" },
+    { key: "account_id", label: "Método de pago" },
+    { key: "channel_id", label: "Canal" },
 ];
 
 const freqLabels: Record<string, string> = {
@@ -273,6 +276,24 @@ export function PresetManager() {
             toast(`El preset "${name}" ya existe`);
             return;
         }
+        const originalPreset = presetsList?.find((p) => p.id === editingPresetId);
+        if (originalPreset) {
+            const changed =
+                name !== originalPreset.name ||
+                editFormData.type !== originalPreset.type ||
+                (editFormData.description?.trim() ?? "") !== (originalPreset.description ?? "") ||
+                editFormData.frequency !== originalPreset.frequency ||
+                (editFormData.category_id?.trim() ?? "") !== (originalPreset.category_id ?? "") ||
+                (editFormData.subcategory_id?.trim() ?? "") !== (originalPreset.subcategory_id ?? "") ||
+                (editFormData.channel_id?.trim() ?? "") !== (originalPreset.channel_id ?? "") ||
+                (editFormData.account_id?.trim() ?? "") !== (originalPreset.account_id ?? "") ||
+                (editFormData.is_paid ?? false) !== (originalPreset.is_paid ?? false) ||
+                (editFormData.currency ?? "") !== (originalPreset.currency ?? "");
+            if (!changed) {
+                closeEditForm();
+                return;
+            }
+        }
         updatePresetMutation.mutate(
             { id: editingPresetId, data: buildPresetPayload(editFormData) },
             {
@@ -406,49 +427,6 @@ export function PresetManager() {
 
                     {/* Fields row 1 */}
                     <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap" }}>
-                        <div style={{ flex: "2 1 200px", minWidth: 0 }}>
-                            <span style={fieldLabelAbove}>Categoría</span>
-                            <Dropdown
-                                groups={categoryGroups}
-                                value={createFormData.subcategory_id ?? ""}
-                                onChange={(subId) => setCreateFormData((p) => ({ ...p, subcategory_id: subId, category_id: getCategoryId(subId) }))}
-                                placeholder="Seleccionar..."
-                                searchable
-                                clearable
-                                clearLabel="—"
-                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                            />
-                        </div>
-                        <div style={{ flex: "2 1 200px", minWidth: 0 }}>
-                            <span style={fieldLabelAbove}>Cuenta</span>
-                            <Dropdown
-                                groups={accountGroups}
-                                value={createFormData.account_id ?? ""}
-                                onChange={(accId) => setCreateFormData((p) => ({ ...p, account_id: accId, channel_id: getChannelId(accId) }))}
-                                placeholder="Seleccionar..."
-                                searchable
-                                clearable
-                                clearLabel="—"
-                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                            />
-                        </div>
-                        <div style={{ flex: "1 1 120px", minWidth: 0 }}>
-                            <span style={fieldLabelAbove}>Estado</span>
-                            <Dropdown
-                                options={[
-                                    { id: "false", label: "Pendiente" },
-                                    { id: "true", label: createFormData.type === "income" ? "Recibido" : "Pagado" },
-                                ]}
-                                value={createFormData.is_paid ? "true" : "false"}
-                                onChange={(v) => setCreateFormData((p) => ({ ...p, is_paid: v === "true" }))}
-                                placeholder="—"
-                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Fields row 2 */}
-                    <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap" }}>
                         <div style={{ flex: "1 1 140px", minWidth: 0 }}>
                             <span style={fieldLabelAbove}>Frecuencia</span>
                             <Dropdown
@@ -474,6 +452,49 @@ export function PresetManager() {
                                 value={createFormData.currency ?? ""}
                                 onChange={(c) => setCreateFormData((p) => ({ ...p, currency: (c || undefined) as Currency | undefined }))}
                                 placeholder="—"
+                                clearable
+                                clearLabel="—"
+                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
+                            />
+                        </div>
+                        <div style={{ flex: "1 1 120px", minWidth: 0 }}>
+                            <span style={fieldLabelAbove}>Estado</span>
+                            <Dropdown
+                                options={[
+                                    { id: "false", label: "Pendiente" },
+                                    { id: "true", label: createFormData.type === "income" ? "Recibido" : "Pagado" },
+                                ]}
+                                value={createFormData.is_paid ? "true" : "false"}
+                                onChange={(v) => setCreateFormData((p) => ({ ...p, is_paid: v === "true" }))}
+                                placeholder="—"
+                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Fields row 2 */}
+                    <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap" }}>
+                        <div style={{ flex: "2 1 200px", minWidth: 0 }}>
+                            <span style={fieldLabelAbove}>Categoría</span>
+                            <Dropdown
+                                groups={categoryGroups}
+                                value={createFormData.subcategory_id ?? ""}
+                                onChange={(subId) => setCreateFormData((p) => ({ ...p, subcategory_id: subId, category_id: getCategoryId(subId) }))}
+                                placeholder="Seleccionar..."
+                                searchable
+                                clearable
+                                clearLabel="—"
+                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
+                            />
+                        </div>
+                        <div style={{ flex: "2 1 200px", minWidth: 0 }}>
+                            <span style={fieldLabelAbove}>Método de pago</span>
+                            <Dropdown
+                                groups={accountGroups}
+                                value={createFormData.account_id ?? ""}
+                                onChange={(accId) => setCreateFormData((p) => ({ ...p, account_id: accId, channel_id: getChannelId(accId) }))}
+                                placeholder="Seleccionar..."
+                                searchable
                                 clearable
                                 clearLabel="—"
                                 triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
@@ -542,6 +563,7 @@ export function PresetManager() {
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "space-between",
+                                        gap: spacing[5],
                                     }}
                                 >
                                     <div
@@ -551,13 +573,24 @@ export function PresetManager() {
                                             gap: spacing[2],
                                             cursor: "pointer",
                                             flex: 1,
+                                            minWidth: 0,
                                         }}
                                         onClick={() => toggleExpand(preset.id)}
                                     >
-                                        <span style={{ color: colors.fg.dim, display: "flex" }}>
+                                        <span style={{ color: colors.fg.dim, display: "flex", flexShrink: 0 }}>
                                             {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                                         </span>
-                                        <span style={{ fontWeight: 600, color: colors.fg.base, fontSize: fonts.size.sm }}>
+                                        <span style={{
+                                            fontWeight: 600,
+                                            color: colors.fg.base,
+                                            fontSize: fonts.size.sm,
+                                            flex: 1,
+                                            minWidth: 0,
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            whiteSpace: "nowrap",
+                                            paddingRight: spacing[2],
+                                        }}>
                                             {preset.name}
                                         </span>
                                         <span
@@ -572,7 +605,7 @@ export function PresetManager() {
                                             title={preset.type === "income" ? "Ingreso" : "Gasto"}
                                         />
                                     </div>
-                                    <div style={{ display: "flex", alignItems: "center", gap: spacing[1] }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: spacing[1], flexShrink: 0 }}>
                                         <Button
                                             variant="icon"
                                             title="Editar"
@@ -599,7 +632,7 @@ export function PresetManager() {
                                         ? (preset.type === "income" ? "Recibido" : "Pagado")
                                         : label;
                                     return (
-                                        <div key={key} style={fieldRowStyle}>
+                                        <div key={key} style={{ ...fieldRowStyle, gap: spacing[5] }}>
                                             <span style={fieldLabelStyle}>{displayLabel}:</span>
                                             <span style={fieldValueStyle}>
                                                 {formatValue(preset, key, categoriesList, subcategoriesList, channelsList, accountsList)}
@@ -613,48 +646,6 @@ export function PresetManager() {
                             {/* Inline edit form body */}
                             {isEditing && (
                                 <div style={{ marginTop: spacing[3], display: "flex", flexDirection: "column", gap: spacing[3] }}>
-                                    <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap" }}>
-                                        <div style={{ flex: "2 1 200px", minWidth: 0 }}>
-                                            <span style={fieldLabelAbove}>Categoría</span>
-                                            <Dropdown
-                                                groups={categoryGroups}
-                                                value={editFormData.subcategory_id ?? ""}
-                                                onChange={(subId) => setEditFormData((p) => ({ ...p, subcategory_id: subId, category_id: getCategoryId(subId) }))}
-                                                placeholder="Seleccionar..."
-                                                searchable
-                                                clearable
-                                                clearLabel="—"
-                                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                                            />
-                                        </div>
-                                        <div style={{ flex: "2 1 200px", minWidth: 0 }}>
-                                            <span style={fieldLabelAbove}>Cuenta</span>
-                                            <Dropdown
-                                                groups={accountGroups}
-                                                value={editFormData.account_id ?? ""}
-                                                onChange={(accId) => setEditFormData((p) => ({ ...p, account_id: accId, channel_id: getChannelId(accId) }))}
-                                                placeholder="Seleccionar..."
-                                                searchable
-                                                clearable
-                                                clearLabel="—"
-                                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                                            />
-                                        </div>
-                                        <div style={{ flex: "1 1 120px", minWidth: 0 }}>
-                                            <span style={fieldLabelAbove}>Estado</span>
-                                            <Dropdown
-                                                options={[
-                                                    { id: "false", label: "Pendiente" },
-                                                    { id: "true", label: editFormData.type === "income" ? "Recibido" : "Pagado" },
-                                                ]}
-                                                value={editFormData.is_paid ? "true" : "false"}
-                                                onChange={(v) => setEditFormData((p) => ({ ...p, is_paid: v === "true" }))}
-                                                placeholder="—"
-                                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                                            />
-                                        </div>
-                                    </div>
-
                                     <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap" }}>
                                         <div style={{ flex: "1 1 140px", minWidth: 0 }}>
                                             <span style={fieldLabelAbove}>Frecuencia</span>
@@ -681,6 +672,48 @@ export function PresetManager() {
                                                 value={editFormData.currency ?? ""}
                                                 onChange={(c) => setEditFormData((p) => ({ ...p, currency: (c || undefined) as Currency | undefined }))}
                                                 placeholder="—"
+                                                clearable
+                                                clearLabel="—"
+                                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
+                                            />
+                                        </div>
+                                        <div style={{ flex: "1 1 120px", minWidth: 0 }}>
+                                            <span style={fieldLabelAbove}>Estado</span>
+                                            <Dropdown
+                                                options={[
+                                                    { id: "false", label: "Pendiente" },
+                                                    { id: "true", label: editFormData.type === "income" ? "Recibido" : "Pagado" },
+                                                ]}
+                                                value={editFormData.is_paid ? "true" : "false"}
+                                                onChange={(v) => setEditFormData((p) => ({ ...p, is_paid: v === "true" }))}
+                                                placeholder="—"
+                                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap" }}>
+                                        <div style={{ flex: "2 1 200px", minWidth: 0 }}>
+                                            <span style={fieldLabelAbove}>Categoría</span>
+                                            <Dropdown
+                                                groups={categoryGroups}
+                                                value={editFormData.subcategory_id ?? ""}
+                                                onChange={(subId) => setEditFormData((p) => ({ ...p, subcategory_id: subId, category_id: getCategoryId(subId) }))}
+                                                placeholder="Seleccionar..."
+                                                searchable
+                                                clearable
+                                                clearLabel="—"
+                                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
+                                            />
+                                        </div>
+                                        <div style={{ flex: "2 1 200px", minWidth: 0 }}>
+                                            <span style={fieldLabelAbove}>Método de pago</span>
+                                            <Dropdown
+                                                groups={accountGroups}
+                                                value={editFormData.account_id ?? ""}
+                                                onChange={(accId) => setEditFormData((p) => ({ ...p, account_id: accId, channel_id: getChannelId(accId) }))}
+                                                placeholder="Seleccionar..."
+                                                searchable
                                                 clearable
                                                 clearLabel="—"
                                                 triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
