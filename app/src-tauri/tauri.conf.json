@@ -44,7 +44,6 @@
         "windows": {
             "nsis": {
                 "installMode": "perMachine",
-                "template": "./templates/installer.nsi"
             }
         }
     }
