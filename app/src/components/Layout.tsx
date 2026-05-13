@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
+import { TitleBar } from "./TitleBar";
 import { SettingsModal } from "./SettingsModal";
 import { colors } from "@/styles/colors";
 import { spacing } from "@/styles/theme";
@@ -26,24 +27,8 @@ export function Layout({ children, activeTab, onTabChange, showSettings, onOpenS
             }}
         >
             <Sidebar activeTab={activeTab} onTabChange={onTabChange} onOpenSettings={onOpenSettings} />
-            <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                <header
-                    style={{
-                        padding: `${spacing[4]} ${spacing[6]}`,
-                        borderBottom: `1px solid ${colors.fill}`,
-                    }}
-                >
-                    <h1
-                        style={{
-                            fontFamily: fonts.family.display,
-                            fontSize: fonts.size.xl,
-                            fontWeight: 600,
-                            margin: 0,
-                        }}
-                    >
-                        Quant
-                    </h1>
-                </header>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+                <TitleBar />
                 <main
                     style={{
                         padding: spacing[6],

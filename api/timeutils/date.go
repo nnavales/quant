@@ -38,6 +38,14 @@ func ParseDate(s string) (Date, error) {
 	return NewDate(t), nil
 }
 
+func ParseYearMonthToDate(s string) (Date, error) {
+	t, err := time.Parse("2006-01", s)
+	if err != nil {
+		return Date{}, err
+	}
+	return NewDate(t), nil
+}
+
 func ParseDateFromTime(s string) (Date, error) {
 	if i := strings.Index(s, "T"); i != -1 {
 		s = s[:i]

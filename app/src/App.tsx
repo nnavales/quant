@@ -1,81 +1,175 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import "./index.css";
 import { Layout } from "@/components/Layout";
+import { TitleBar } from "@/components/TitleBar";
 import { TransactionsPage } from "@/pages/TransactionsPage";
 import { EconomicPage } from "@/pages/EconomicPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { AnalysisPage } from "@/pages/AnalysisPage";
 import { ToastContainer } from "@/components/ui/Toast";
+import { WifiOff } from "lucide-react";
 import { api } from "@/api_client/client";
-import { colors } from "@/styles/colors";
+import { colors, radius } from "@/styles";
 import { fonts } from "@/styles/fonts";
 
 function ApiUnavailable({ onRetry }: { onRetry: () => void }) {
     return (
         <div
             style={{
-                position: "fixed",
-                inset: 0,
-                backgroundColor: colors.bg.base,
+                flex: 1,
                 display: "flex",
-                flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "16px",
-                zIndex: 9999,
             }}
         >
             <div
                 style={{
-                    width: "48px",
-                    height: "48px",
-                    borderRadius: "50%",
-                    backgroundColor: `${colors.accent.red}15`,
                     display: "flex",
+                    flexDirection: "column",
                     alignItems: "center",
-                    justifyContent: "center",
+                    gap: "24px",
                 }}
             >
-                <span style={{ fontSize: "24px" }}>⚠️</span>
+                <span
+                    style={{
+                        fontFamily: fonts.family.display,
+                        fontSize: fonts.size.xl,
+                        fontWeight: fonts.weight.semibold,
+                        color: colors.fg.base,
+                        letterSpacing: "-0.02em",
+                    }}
+                >
+                    Quant
+                </span>
+
+                <div
+                    style={{
+                        width: "44px",
+                        height: "44px",
+                        borderRadius: "50%",
+                        backgroundColor: `${colors.accent.red}15`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                    }}
+                >
+                    <WifiOff size={20} color={colors.accent.red} />
+                </div>
+
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: "6px",
+                    }}
+                >
+                    <span
+                        style={{
+                            fontSize: fonts.size.base,
+                            fontWeight: fonts.weight.medium,
+                            color: colors.fg.base,
+                        }}
+                    >
+                        Sin conexión
+                    </span>
+                    <span
+                        style={{
+                            fontSize: fonts.size.sm,
+                            color: colors.fg.dim,
+                            textAlign: "center",
+                            maxWidth: "280px",
+                            lineHeight: 1.5,
+                        }}
+                    >
+                        No se pudo conectar con la API.
+                    </span>
+                </div>
+
+                <button
+                    onClick={onRetry}
+                    style={{
+                        padding: "8px 24px",
+                        backgroundColor: colors.fill,
+                        border: `1px solid ${colors.border}`,
+                        borderRadius: radius.md,
+                        color: colors.fg.base,
+                        fontSize: fonts.size.sm,
+                        fontWeight: fonts.weight.medium,
+                        cursor: "pointer",
+                        transition: "background-color 0.15s",
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = colors.bg.hover;
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = colors.fill;
+                    }}
+                >
+                    Reintentar
+                </button>
             </div>
-            <h2
+        </div>
+    );
+}
+
+function ApiStarting() {
+    return (
+        <div
+            style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+            }}
+        >
+            <div
                 style={{
-                    margin: 0,
-                    fontSize: fonts.size.lg,
-                    fontWeight: 600,
-                    color: colors.fg.base,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "24px",
                 }}
             >
-                API no disponible
-            </h2>
-            <p
-                style={{
-                    margin: 0,
-                    fontSize: fonts.size.sm,
-                    color: colors.fg.dim,
-                    textAlign: "center",
-                    maxWidth: "360px",
-                    lineHeight: 1.5,
-                }}
-            >
-                No se pudo conectar con el servidor. Verificá que la API esté corriendo e intentá de nuevo.
-            </p>
-            <button
-                onClick={onRetry}
-                style={{
-                    marginTop: "8px",
-                    padding: "8px 20px",
-                    backgroundColor: colors.fill,
-                    border: `1px solid ${colors.border}`,
-                    borderRadius: "6px",
-                    color: colors.fg.base,
-                    fontSize: fonts.size.sm,
-                    fontWeight: 500,
-                    cursor: "pointer",
-                }}
-            >
-                Reintentar
-            </button>
+                <span
+                    style={{
+                        fontFamily: fonts.family.display,
+                        fontSize: fonts.size.xl,
+                        fontWeight: fonts.weight.semibold,
+                        color: colors.fg.base,
+                        letterSpacing: "-0.02em",
+                    }}
+                >
+                    Quant
+                </span>
+
+                <div
+                    style={{
+                        width: "160px",
+                        height: "2px",
+                        backgroundColor: colors.fill,
+                        overflow: "hidden",
+                    }}
+                >
+                    <div
+                        style={{
+                            height: "100%",
+                            width: "30%",
+                            backgroundColor: colors.fg.dim,
+                            animation: "splash-loading 1.4s ease-in-out infinite",
+                        }}
+                    />
+                </div>
+
+                <span
+                    style={{
+                        fontSize: fonts.size.sm,
+                        color: colors.fg.dim,
+                    }}
+                >
+                    Conectando...
+                </span>
+            </div>
         </div>
     );
 }
@@ -83,70 +177,99 @@ function ApiUnavailable({ onRetry }: { onRetry: () => void }) {
 function App() {
     const [activeTab, setActiveTab] = useState("dashboard");
     const [showSettings, setShowSettings] = useState(false);
-    const [apiReady, setApiReady] = useState<boolean | null>(null);
+    const [apiStatus, setApiStatus] = useState<"loading" | "starting" | "ready" | "error">("loading");
+    const retryCount = useRef(0);
+    const apiStatusRef = useRef(apiStatus);
+    apiStatusRef.current = apiStatus;
 
-    const checkHealth = async () => {
-        setApiReady(null);
+    const doHealthCheck = useCallback(async () => {
         await api.initFromConfig();
-        const ok = await api.healthCheck();
-        setApiReady(ok);
-    };
-
-    useEffect(() => {
-        checkHealth();
-        const interval = setInterval(async () => {
-            await api.initFromConfig();
-            const ok = await api.healthCheck();
-            if (!ok) setApiReady(false);
-        }, 15000);
-        return () => clearInterval(interval);
+        return api.healthCheck();
     }, []);
 
-    if (apiReady === null) {
-        return (
-            <div
-                style={{
-                    position: "fixed",
-                    inset: 0,
-                    backgroundColor: colors.bg.base,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: colors.fg.dim,
-                    fontSize: fonts.size.sm,
-                    animation: "fadeIn 0.3s ease-out",
-                }}
-            >
-                Iniciando...
-            </div>
-        );
-    }
+    const startPolling = useCallback(() => {
+        retryCount.current = 0;
+        setApiStatus("loading");
 
-    if (!apiReady) {
+        const poll = async () => {
+            const ok = await doHealthCheck();
+            if (ok) {
+                setApiStatus("ready");
+                return;
+            }
+            retryCount.current++;
+            if (retryCount.current >= 10) {
+                setApiStatus("error");
+                return;
+            }
+            setApiStatus("starting");
+            setTimeout(poll, 1000);
+        };
+
+        poll();
+    }, [doHealthCheck]);
+
+    useEffect(() => {
+        startPolling();
+    }, []);
+
+    // React faster when Tauri sidecar emits api-ready event
+    useEffect(() => {
+        let unlisten: (() => void) | undefined;
+        import("@tauri-apps/api/event").then(({ listen }) => {
+            listen("api-ready", async () => {
+                if (apiStatusRef.current === "starting" || apiStatusRef.current === "loading") {
+                    const ok = await doHealthCheck();
+                    if (ok) setApiStatus("ready");
+                }
+            }).then((fn) => { unlisten = fn; });
+        });
+        return () => { unlisten?.(); };
+    }, [doHealthCheck]);
+
+    useEffect(() => {
+        if (apiStatus !== "ready") return;
+        const interval = setInterval(async () => {
+            const ok = await doHealthCheck();
+            if (!ok) setApiStatus("error");
+        }, 15000);
+        return () => clearInterval(interval);
+    }, [apiStatus, doHealthCheck]);
+
+    if (apiStatus === "ready") {
         return (
             <>
-                <ApiUnavailable onRetry={checkHealth} />
+                <Layout
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                    showSettings={showSettings}
+                    onOpenSettings={() => setShowSettings(true)}
+                    onCloseSettings={() => setShowSettings(false)}
+                >
+                    {activeTab === "dashboard" && <DashboardPage />}
+                    {activeTab === "transactions" && <TransactionsPage />}
+                    {activeTab === "economic" && <EconomicPage />}
+                    {activeTab === "analysis" && <AnalysisPage />}
+                </Layout>
                 <ToastContainer />
             </>
         );
     }
 
     return (
-        <>
-            <Layout
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-                showSettings={showSettings}
-                onOpenSettings={() => setShowSettings(true)}
-                onCloseSettings={() => setShowSettings(false)}
-            >
-                {activeTab === "dashboard" && <DashboardPage />}
-                {activeTab === "transactions" && <TransactionsPage />}
-                {activeTab === "economic" && <EconomicPage />}
-                {activeTab === "analysis" && <AnalysisPage />}
-            </Layout>
-            <ToastContainer />
-        </>
+        <div
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                height: "100vh",
+                backgroundColor: colors.bg.base,
+                color: colors.fg.base,
+            }}
+        >
+            <TitleBar />
+            {apiStatus === "starting" && <ApiStarting />}
+            {apiStatus === "error" && <ApiUnavailable onRetry={startPolling} />}
+        </div>
     );
 }
 

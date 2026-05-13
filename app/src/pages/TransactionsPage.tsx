@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import type { TransactionFilters, HistoricalFilters } from "@/api_client";
 import type { TransactionRowDTO } from "@/api_client/types";
 import { TransactionList } from "@/components/TransactionList";
@@ -19,8 +19,6 @@ import {
 import { spacing, colors } from "@/styles";
 import { fonts } from "@/styles/fonts";
 
-const ROW_HEIGHT = 52;
-
 type Tab = "transacciones" | "historico";
 
 export function TransactionsPage() {
@@ -35,8 +33,7 @@ export function TransactionsPage() {
         type: "income" | "expense";
     }>({ open: false, type: "expense" });
     const [showBulkImport, setShowBulkImport] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [historicalFilters] = useState<HistoricalFilters>({ page: 1, limit: 20 });
+    const [historicalFilters] = useState<HistoricalFilters>({ page: 1, limit: 15 });
 
     const { data, isLoading, isError, error } = useTransactionAggregates(filters);
     const { data: historicalData } = useHistoricalEntries(historicalFilters);
@@ -46,39 +43,6 @@ export function TransactionsPage() {
     const transactions = data?.data ?? [];
     const total = data?.total ?? 0;
     const historicalTotal = historicalData?.total ?? 0;
-
-    const calculateLimit = useCallback(() => {
-        if (!containerRef.current) return 16;
-        const rect = containerRef.current.getBoundingClientRect();
-        const containerHeight = rect.height;
-        const filtersHeight = 50;
-        const paginationHeight = 50;
-        const tableHeaderHeight = 40;
-        const padding = 20;
-        const buffer = 10;
-        const availableHeight =
-            containerHeight -
-            filtersHeight -
-            paginationHeight -
-            tableHeaderHeight -
-            padding -
-            buffer;
-        return Math.max(5, Math.floor(availableHeight / ROW_HEIGHT));
-    }, []);
-
-    const updateLimit = useCallback(() => {
-        const newLimit = calculateLimit();
-        setFilters((prev) => ({ ...prev, limit: newLimit, page: 1 }));
-    }, [calculateLimit]);
-
-    useEffect(() => {
-        const timeoutId = setTimeout(updateLimit, 0);
-        window.addEventListener("resize", updateLimit);
-        return () => {
-            clearTimeout(timeoutId);
-            window.removeEventListener("resize", updateLimit);
-        };
-    }, [updateLimit]);
 
     const handleFiltersChange = (newFilters: TransactionFilters) => {
         setFilters((prev) => ({ ...newFilters, limit: prev.limit }));

@@ -19,6 +19,7 @@ import (
 	"github.com/nnavales/quant/api/installments"
 	"github.com/nnavales/quant/api/macro"
 	"github.com/nnavales/quant/api/networth"
+	"github.com/nnavales/quant/api/planning"
 	"github.com/nnavales/quant/api/presets"
 	"github.com/nnavales/quant/api/transactions"
 	"github.com/nnavales/quant/api/transport/middleware"
@@ -43,6 +44,7 @@ type Services struct {
 	DashboardService    *dashboard.Service
 	NetWorthService     *networth.Service
 	PresetsService      *presets.Service
+	PlanningService     *planning.Service
 	BackupService       *backup.Service
 }
 
@@ -59,6 +61,7 @@ func NewServer(cfg config.Config, services *Services) *Server {
 	dashboardHandler := dashboard.NewHandler(services.DashboardService)
 	networthHandler := networth.NewHandler(services.NetWorthService)
 	presetsHandler := presets.NewHandler(services.PresetsService)
+	planningHandler := planning.NewHandler(services.PlanningService)
 	backupHandler := backup.NewHandler(services.BackupService)
 	chatbotHandler := chatbot.NewHandler()
 
@@ -68,7 +71,7 @@ func NewServer(cfg config.Config, services *Services) *Server {
 		financeHandler, transactionsHandler, entriesHandler,
 		installmentsHandler, channelsHandler, categoriesHandler,
 		macroHandler, usersHandler, historicalHandler, dashboardHandler,
-		networthHandler, presetsHandler, backupHandler, chatbotHandler,
+		networthHandler, presetsHandler, planningHandler, backupHandler, chatbotHandler,
 	)
 
 	var handler http.Handler = api

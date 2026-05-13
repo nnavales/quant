@@ -44,6 +44,14 @@ sidecar-dev:
 client-sidecar:
 	@cd app && $(DISPLAY_FLAGS) APP_ENV=dev SIDECAR=1 bun run tauri dev
 
+client-dev:
+	@cd app && $(DISPLAY_FLAGS) APP_ENV=dev bun run tauri dev
+
+api:
+	@mkdir -p $(BIN_DIR)
+	@go build -o $(BIN_DIR)/quant $(API_MAIN)
+	@APP_ENV=dev ./$(BIN_DIR)/quant
+
 version:
 	@if [ -z "$(VERSION)" ]; then \
 		echo "Usage: make version VERSION=0.2.0"; \
@@ -51,10 +59,6 @@ version:
 	fi
 	@./scripts/bump-version.sh $(VERSION)
 
-api:
-	@mkdir -p $(BIN_DIR)
-	@go build -o $(BIN_DIR)/quant $(API_MAIN)
-	@./$(BIN_DIR)/quant
 
 cli:
 	@mkdir -p $(BIN_DIR)

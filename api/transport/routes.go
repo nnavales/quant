@@ -14,6 +14,7 @@ import (
 	"github.com/nnavales/quant/api/installments"
 	"github.com/nnavales/quant/api/macro"
 	"github.com/nnavales/quant/api/networth"
+	"github.com/nnavales/quant/api/planning"
 	"github.com/nnavales/quant/api/presets"
 	"github.com/nnavales/quant/api/transactions"
 	"github.com/nnavales/quant/api/transport/httpx"
@@ -25,7 +26,7 @@ func addRoutes(mux *http.ServeMux,
 	ih *installments.Handler, ch *channels.Handler, cat *categories.Handler,
 	hm *macro.Handler, uh *users.Handler, hh *historical.Handler,
 	dh *dashboard.Handler, nw *networth.Handler, ph *presets.Handler,
-	bh *backup.Handler, cbh *chatbot.Handler,
+	pl *planning.Handler, bh *backup.Handler, cbh *chatbot.Handler,
 ) {
 	mux.HandleFunc("GET /healthz", handlerHealthz)
 
@@ -133,6 +134,20 @@ func addRoutes(mux *http.ServeMux,
 
 	mux.HandleFunc("GET /backup/export", bh.Export)
 	mux.HandleFunc("POST /backup/import/{resource}", bh.Import)
+
+	mux.HandleFunc("POST /planning/inputs", pl.CreateInput)
+	mux.HandleFunc("GET /planning/inputs/{id}", pl.GetInput)
+	mux.HandleFunc("GET /planning/inputs", pl.ListInputs)
+	mux.HandleFunc("PATCH /planning/inputs/{id}", pl.UpdateInput)
+	mux.HandleFunc("DELETE /planning/inputs/{id}", pl.DeleteInput)
+
+	mux.HandleFunc("POST /planning/exchange-rates", pl.CreateRate)
+	mux.HandleFunc("GET /planning/exchange-rates/{date}", pl.GetRateByDate)
+	mux.HandleFunc("GET /planning/exchange-rates", pl.ListRatesByYear)
+	mux.HandleFunc("PATCH /planning/exchange-rates/{date}", pl.UpdateRate)
+	mux.HandleFunc("DELETE /planning/exchange-rates/{date}", pl.DeleteRate)
+
+	mux.HandleFunc("GET /planning/year/{year}", pl.GetPlanningYear)
 }
 
 func handlerHealthz(w http.ResponseWriter, r *http.Request) {

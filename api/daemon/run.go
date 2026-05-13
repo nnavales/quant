@@ -21,6 +21,7 @@ import (
 	"github.com/nnavales/quant/api/logger"
 	"github.com/nnavales/quant/api/macro"
 	"github.com/nnavales/quant/api/networth"
+	"github.com/nnavales/quant/api/planning"
 	"github.com/nnavales/quant/api/presets"
 	"github.com/nnavales/quant/api/timeutils"
 	"github.com/nnavales/quant/api/transactions"
@@ -86,6 +87,9 @@ func Run(stopCh <-chan struct{}) error {
 	networthRepo := networth.NewRepo(dbConn.DB)
 	networthService := networth.NewService(networthRepo, clock, *macroProvider, *usersRepo)
 
+	planningRepo := planning.NewSQLiteRepo(dbConn.DB)
+	planningService := planning.NewService(clock, planningRepo)
+
 	presetsRepo := presets.NewSQLiteRepo(dbConn.DB)
 	presetsService := presets.NewService(clock, presetsRepo)
 
@@ -119,6 +123,7 @@ func Run(stopCh <-chan struct{}) error {
 		DashboardService:    dashboardService,
 		NetWorthService:     networthService,
 		PresetsService:      presetsService,
+		PlanningService:     planningService,
 		BackupService:       backupService,
 	}
 

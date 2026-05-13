@@ -77,12 +77,12 @@ func FormatAmount(cents int64) string {
 	return fmt.Sprintf("%s%d.%02d", sign, cents/100, cents%100)
 }
 
-func USDToARS(usdCents int64, rate float64) int64 {
-	return int64(math.Round(float64(usdCents) * rate))
+func (m *Money) USDToARS(rate float64) Money {
+	return Money(math.Round(float64(*m) * rate))
 }
 
-func ARSToUSD(arsCents int64, rate float64) int64 {
-	return int64(math.Round(float64(arsCents) / rate))
+func (m *Money) ARSToUSD(rate float64) Money {
+	return Money(math.Round(float64(*m) / rate))
 }
 
 func FromCents(cents int64) Money {

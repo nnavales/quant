@@ -110,7 +110,7 @@ fn wait_for_api_port(port: u16, timeout: Duration) -> Result<(), String> {
     Err(format!("API not responding on port {} within {:?}", port, timeout))
 }
 
-fn spawn_sidecar(app: &tauri::App) -> Result<(), String> {
+fn spawn_sidecar_nonblocking(app: &tauri::App) -> Result<(), String> {
     let (_rx, child) = app.shell()
         .sidecar("quant-api")
         .map_err(|e| format!("sidecar command: {}", e))?
@@ -119,16 +119,19 @@ fn spawn_sidecar(app: &tauri::App) -> Result<(), String> {
 
     app.manage(SidecarChild(Mutex::new(Some(child))));
 
-    match wait_for_api(Duration::from_secs(30)) {
+    let handle = app.handle().clone();
+    thread::spawn(move || match wait_for_api(Duration::from_secs(30)) {
         Ok(port) => {
             eprintln!("[quant] API ready on port {}", port);
-            Ok(())
+            let _ = handle.emit("api-ready", port);
         }
         Err(e) => {
             eprintln!("[quant] warning: {}", e);
-            Err(e)
+            let _ = handle.emit("api-error", e);
         }
-    }
+    });
+
+    Ok(())
 }
 
 fn check_service_mode(app: &tauri::App) -> Result<(), String> {
@@ -174,8 +177,8 @@ pub fn run() {
                         let _ = check_service_mode(app);
                     }
                     _ => {
-                        // Default to user mode
-                        let _ = spawn_sidecar(app);
+                        // Default to user mode (non-blocking)
+                        let _ = spawn_sidecar_nonblocking(app);
                     }
                 }
             }
