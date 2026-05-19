@@ -13,37 +13,76 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
+type GoalMetric string
+
+const (
+	GoalIncome  GoalMetric = "income"
+	GoalExpense GoalMetric = "expense"
+)
+
+var validGoalMetrics = map[GoalMetric]bool{
+	GoalIncome:  true,
+	GoalExpense: true,
+}
+
+func IsValidGoalMetric(m GoalMetric) bool {
+	return validGoalMetrics[m]
+}
+
 var ErrInvalidField = apperrors.ErrInvalidInput
 var ErrNotFound = apperrors.ErrNotFound
 
 type PlanningInput struct {
 	ID          string                       `json:"id"`
-	Month       timeutils.YearMonth          `json:"month"`
-	Description string                       `json:"description,omitempty"`
+	Year        int                          `json:"year"`
+	Description string                       `json:"description"`
 	Type        transactions.TransactionType `json:"type"`
-	Amount      money.Money                  `json:"amount"`
 	Currency    entries.Currency             `json:"currency"`
+	January     money.Money                  `json:"january"`
+	February    money.Money                  `json:"february"`
+	March       money.Money                  `json:"march"`
+	April       money.Money                  `json:"april"`
+	May         money.Money                  `json:"may"`
+	June        money.Money                  `json:"june"`
+	July        money.Money                  `json:"july"`
+	August      money.Money                  `json:"august"`
+	September   money.Money                  `json:"september"`
+	October     money.Money                  `json:"october"`
+	November    money.Money                  `json:"november"`
+	December    money.Money                  `json:"december"`
 	CreatedAt   time.Time                    `json:"created_at"`
 	UpdatedAt   *time.Time                   `json:"updated_at"`
 }
 
 func NewPlanningInput(
 	clock timeutils.Clock,
-	month timeutils.YearMonth,
-	concept string,
+	year int,
+	description string,
 	currency entries.Currency,
 	inputType transactions.TransactionType,
-	amount money.Money) (*PlanningInput, error) {
+	values [12]money.Money,
+) (*PlanningInput, error) {
 
 	id := ulid.Make().String()
 
 	i := &PlanningInput{
 		ID:          id,
-		Month:       month,
-		Description: concept,
+		Year:        year,
+		Description: description,
 		Type:        inputType,
-		Amount:      amount,
 		Currency:    currency,
+		January:     values[0],
+		February:    values[1],
+		March:       values[2],
+		April:       values[3],
+		May:         values[4],
+		June:        values[5],
+		July:        values[6],
+		August:      values[7],
+		September:   values[8],
+		October:     values[9],
+		November:    values[10],
+		December:    values[11],
 		CreatedAt:   clock.Now(),
 	}
 
@@ -58,23 +97,17 @@ func (i *PlanningInput) Validate() error {
 	if i.ID == "" {
 		return fmt.Errorf("id is required: %w", ErrInvalidField)
 	}
-	if i.Type == "" {
-		return fmt.Errorf("type is required: %w", ErrInvalidField)
+	if i.Year == 0 {
+		return fmt.Errorf("year is required: %w", ErrInvalidField)
 	}
-
+	if i.Description == "" {
+		return fmt.Errorf("description is required: %w", ErrInvalidField)
+	}
 	if len(i.Description) > 50 {
 		return fmt.Errorf("description is too long (max 50 chars): %w", ErrInvalidField)
 	}
-
-	if i.Month.IsZero() {
-		return fmt.Errorf("month is required: %w", ErrInvalidField)
-	}
-
-	if i.Amount == 0 {
-		return fmt.Errorf("amount is required: %w", ErrInvalidField)
-	}
-	if i.Amount < 0 {
-		return fmt.Errorf("amount is less than 0: %w", ErrInvalidField)
+	if i.Type == "" {
+		return fmt.Errorf("type is required: %w", ErrInvalidField)
 	}
 	if i.Currency == "" {
 		return fmt.Errorf("currency is required: %w", ErrInvalidField)
@@ -96,44 +129,84 @@ type Repository interface {
 	CreateRate(ctx context.Context, i ExchangeRateInput) (*ExchangeRateInput, error)
 	UpdateRate(ctx context.Context, i ExchangeRateInput, now time.Time) (*ExchangeRateInput, error)
 	DeleteRate(ctx context.Context, date timeutils.YearMonth) error
+
+	GetGoal(ctx context.Context, id string) (*PlanningGoal, error)
+	ListGoalsByYear(ctx context.Context, year string) ([]PlanningGoal, error)
+	CreateGoal(ctx context.Context, g PlanningGoal) (*PlanningGoal, error)
+	UpdateGoal(ctx context.Context, g PlanningGoal, now time.Time) (*PlanningGoal, error)
+	DeleteGoal(ctx context.Context, id string) error
+
+	GetPlanningConfig(ctx context.Context, year int) (*PlanningConfig, error)
+	UpsertPlanningConfig(ctx context.Context, c PlanningConfig) (*PlanningConfig, error)
 }
 
 type PlanningYear struct {
-	Year   int                 `json:"year"`
-	Inputs []PlanningInput     `json:"inputs"`
-	Rates  []ExchangeRateInput `json:"rates"`
-	Months []PlanningMonth     `json:"months"`
-	Totals PlanningTotals      `json:"totals"`
+	Year   int             `json:"year"`
+	Inputs []PlanningInput `json:"inputs"`
+	Months []PlanningMonth `json:"months"`
+	Totals PlanningTotals  `json:"totals"`
 }
 
 type PlanningMonth struct {
-	Month      int         `json:"month"`
-	IncomeARS  money.Money `json:"income_ars"`
-	ExpenseARS money.Money `json:"expense_ars"`
-	SavingsARS money.Money `json:"savings_ars"`
-	IncomeUSD  money.Money `json:"income_usd"`
-	ExpenseUSD money.Money `json:"expense_usd"`
-	SavingsUSD money.Money `json:"savings_usd"`
+	Month   int         `json:"month"`
+	Income  money.Money `json:"income"`
+	Expense money.Money `json:"expense"`
+	Savings money.Money `json:"savings"`
+	Capital money.Money `json:"capital"`
 }
 
 type PlanningTotals struct {
-	IncomeARS  money.Money `json:"income_ars"`
-	ExpenseARS money.Money `json:"expense_ars"`
-	SavingsARS money.Money `json:"savings_ars"`
-	IncomeUSD  money.Money `json:"income_usd"`
-	ExpenseUSD money.Money `json:"expense_usd"`
-	SavingsUSD money.Money `json:"savings_usd"`
+	Income  money.Money `json:"income"`
+	Expense money.Money `json:"expense"`
+	Savings money.Money `json:"savings"`
+	Capital money.Money `json:"capital"`
+}
+
+type PlanningConfig struct {
+	Year           int         `json:"year"`
+	InitialCapital money.Money `json:"initial_capital"`
+	UpdatedAt      *time.Time  `json:"updated_at"`
+}
+
+type PlanningConfigReq struct {
+	InitialCapital *money.Money `json:"initial_capital"`
 }
 
 // helper para calcular planning year desde input
 
 type PlanningReq struct {
-	ID          *string                       `json:"id"`
-	Month       *timeutils.YearMonth          `json:"month"`
+	Year        *int                          `json:"year"`
 	Description *string                       `json:"description"`
 	Type        *transactions.TransactionType `json:"type"`
-	Amount      *money.Money                  `json:"amount"`
 	Currency    *entries.Currency             `json:"currency"`
+	January     *money.Money                  `json:"january"`
+	February    *money.Money                  `json:"february"`
+	March       *money.Money                  `json:"march"`
+	April       *money.Money                  `json:"april"`
+	May         *money.Money                  `json:"may"`
+	June        *money.Money                  `json:"june"`
+	July        *money.Money                  `json:"july"`
+	August      *money.Money                  `json:"august"`
+	September   *money.Money                  `json:"september"`
+	October     *money.Money                  `json:"october"`
+	November    *money.Money                  `json:"november"`
+	December    *money.Money                  `json:"december"`
+}
+
+type PlanningGoalMonth struct {
+	Month   int         `json:"month"`
+	Income  money.Money `json:"income"`
+	Expense money.Money `json:"expense"`
+	Savings money.Money `json:"savings"`
+	Capital money.Money `json:"capital"`
+}
+
+type PlanningGoalYear struct {
+	Year           int                 `json:"year"`
+	InitialCapital money.Money         `json:"initial_capital"`
+	Months         []PlanningGoalMonth `json:"months"`
+	Goals          []PlanningGoal      `json:"goals"`
+	Totals         PlanningGoalMonth   `json:"totals"`
 }
 
 type ExchangeRateInput struct {
@@ -170,4 +243,87 @@ func (r *ExchangeRateInput) Validate() error {
 type ExchangeRateReq struct {
 	Month *timeutils.YearMonth `json:"month"`
 	Rate  *float64             `json:"exchange_rate"`
+}
+
+type PlanningGoal struct {
+	ID        string      `json:"id"`
+	Year      int         `json:"year"`
+	Metric    GoalMetric  `json:"metric"` // income, expense
+	January   money.Money `json:"january"`
+	February  money.Money `json:"february"`
+	March     money.Money `json:"march"`
+	April     money.Money `json:"april"`
+	May       money.Money `json:"may"`
+	June      money.Money `json:"june"`
+	July      money.Money `json:"july"`
+	August    money.Money `json:"august"`
+	September money.Money `json:"september"`
+	October   money.Money `json:"october"`
+	November  money.Money `json:"november"`
+	December  money.Money `json:"december"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt *time.Time  `json:"updated_at"`
+}
+
+func NewPlanningGoal(clock timeutils.Clock, year int, metric GoalMetric, values [12]money.Money) (*PlanningGoal, error) {
+	if !IsValidGoalMetric(metric) {
+		return nil, fmt.Errorf("invalid goal metric %q: %w", metric, ErrInvalidField)
+	}
+
+	id := ulid.Make().String()
+
+	g := &PlanningGoal{
+		ID:        id,
+		Year:      year,
+		Metric:    metric,
+		January:   values[0],
+		February:  values[1],
+		March:     values[2],
+		April:     values[3],
+		May:       values[4],
+		June:      values[5],
+		July:      values[6],
+		August:    values[7],
+		September: values[8],
+		October:   values[9],
+		November:  values[10],
+		December:  values[11],
+		CreatedAt: clock.Now(),
+	}
+
+	if err := g.Validate(); err != nil {
+		return nil, err
+	}
+
+	return g, nil
+}
+
+func (g *PlanningGoal) Validate() error {
+	if g.ID == "" {
+		return fmt.Errorf("id is required: %w", ErrInvalidField)
+	}
+	if g.Year == 0 {
+		return fmt.Errorf("year is required: %w", ErrInvalidField)
+	}
+	if !IsValidGoalMetric(g.Metric) {
+		return fmt.Errorf("invalid metric %q: %w", g.Metric, ErrInvalidField)
+	}
+	return nil
+}
+
+type PlanningGoalReq struct {
+	Year      *int         `json:"year"`
+	Metric    *GoalMetric  `json:"metric"`
+	January   *money.Money `json:"january"`
+	February  *money.Money `json:"february"`
+	March     *money.Money `json:"march"`
+	April     *money.Money `json:"april"`
+	May       *money.Money `json:"may"`
+	June      *money.Money `json:"june"`
+	July      *money.Money `json:"july"`
+	August    *money.Money `json:"august"`
+	September *money.Money `json:"september"`
+	October   *money.Money `json:"october"`
+	November  *money.Money `json:"november"`
+	December  *money.Money `json:"december"`
 }

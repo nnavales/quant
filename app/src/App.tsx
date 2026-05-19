@@ -4,8 +4,10 @@ import { Layout } from "@/components/Layout";
 import { TitleBar } from "@/components/TitleBar";
 import { TransactionsPage } from "@/pages/TransactionsPage";
 import { EconomicPage } from "@/pages/EconomicPage";
-import { DashboardPage } from "@/pages/DashboardPage";
 import { AnalysisPage } from "@/pages/AnalysisPage";
+import { PlanningPage } from "@/pages/PlanningPage";
+import { MetricsComparisonPage } from "@/pages/MetricsComparisonPage";
+import { EvolutionPage } from "@/pages/EvolutionPage";
 import { ToastContainer } from "@/components/ui/Toast";
 import { WifiOff } from "lucide-react";
 import { api } from "@/api_client/client";
@@ -175,7 +177,7 @@ function ApiStarting() {
 }
 
 function App() {
-    const [activeTab, setActiveTab] = useState("dashboard");
+    const [activeTab, setActiveTab] = useState("analysis");
     const [showSettings, setShowSettings] = useState(false);
     const [apiStatus, setApiStatus] = useState<"loading" | "starting" | "ready" | "error">("loading");
     const retryCount = useRef(0);
@@ -246,10 +248,24 @@ function App() {
                     onOpenSettings={() => setShowSettings(true)}
                     onCloseSettings={() => setShowSettings(false)}
                 >
-                    {activeTab === "dashboard" && <DashboardPage />}
-                    {activeTab === "transactions" && <TransactionsPage />}
-                    {activeTab === "economic" && <EconomicPage />}
-                    {activeTab === "analysis" && <AnalysisPage />}
+                    <div style={{ display: activeTab === "analysis" ? "" : "none", height: "100%", boxSizing: "border-box" }}>
+                        <AnalysisPage />
+                    </div>
+                    <div style={{ display: activeTab === "transactions" ? "" : "none", height: "100%", boxSizing: "border-box" }}>
+                        <TransactionsPage />
+                    </div>
+                    <div style={{ display: activeTab === "economic" ? "" : "none", height: "100%", boxSizing: "border-box" }}>
+                        <EconomicPage />
+                    </div>
+                    <div style={{ display: activeTab === "planning" ? "" : "none", height: "100%", boxSizing: "border-box" }}>
+                        <PlanningPage />
+                    </div>
+                    <div style={{ display: activeTab === "metrics" ? "" : "none", height: "100%", boxSizing: "border-box" }}>
+                        <MetricsComparisonPage />
+                    </div>
+                    <div style={{ display: activeTab === "evolution" ? "" : "none", height: "100%", boxSizing: "border-box" }}>
+                        <EvolutionPage />
+                    </div>
                 </Layout>
                 <ToastContainer />
             </>

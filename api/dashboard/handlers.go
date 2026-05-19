@@ -1,19 +1,51 @@
 package dashboard
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 
+	"github.com/nnavales/quant/api/planning"
 	"github.com/nnavales/quant/api/transport/httpx"
 )
 
 type Handler struct {
-	service *Service
+	service         *Service
+	planningService *planning.Service
 }
 
-func NewHandler(service *Service) *Handler {
+func NewHandler(service *Service, planningSrv *planning.Service) *Handler {
 	return &Handler{
-		service: service,
+		service:         service,
+		planningService: planningSrv,
 	}
+}
+
+func (h *Handler) GetMetrics(w http.ResponseWriter, r *http.Request) {
+	year := time.Now().Year()
+	if y := r.URL.Query().Get("year"); y != "" {
+		year, _ = strconv.Atoi(y)
+	}
+
+	forecast, err := h.planningService.BuildPlanningYear(r.Context(), strconv.Itoa(year))
+	if err != nil {
+		httpx.WriteServiceError(w, r, fmt.Errorf("failed to get forecast: %w", err))
+		return
+	}
+
+	plan, err := h.planningService.GetPlanYear(r.Context(), strconv.Itoa(year))
+	if err != nil {
+		httpx.WriteServiceError(w, r, fmt.Errorf("failed to get plan: %w", err))
+		return
+	}
+
+	res, err := h.service.GetMetrics(r.Context(), forecast, plan)
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, res)
 }
 
 func (h *Handler) GetKPIs(w http.ResponseWriter, r *http.Request) {

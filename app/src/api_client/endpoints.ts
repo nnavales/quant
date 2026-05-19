@@ -1,43 +1,55 @@
 import { api } from "./client";
 import type {
-    NetWorth,
-    Asset,
-    AssetReq,
-    Channel,
-    ChannelReq,
-    Account,
-    AccountReq,
-    Category,
-    CategoryReq,
-    Subcategory,
-    SubcategoryReq,
-    CategoryWithSubcategories,
-    ChannelWithAccounts,
-    TransactionRowDTO,
-    TransactionAggregateReq,
-    CancelInstallmentsReq,
-    EconomicSeriesResponse,
-    DollarMap,
-    LoanMap,
-    YieldMap,
-    FixedDepositsMap,
-    CountryRiskValue,
-    UserConfig,
-    UserConfigUpdate,
-    ConfigStatusResponse,
-    HistoricalEntry,
-    HistoricalEntryResponse,
-    HistoricalEntryCreate,
-    HistoricalFinanceReq,
-    BulkCreateHistoricalReq,
-    DashboardResponse,
-    KPIEvolutionResponse,
-    KPI,
-    Dimension,
-    DimensionSeriesResponse,
-    Preset,
-    PresetReq,
-} from "./types";
+     NetWorth,
+     Asset,
+     AssetReq,
+     Channel,
+     ChannelReq,
+     Account,
+     AccountReq,
+     Category,
+     CategoryReq,
+     Subcategory,
+     SubcategoryReq,
+     CategoryWithSubcategories,
+     ChannelWithAccounts,
+     TransactionRowDTO,
+     TransactionAggregateReq,
+     CancelInstallmentsReq,
+     EconomicSeriesResponse,
+     DollarMap,
+     LoanMap,
+     YieldMap,
+     FixedDepositsMap,
+     CountryRiskValue,
+     UserConfig,
+     UserConfigUpdate,
+     ConfigStatusResponse,
+     HistoricalEntry,
+     HistoricalEntryResponse,
+     HistoricalEntryCreate,
+     HistoricalFinanceReq,
+     BulkCreateHistoricalReq,
+     DashboardResponse,
+     KPIEvolutionResponse,
+     KPI,
+     Dimension,
+     DimensionSeriesResponse,
+     Preset,
+     PresetReq,
+     PlanningInput,
+     PlanningInputReq,
+     PlanningGoal,
+     PlanningGoalReq,
+     PlanningExchangeRate,
+     ExchangeRateReq,
+     PlanningConfig,
+     PlanningConfigReq,
+     PlanningYear,
+     PlanningGoalYear,
+     GenerateGoalsReq,
+     MetricComparisonDashboard,
+ } from "./types";
 
 export const channels = {
     list: () => api.get<Channel[]>("/channels"),
@@ -221,16 +233,17 @@ export const transactions = {
 };
 
 export const dashboard = {
-    getKPIs: () => api.get<DashboardResponse>("/dashboard"),
-    getKPIEvolution: (kpi: KPI) => api.get<KPIEvolutionResponse>(`/dashboard/kpi/${kpi}/evolution`),
-    getDimensionSeries: (dimension: Dimension, params?: Record<string, string>) => {
-        const searchParams = new URLSearchParams(params);
-        const query = searchParams.toString();
-        return api.get<DimensionSeriesResponse>(
-            `/dashboard/dimension/${dimension}${query ? `?${query}` : ""}`
-        );
-    },
-};
+     getKPIs: () => api.get<DashboardResponse>("/dashboard"),
+     getKPIEvolution: (kpi: KPI) => api.get<KPIEvolutionResponse>(`/dashboard/kpi/${kpi}/evolution`),
+     getDimensionSeries: (dimension: Dimension, params?: Record<string, string>) => {
+         const searchParams = new URLSearchParams(params);
+         const query = searchParams.toString();
+         return api.get<DimensionSeriesResponse>(
+             `/dashboard/dimension/${dimension}${query ? `?${query}` : ""}`
+         );
+     },
+     getMetrics: (year: number) => api.get<MetricComparisonDashboard>(`/dashboard/metrics?year=${year}`),
+ };
 
 // ============================================
 // Historical Endpoints
@@ -308,6 +321,43 @@ export const presets = {
     update: (id: string, data: Partial<PresetReq>) => api.patch<Preset>(`/presets/${id}`, data),
     delete: (id: string) => api.delete<void>(`/presets/${id}`),
     restore: (id: string) => api.post<void>(`/presets/${id}/restore`),
+};
+
+export const planning = {
+    inputs: {
+        list: (year: string) => api.get<PlanningInput[]>(`/planning/inputs?year=${year}`),
+        get: (id: string) => api.get<PlanningInput>(`/planning/inputs/${id}`),
+        create: (data: PlanningInputReq) => api.post<PlanningInput>("/planning/inputs", data),
+        update: (id: string, data: Partial<PlanningInputReq>) =>
+            api.patch<PlanningInput>(`/planning/inputs/${id}`, data),
+        delete: (id: string) => api.delete<void>(`/planning/inputs/${id}`),
+    },
+    goals: {
+        list: (year: string) => api.get<PlanningGoal[]>(`/planning/goals?year=${year}`),
+        get: (id: string) => api.get<PlanningGoal>(`/planning/goals/${id}`),
+        create: (data: PlanningGoalReq) => api.post<PlanningGoal>("/planning/goals", data),
+        update: (id: string, data: Partial<PlanningGoalReq>) =>
+            api.patch<PlanningGoal>(`/planning/goals/${id}`, data),
+        delete: (id: string) => api.delete<void>(`/planning/goals/${id}`),
+        generate: (data: GenerateGoalsReq) =>
+            api.post<PlanningGoal[]>("/planning/goals/generate", data),
+    },
+    exchangeRates: {
+        list: (year: string) => api.get<PlanningExchangeRate[]>(`/planning/exchange-rates?year=${year}`),
+        get: (date: string) => api.get<PlanningExchangeRate>(`/planning/exchange-rates/${date}`),
+        create: (data: ExchangeRateReq) =>
+            api.post<PlanningExchangeRate>("/planning/exchange-rates", data),
+        update: (date: string, data: ExchangeRateReq) =>
+            api.patch<PlanningExchangeRate>(`/planning/exchange-rates/${date}`, data),
+        delete: (date: string) => api.delete<void>(`/planning/exchange-rates/${date}`),
+    },
+    config: {
+        get: (year: string) => api.get<PlanningConfig>(`/planning/config/${year}`),
+        update: (year: string, data: PlanningConfigReq) =>
+            api.patch<PlanningConfig>(`/planning/config/${year}`, data),
+    },
+    forecast: (year: string) => api.get<PlanningYear>(`/planning/forecast/${year}`),
+    plan: (year: string) => api.get<PlanningGoalYear>(`/planning/plan/${year}`),
 };
 
 export const backup = {

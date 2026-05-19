@@ -1,10 +1,8 @@
 -- +goose Up
-CREATE TABLE planning_inputs (
+CREATE TABLE planning_goals (
     id TEXT PRIMARY KEY,
     year INTEGER NOT NULL,
-    description TEXT NOT NULL,
-    type TEXT NOT NULL, -- income/expense
-    currency TEXT NOT NULL,
+    metric TEXT NOT NULL,        -- income, expense
     january INTEGER NOT NULL DEFAULT 0,
     february INTEGER NOT NULL DEFAULT 0,
     march INTEGER NOT NULL DEFAULT 0,
@@ -18,8 +16,10 @@ CREATE TABLE planning_inputs (
     november INTEGER NOT NULL DEFAULT 0,
     december INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
-    updated_at TEXT
+    updated_at TEXT,
+
+    UNIQUE(year, metric)
 );
 
 -- +goose Down
-DROP TABLE planning_inputs;
+DROP TABLE planning_goals;

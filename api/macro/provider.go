@@ -2,6 +2,7 @@ package macro
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -192,4 +193,18 @@ func (p *Provider) LastSell(ctx context.Context) (float64, error) {
 
 	return series.Points[n-1].Value, nil
 
+}
+
+func (p *Provider) LastSellSource(ctx context.Context, src string) (float64, error) {
+	dollarMap, err := p.dollarsBankMap.Get(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	v, ok := dollarMap[src]
+	if !ok {
+		return 0, errors.New("dollar bank not found")
+	}
+
+	return v.Sell, err
 }

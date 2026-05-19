@@ -2,10 +2,11 @@ package transport
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
-	"time"
 
 	"github.com/nnavales/quant/api/backup"
 	"github.com/nnavales/quant/api/categories"
@@ -58,7 +59,7 @@ func NewServer(cfg config.Config, services *Services) *Server {
 	macroHandler := macro.NewHandler(services.MacroService)
 	usersHandler := users.NewHandler(services.UsersService)
 	historicalHandler := historical.NewHandler(services.HistoricalService)
-	dashboardHandler := dashboard.NewHandler(services.DashboardService)
+	dashboardHandler := dashboard.NewHandler(services.DashboardService, services.PlanningService)
 	networthHandler := networth.NewHandler(services.NetWorthService)
 	presetsHandler := presets.NewHandler(services.PresetsService)
 	planningHandler := planning.NewHandler(services.PlanningService)
@@ -87,30 +88,52 @@ func NewServer(cfg config.Config, services *Services) *Server {
 	}
 }
 
-func (sv *Server) Run(ctx context.Context, addr string) error {
+func (sv *Server) Run(addr string) error {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
-		return nil
+		return fmt.Errorf("failed to listen: %w", err)
 	}
 
-	port := ln.Addr().(*net.TCPAddr).Port
-	if err := config.EditConfigFile(config.Config{Port: port}); err != nil {
-		return err
+	tcpAddr, ok := ln.Addr().(*net.TCPAddr)
+	if !ok {
+		_ = ln.Close()
+		return fmt.Errorf("invalid tcp listener")
 	}
 
-	slog.Info("server.started", slog.String("addr", ln.Addr().String()))
+	cfg, err := config.ReadConfigFile()
+	if err != nil {
+		_ = ln.Close()
+		return fmt.Errorf("failed to load config: %w", err)
+	}
 
-	if err := sv.Serve(ln); err != nil && err != http.ErrServerClosed {
-		return err
+	cfg.Port = tcpAddr.Port
+
+	if err := config.EditConfigFile(cfg); err != nil {
+		_ = ln.Close()
+		return fmt.Errorf("failed to update config: %w", err)
+	}
+
+	slog.Info(
+		"server.started",
+		slog.String("addr", ln.Addr().String()),
+		slog.Int("port", tcpAddr.Port),
+	)
+
+	err = sv.Serve(ln)
+	if err != nil &&
+		!errors.Is(err, http.ErrServerClosed) {
+		return fmt.Errorf("serve.error: %w", err)
 	}
 
 	return nil
 }
 
 func (sv *Server) Shutdown(ctx context.Context) error {
-	shutdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
 	slog.Info("server.shutting_down")
-	return sv.Server.Shutdown(shutdownCtx)
+
+	if err := sv.Server.Shutdown(ctx); err != nil {
+		return fmt.Errorf("shutdown.error: %w", err)
+	}
+
+	return nil
 }

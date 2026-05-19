@@ -13,13 +13,16 @@ export interface KPICardProps {
     icon: React.ElementType;
     iconColor: string;
     compact?: boolean;
+    fixedHeight?: number;
     onClick?: () => void;
     prevValue?: number | null;
     changeLabel?: string;
-    directChange?: number;
     tooltip?: string;
     year?: number;
     currentMonth?: string;
+    changeDiff?: string;
+    changeDiffColor?: string;
+    changeDiffLabel?: string;
 }
 
 export function KPICard({
@@ -30,13 +33,16 @@ export function KPICard({
     icon: Icon,
     iconColor,
     compact = false,
+    fixedHeight,
     onClick,
     prevValue,
     changeLabel,
-    directChange,
     tooltip,
     year,
     currentMonth,
+    changeDiff,
+    changeDiffColor,
+    changeDiffLabel,
 }: KPICardProps) {
     const hasValue = value !== undefined && value !== null;
 
@@ -55,9 +61,9 @@ export function KPICard({
     const isPositive = change !== null && change >= 0;
 
     const padding = compact ? spacing[2] : spacing[4];
-    const fontSize = compact ? fonts.size.base : fonts.size["2xl"];
+    const fontSize = compact ? fonts.size.base : "25px";
     const iconSize = compact ? 14 : 18;
-    const labelSize = compact ? fonts.size.xs : fonts.size.xs;
+    const labelSize = compact ? fonts.size.xs : "12px";
 
     return (
         <div
@@ -67,11 +73,13 @@ export function KPICard({
                 borderRadius: radius.lg,
                 padding,
                 border: `1px solid ${colors.border}`,
+                borderLeft: `3px solid ${iconColor}`,
                 boxShadow: "none",
                 display: "flex",
                 flexDirection: "column",
                 cursor: onClick ? "pointer" : "default",
                 position: "relative",
+                height: fixedHeight ? `${fixedHeight}px` : undefined,
             }}
         >
             <div
@@ -86,6 +94,7 @@ export function KPICard({
                 <span
                     style={{
                         fontSize: labelSize,
+                        fontWeight: 600,
                         color: colors.fg.dim,
                         textTransform: "uppercase",
                         letterSpacing: "0.5px",
@@ -133,35 +142,35 @@ export function KPICard({
             <div
                 style={{
                     fontSize,
-                    fontWeight: 600,
+                    fontWeight: 700,
                     fontFamily: fonts.family.display,
                     color: colors.fg.base,
                 }}
             >
                 {displayValue}
             </div>
-            {change !== null && !compact && (
+            {(change !== null || changeDiff !== undefined || changeDiffLabel !== undefined) && !compact && (
                 <div
                     style={{
-                        fontSize: fonts.size.xs,
-                        color: isPositive ? colors.accent.green : colors.accent.red,
+                        fontSize: "11.5px",
                         marginTop: spacing[1],
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "2px",
                     }}
                 >
-                    {isPositive ? "▲" : "▼"} {Math.abs(change).toFixed(1)}%{" "}
-                    {changeLabel || "vs período anterior"}
-                </div>
-            )}
-            {directChange !== undefined && !compact && (
-                <div
-                    style={{
-                        fontSize: fonts.size.xs,
-                        color: directChange >= 0 ? colors.accent.green : colors.accent.red,
-                        marginTop: spacing[1],
-                    }}
-                >
-                    {directChange >= 0 ? "▲" : "▼"} {Math.abs(directChange * 100).toFixed(1)}%{" "}
-                    {changeLabel}
+                    {change !== null && (
+                        <div style={{ color: isPositive ? colors.accent.green : colors.accent.red }}>
+                            <span style={{ fontWeight: 500 }}>{isPositive ? "▲" : "▼"} {Math.abs(change).toFixed(1)}%</span>{" "}
+                            <span style={{ color: colors.fg.dim }}>{changeLabel || "vs período anterior"}</span>
+                        </div>
+                    )}
+                    {(changeDiff !== undefined || changeDiffLabel !== undefined) && (
+                        <div>
+                            {changeDiff !== undefined && <span style={{ color: changeDiffColor ?? colors.fg.dim }}>{changeDiff}</span>}
+                            {changeDiffLabel !== undefined && <span style={{ color: colors.fg.dim }}>{" "}{changeDiffLabel}</span>}
+                        </div>
+                    )}
                 </div>
             )}
         </div>

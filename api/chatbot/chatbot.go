@@ -1,6 +1,7 @@
 package chatbot
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/nnavales/quant/api/config"
@@ -14,7 +15,7 @@ import (
 -> Telegram consumes the message and makes the agent process it. After that it gives back an answer
 */
 
-func Start(cfg config.Config, svcTools *ServiceTools) {
+func Start(ctx context.Context, cfg config.Config, svcTools *ServiceTools) {
 	tools := NewTools(svcTools)
 	a := initAgent(cfg, tools)
 	bot := initBot(cfg, a)

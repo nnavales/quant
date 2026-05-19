@@ -201,22 +201,17 @@ func AppDataDir() (string, error) {
 	}
 
 	// Linux
-	if runtime.GOOS == "linux" {
+	switch runtime.GOOS {
+	case "linux":
 		if dir := os.Getenv("XDG_DATA_HOME"); dir != "" {
 			return filepath.Join(dir, app), nil
 		}
 		home, _ := os.UserHomeDir()
 		return filepath.Join(home, ".local", "share", app), nil
-	}
-
-	// macOS
-	if runtime.GOOS == "darwin" {
+	case "darwin":
 		home, _ := os.UserHomeDir()
 		return filepath.Join(home, "Library", "Application Support", app), nil
-	}
-
-	// Windows
-	if runtime.GOOS == "windows" {
+	case "windows":
 		if dir := os.Getenv("LOCALAPPDATA"); dir != "" {
 			return filepath.Join(dir, app), nil
 		}

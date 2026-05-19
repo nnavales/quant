@@ -34,7 +34,8 @@ const tdStyle: React.CSSProperties = {
     padding: `${spacing[1]} ${spacing[3]}`,
     verticalAlign: "middle",
     textAlign: "center",
-    border: `1px solid ${colors.fill}`,
+    borderBottom: `1px solid ${colors.fill}`,
+    borderLeft: `1px solid ${colors.fill}`,
     height: "48px",
 };
 

@@ -35,7 +35,7 @@ const formatMonth = (monthStr: string, useFullFormat: boolean, dateFormat: impor
 const formatAmount = (amount: string | undefined): string => {
     if (!amount) return "0";
     const num = parseFloat(amount);
-    return num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return num.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 const STORAGE_KEY = "quant-historical-month-format";
@@ -92,7 +92,8 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
         padding: `${spacing[1]} ${spacing[3]}`,
         verticalAlign: "middle",
         height: "48px",
-        border: `1px solid ${colors.fill}`,
+        borderBottom: `1px solid ${colors.fill}`,
+        borderLeft: `1px solid ${colors.fill}`,
     };
 
     const moneyStyle: React.CSSProperties = {
@@ -133,6 +134,8 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
             borderRadius: radius.lg,
             overflow: "hidden",
             backgroundColor: colors.bg.surface,
+            borderTop: `1px solid ${colors.fill}`,
+            borderRight: `1px solid ${colors.fill}`,
         }}>
             <table style={tableStyle}>
             <thead style={theadStyle}>
@@ -205,8 +208,8 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
                             </Tooltip>
                         </td>
                         <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("7%") }}>
-                            <Tooltip content={entry.exchange_rate % 1 === 0 ? String(entry.exchange_rate) : entry.exchange_rate.toFixed(2)}>
-                                <span style={{ fontFamily: fonts.family.display, fontSize: fonts.table.meta, color: colors.fg.dim, opacity: 0.7, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{entry.exchange_rate % 1 === 0 ? String(entry.exchange_rate) : entry.exchange_rate.toFixed(2)}</span>
+                            <Tooltip content={entry.exchange_rate % 1 === 0 ? String(entry.exchange_rate) : entry.exchange_rate.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}>
+                                <span style={{ fontFamily: fonts.family.display, fontSize: fonts.table.meta, color: colors.fg.dim, opacity: 0.7, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{entry.exchange_rate % 1 === 0 ? String(entry.exchange_rate) : entry.exchange_rate.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </Tooltip>
                         </td>
                         <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("10%") }}>

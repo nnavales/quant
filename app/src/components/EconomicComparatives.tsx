@@ -259,7 +259,7 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                                 alignItems: "center",
                                 gap: "4px",
                                 cursor: "pointer",
-                                color: colors.accent.teal,
+                                color: colors.accent.cyan,
                                 fontSize: fonts.size.sm,
                                 fontWeight: 500,
                                 textTransform: "uppercase",

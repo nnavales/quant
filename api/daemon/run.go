@@ -2,31 +2,20 @@ package daemon
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
+	"time"
 
-	"github.com/nnavales/quant/api/backup"
-	"github.com/nnavales/quant/api/categories"
-	"github.com/nnavales/quant/api/channels"
 	"github.com/nnavales/quant/api/chatbot"
 	"github.com/nnavales/quant/api/config"
-	"github.com/nnavales/quant/api/dashboard"
-	"github.com/nnavales/quant/api/db"
-	"github.com/nnavales/quant/api/entries"
-	"github.com/nnavales/quant/api/finance"
-	"github.com/nnavales/quant/api/historical"
-	"github.com/nnavales/quant/api/installments"
+	"github.com/nnavales/quant/api/daemon/runtime"
 	"github.com/nnavales/quant/api/logger"
-	"github.com/nnavales/quant/api/macro"
-	"github.com/nnavales/quant/api/networth"
-	"github.com/nnavales/quant/api/planning"
-	"github.com/nnavales/quant/api/presets"
-	"github.com/nnavales/quant/api/timeutils"
-	"github.com/nnavales/quant/api/transactions"
 	"github.com/nnavales/quant/api/transport"
-	"github.com/nnavales/quant/api/users"
 )
 
 // Run initializes and starts the Quant API server.
@@ -43,125 +32,76 @@ func Run(stopCh <-chan struct{}) error {
 	}
 	slog.SetDefault(log)
 
-	dbConn, err := db.New(cfg)
-	if err != nil {
-		return fmt.Errorf("database.error %w", err)
-	}
-	defer dbConn.Close()
-
-	clock := timeutils.RealClock{}
-
-	macroProvider, err := macro.NewEconomicProvider(context.Background())
-	if err != nil {
-		return fmt.Errorf("macro.provider.error: %w", err)
-	}
-
-	macroService := macro.NewService(macroProvider)
-
-	dashboardRepo := dashboard.NewSQLiteRepo(dbConn.DB)
-	dashboardService := dashboard.NewService(dashboardRepo)
-
-	transactionsRepo := transactions.NewSQLiteRepo(dbConn.DB)
-	transactionsService := transactions.NewService(clock, transactionsRepo)
-
-	installmentsRepo := installments.NewSQLiteRepo(dbConn.DB)
-	installmentsService := installments.NewService(clock, installmentsRepo)
-
-	entriesRepo := entries.NewSQLiteRepo(dbConn.DB)
-	entriesService := entries.NewService(clock, entriesRepo)
-
-	financeRepo := finance.NewSQLiteRepo(dbConn.DB)
-	historicalRepo := historical.NewSQLiteRepo(dbConn.DB)
-	historicalService := historical.NewService(clock, historicalRepo, transactionsRepo)
-	financeService := finance.NewService(clock, financeRepo, historicalRepo, installmentsRepo)
-
-	channelsRepo := channels.NewSQLiteRepo(dbConn.DB)
-	channelsService := channels.NewService(clock, channelsRepo)
-
-	categoriesRepo := categories.NewSQLiteRepo(dbConn.DB)
-	categoriesService := categories.NewService(clock, categoriesRepo)
-
-	usersRepo := users.NewRepo(dbConn.DB)
-	usersService := users.NewService(clock, usersRepo)
-
-	networthRepo := networth.NewRepo(dbConn.DB)
-	networthService := networth.NewService(networthRepo, clock, *macroProvider, *usersRepo)
-
-	planningRepo := planning.NewSQLiteRepo(dbConn.DB)
-	planningService := planning.NewService(clock, planningRepo)
-
-	presetsRepo := presets.NewSQLiteRepo(dbConn.DB)
-	presetsService := presets.NewService(clock, presetsRepo)
-
-	backupService := backup.NewService(dbConn.DB, financeRepo, networthRepo, historicalRepo, categoriesRepo, channelsRepo)
-
-	if err := users.SeedDefaults(context.Background(), usersRepo, clock); err != nil {
-		slog.Warn("user.config.seed.error", "err", err)
-	}
-
-	go chatbot.Start(cfg.Config, &chatbot.ServiceTools{
-		FinanceSvc:    financeService,
-		CategorySvc:   categoriesService,
-		ChannelSvc:    channelsService,
-		MacroSvc:      macroService,
-		DashboardSvc:  dashboardService,
-		UserSvc:       usersService,
-		HistoricalSvc: historicalService,
-		NetWorthSvc:   networthService,
-	})
-
-	services := &transport.Services{
-		FinanceService:      financeService,
-		TransactionsService: transactionsService,
-		EntriesService:      entriesService,
-		InstallmentsService: installmentsService,
-		ChannelsService:     channelsService,
-		CategoriesService:   categoriesService,
-		MacroService:        macroService,
-		UsersService:        usersService,
-		HistoricalService:   historicalService,
-		DashboardService:    dashboardService,
-		NetWorthService:     networthService,
-		PresetsService:      presetsService,
-		PlanningService:     planningService,
-		BackupService:       backupService,
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Handle OS signals
-	sigCtx, stop := signal.NotifyContext(ctx, os.Interrupt)
+	sigCtx, stop := signal.NotifyContext(
+		ctx,
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
 	defer stop()
 
-	// Also listen to the stop channel (for service.Stop)
 	if stopCh != nil {
 		go func() {
 			select {
 			case <-stopCh:
 				stop()
+
 			case <-sigCtx.Done():
 			}
 		}()
 	}
 
+	app, err := runtime.NewApp(sigCtx, cfg)
+	if err != nil {
+		return fmt.Errorf("runtime.error: %w", err)
+	}
+
+	defer app.Close()
+
+	go chatbot.Start(sigCtx, cfg.Config, &chatbot.ServiceTools{
+		FinanceSvc:    app.Services.FinanceService,
+		CategorySvc:   app.Services.CategoriesService,
+		ChannelSvc:    app.Services.ChannelsService,
+		MacroSvc:      app.Services.MacroService,
+		DashboardSvc:  app.Services.DashboardService,
+		UserSvc:       app.Services.UsersService,
+		HistoricalSvc: app.Services.HistoricalService,
+		NetWorthSvc:   app.Services.NetWorthService,
+	})
+
 	addr := "127.0.0.1:0"
+
 	if cfg.Mode == "service" {
 		addr = fmt.Sprintf("127.0.0.1:%d", cfg.Port)
 	}
 
-	httpServer := transport.NewServer(cfg.Config, services)
+	httpServer := transport.NewServer(cfg.Config, app.Services)
+
+	serverErrCh := make(chan error, 1)
 
 	go func() {
-		if err := httpServer.Run(sigCtx, addr); err != nil {
-			slog.Error("server.error", "err", err)
-			stop()
-		}
+		serverErrCh <- httpServer.Run(addr)
 	}()
 
-	<-sigCtx.Done()
+	select {
+	case <-sigCtx.Done():
 
-	if err := httpServer.Shutdown(context.Background()); err != nil {
+	case err := <-serverErrCh:
+		if err != nil &&
+			!errors.Is(err, http.ErrServerClosed) {
+			return fmt.Errorf("server.error: %w", err)
+		}
+	}
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(
+		context.Background(),
+		5*time.Second,
+	)
+	defer shutdownCancel()
+
+	if err := httpServer.Shutdown(shutdownCtx); err != nil {
 		return fmt.Errorf("server.shutdown.error: %w", err)
 	}
 

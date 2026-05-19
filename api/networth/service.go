@@ -106,21 +106,37 @@ func (s *Service) GetNetWorth(ctx context.Context) (*NetWorth, error) {
 		return nil, fmt.Errorf("failed to list assets: %w", err)
 	}
 
-	rate, err := s.provider.LastSell(ctx)
-	if err != nil {
-		defaultRate, err := s.userRepo.Get(ctx, "default_rate")
-		if err != nil {
-			return nil, fmt.Errorf("unable to get exchange rate from user settings or provider: %w", err)
+	var dollarVal float64
+
+	if chosenDollar, err := s.userRepo.Get(ctx, "dollar_source"); err == nil {
+		if source, ok := chosenDollar.(string); ok && source != "" {
+			dollarVal, err = s.provider.LastSellSource(ctx, source)
+		}
+	}
+
+	if dollarVal == 0 {
+		dollarVal, err = s.provider.LastSell(ctx)
+	}
+
+	if err != nil || dollarVal == 0 {
+		defaultRate, userErr := s.userRepo.Get(ctx, "default_rate")
+		if userErr != nil {
+			return nil, fmt.Errorf("unable to get exchange rate from provider or user settings: %w", err)
 		}
 
-		strRate := defaultRate.(string)
-		rate, err = strconv.ParseFloat(strRate, 64)
+		strRate, ok := defaultRate.(string)
+		if !ok {
+			return nil, fmt.Errorf("default_rate is not a string")
+		}
+
+		dollarVal, err = strconv.ParseFloat(strRate, 64)
 		if err != nil {
 			return nil, fmt.Errorf("unable to parse exchange rate: %w", err)
 		}
 	}
 
-	nw := calcuateNetWorth(s.clock, assets, rate)
+	nw := calcuateNetWorth(s.clock, assets, dollarVal)
 	nw.Assets = assets
+
 	return nw, nil
 }

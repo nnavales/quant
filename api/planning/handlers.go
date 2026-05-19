@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/nnavales/quant/api/money"
 	"github.com/nnavales/quant/api/timeutils"
 	"github.com/nnavales/quant/api/transport/httpx"
 )
@@ -192,7 +193,181 @@ func (h *Handler) DeleteRate(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *Handler) GetPlanningYear(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateGoal(w http.ResponseWriter, r *http.Request) {
+	req, err := httpx.DecodeJSON[PlanningGoalReq](r.Body)
+	if err != nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid request", err)
+		return
+	}
+
+	goal, err := h.service.CreateGoal(r.Context(), req)
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusCreated, goal)
+}
+
+func (h *Handler) GetGoal(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		httpx.WriteError(w, r, http.StatusBadRequest, "id required", nil)
+		return
+	}
+
+	goal, err := h.service.GetGoal(r.Context(), id)
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, goal)
+}
+
+func (h *Handler) ListGoalsByYear(w http.ResponseWriter, r *http.Request) {
+	yearStr := r.URL.Query().Get("year")
+	if yearStr == "" {
+		yearStr = strconv.Itoa(time.Now().Year())
+	}
+
+	goals, err := h.service.ListGoalsByYear(r.Context(), yearStr)
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, goals)
+}
+
+func (h *Handler) UpdateGoal(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		httpx.WriteError(w, r, http.StatusBadRequest, "id required", nil)
+		return
+	}
+
+	req, err := httpx.DecodeJSON[PlanningGoalReq](r.Body)
+	if err != nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid request", err)
+		return
+	}
+
+	goal, err := h.service.UpdateGoal(r.Context(), id, req)
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, goal)
+}
+
+func (h *Handler) DeleteGoal(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		httpx.WriteError(w, r, http.StatusBadRequest, "id required", nil)
+		return
+	}
+
+	err := h.service.DeleteGoal(r.Context(), id)
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+type GenerateGoalsReq struct {
+	Year         int         `json:"year"`
+	ExtraIncome  money.Money `json:"extra_income"`
+	ExtraExpense money.Money `json:"extra_expense"`
+}
+
+func (h *Handler) GenerateGoals(w http.ResponseWriter, r *http.Request) {
+	req, err := httpx.DecodeJSON[GenerateGoalsReq](r.Body)
+	if err != nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid request", err)
+		return
+	}
+
+	err = h.service.GenerateGoalsFromForecast(r.Context(), req.Year, GoalAdjustment{
+		ExtraIncome:  req.ExtraIncome,
+		ExtraExpense: req.ExtraExpense,
+	})
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+
+	goals, err := h.service.ListGoalsByYear(r.Context(), strconv.Itoa(req.Year))
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+
+	httpx.WriteJSON(w, http.StatusOK, goals)
+}
+
+func (h *Handler) GetPlanningConfig(w http.ResponseWriter, r *http.Request) {
+	yearStr := r.PathValue("year")
+	if yearStr == "" {
+		httpx.WriteError(w, r, http.StatusBadRequest, "year required", nil)
+		return
+	}
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid year", err)
+		return
+	}
+
+	cfg, err := h.service.GetPlanningConfig(r.Context(), year)
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, cfg)
+}
+
+func (h *Handler) SetPlanningConfig(w http.ResponseWriter, r *http.Request) {
+	yearStr := r.PathValue("year")
+	if yearStr == "" {
+		httpx.WriteError(w, r, http.StatusBadRequest, "year required", nil)
+		return
+	}
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid year", err)
+		return
+	}
+
+	req, err := httpx.DecodeJSON[PlanningConfigReq](r.Body)
+	if err != nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid request", err)
+		return
+	}
+
+	cfg, err := h.service.SetPlanningConfig(r.Context(), year, req)
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, cfg)
+}
+
+func (h *Handler) GetPlanYear(w http.ResponseWriter, r *http.Request) {
+	yearStr := r.PathValue("year")
+	if yearStr == "" {
+		httpx.WriteError(w, r, http.StatusBadRequest, "year required", nil)
+		return
+	}
+
+	p, err := h.service.GetPlanYear(r.Context(), yearStr)
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, p)
+}
+
+func (h *Handler) GetForecastYear(w http.ResponseWriter, r *http.Request) {
 	yearStr := r.PathValue("year")
 	if yearStr == "" {
 		httpx.WriteError(w, r, http.StatusBadRequest, "year required", nil)

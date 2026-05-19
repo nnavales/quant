@@ -10,6 +10,11 @@ const monthNames = [
     "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
 ];
 
+const MONTHS_FULL = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
 const getHeatmapColor = (value: number, maxValue: number, isIncome: boolean): string => {
     if (value === 0 || maxValue === 0) return colors.bg.surface;
 
@@ -240,7 +245,24 @@ export function Heatmap({
                         ))}
                     </tr>
                 </thead>
-                <tbody>
+            </table>
+            <div style={{ overflow: "auto", flex: 1, minHeight: 0, backgroundColor: colors.bg.surface }}>
+                <table
+                    style={{
+                        width: "100%",
+                        borderCollapse: "separate",
+                        borderSpacing: "2px",
+                        fontSize: fonts.table.body,
+                        tableLayout: "fixed",
+                    }}
+                >
+                    <colgroup>
+                        <col style={{ width: "140px", minWidth: "140px" }} />
+                        {months.map((month) => (
+                            <col key={month} />
+                        ))}
+                    </colgroup>
+                    <tbody>
                     {categories.map((category) => (
                         <tr key={category}>
                             <td
@@ -265,27 +287,27 @@ export function Heatmap({
                                 const intensity = maxValue > 0 ? value / maxValue : 0;
 
                                 return (
-                                    <td
-                                        key={month}
-                                        style={{
-                                            textAlign: "center",
-                                            padding: `${spacing[2]} ${spacing[1]}`,
-                                            backgroundColor: getHeatmapColor(
-                                                value,
-                                                maxValue,
-                                                isIncome
-                                            ),
-                                            color:
-                                                intensity > 0.5
-                                                    ? colors.bg.base
-                                                    : colors.fg.dim,
-                                            fontFamily: fonts.family.display,
-                                            fontSize: fonts.table.meta,
-                                            fontWeight: 500,
-                                            borderRadius: radius.sm,
-                                            cursor: "pointer",
-                                            transition: "background-color 0.2s, transform 0.15s",
-                                        }}
+                                <td
+                                    key={month}
+                                    style={{
+                                        textAlign: "center",
+                                        padding: `${spacing[2]} ${spacing[1]}`,
+                                        backgroundColor: getHeatmapColor(
+                                            value,
+                                            maxValue,
+                                            isIncome
+                                        ),
+                                        color:
+                                            intensity > 0.5
+                                                ? colors.bg.base
+                                                : colors.fg.dim,
+                                        fontFamily: fonts.family.display,
+                                        fontSize: fonts.table.meta,
+                                        fontWeight: 500,
+                                        borderRadius: radius.sm,
+                                        cursor: "pointer",
+                                        transition: "background-color 0.2s, transform 0.15s",
+                                    }}
                                         onMouseEnter={(e) =>
                                             handleMouseEnter(
                                                 e,
@@ -315,6 +337,7 @@ export function Heatmap({
                     ))}
                 </tbody>
             </table>
+            </div>
 
             {hoveredCell && hoveredCell.composition && hoveredCell.composition.length > 0 && (
                 <div
@@ -326,11 +349,11 @@ export function Heatmap({
                         backgroundColor: colors.bg.header,
                         border: `1px solid ${colors.border}`,
                         borderRadius: radius.md,
-                        padding: `${spacing[2]} ${spacing[3]}`,
+                        padding: `${spacing[1]} ${spacing[2]}`,
                         outline: `1px solid ${colors.fill}`,
                         zIndex: 1000,
-                        minWidth: "200px",
-                        maxWidth: "380px",
+                        minWidth: "180px",
+                        maxWidth: "300px",
                         pointerEvents: "none",
                         wordBreak: "break-word",
                         WebkitFontSmoothing: "antialiased",
@@ -338,56 +361,62 @@ export function Heatmap({
                         lineHeight: 1.5,
                     }}
                 >
-                    <div
-                        style={{
+                    <div style={{
+                        marginBottom: spacing[1],
+                        borderBottom: `1px solid ${colors.border}`,
+                        paddingBottom: spacing[1],
+                    }}>
+                        <div style={{
+                            fontWeight: 600,
+                            fontSize: "13px",
+                            color: colors.fg.base,
+                            lineHeight: 1.3,
+                        }}>
+                            {hoveredCell.category}
+                        </div>
+                        <div style={{
+                            fontSize: "11px",
+                            color: colors.fg.dim,
+                            marginTop: "1px",
+                            lineHeight: 1.3,
+                        }}>
+                            {MONTHS_FULL[parseInt(hoveredCell.month.split("-")[1]) - 1]}
+                        </div>
+                    </div>
+                    <div style={{
+                        fontSize: "12.5px",
+                        color: colors.fg.dim,
+                        marginBottom: spacing[1],
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: spacing[2],
+                    }}>
+                        <span style={{ lineHeight: 1.4 }}>Total</span>
+                        <span style={{
+                            fontFamily: fonts.family.display,
                             fontWeight: 600,
                             fontSize: "12.5px",
-                            marginBottom: spacing[2],
                             color: colors.fg.base,
-                            borderBottom: `1px solid ${colors.border}`,
-                            paddingBottom: spacing[2],
-                            lineHeight: 1.4,
-                        }}
-                    >
-                        {hoveredCell.category} —{" "}
-                        {monthNames[parseInt(hoveredCell.month.split("-")[1]) - 1]}
-                    </div>
-                    <div
-                        style={{
-                            fontSize: "12.5px",
-                            color: colors.fg.dim,
-                            marginBottom: spacing[2],
-                        }}
-                    >
-                        Total:{" "}
-                        <span
-                            style={{
-                                fontFamily: fonts.family.display,
-                                fontWeight: 600,
-                                fontSize: "12.5px",
-                                color: colors.fg.base,
-                            }}
-                        >
+                            whiteSpace: "nowrap",
+                            textAlign: "right",
+                        }}>
                             {formatCurrency(hoveredCell.value)}
                         </span>
                     </div>
                     {hoveredCell.composition.length > 0 && (
-                        <div
-                            style={{
-                                borderTop: `1px solid ${colors.border}`,
-                                paddingTop: spacing[2],
-                                marginTop: spacing[2],
-                            }}
-                        >
-                            <div
-                                style={{
-                                    fontSize: "12.5px",
-                                    color: colors.fg.dim,
-                                    marginBottom: spacing[1],
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.05em",
-                                }}
-                            >
+                        <div style={{
+                            borderTop: `1px solid ${colors.border}`,
+                            paddingTop: spacing[1],
+                            marginTop: spacing[1],
+                        }}>
+                            <div style={{
+                                fontSize: "11px",
+                                color: colors.fg.dim,
+                                marginBottom: spacing[1],
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em",
+                            }}>
                                 Composición
                             </div>
                             {hoveredCell.composition.map((comp, i) => (
@@ -398,28 +427,24 @@ export function Heatmap({
                                         justifyContent: "space-between",
                                         alignItems: "center",
                                         fontSize: "12.5px",
-                                        padding: `${spacing[1]} 0`,
-                                        gap: spacing[3],
+                                        padding: "1px 0",
+                                        gap: spacing[2],
                                     }}
                                 >
-                                    <span
-                                        style={{
-                                            color: colors.fg.base,
-                                            lineHeight: 1.4,
-                                            flex: 1,
-                                        }}
-                                    >
+                                    <span style={{
+                                        color: colors.fg.dim,
+                                        lineHeight: 1.4,
+                                        flex: 1,
+                                    }}>
                                         {comp.key}
                                     </span>
-                                    <span
-                                        style={{
-                                            fontFamily: fonts.family.display,
-                                            fontWeight: 500,
-                                            color: colors.fg.dim,
-                                            whiteSpace: "nowrap",
-                                            textAlign: "right",
-                                        }}
-                                    >
+                                    <span style={{
+                                        fontFamily: fonts.family.display,
+                                        fontWeight: 600,
+                                        color: colors.fg.base,
+                                        whiteSpace: "nowrap",
+                                        textAlign: "right",
+                                    }}>
                                         {formatCurrency(comp.value)}
                                     </span>
                                 </div>

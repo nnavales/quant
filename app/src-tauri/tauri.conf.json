@@ -17,6 +17,8 @@
                 "height": 600,
                 "maximized": true,
                 "decorations": false,
+                "resizable": true,
+                "fullscreen": false,
                 "backgroundColor": "#181A1C"
             }
         ],
@@ -32,10 +34,7 @@
     "bundle": {
         "active": true,
         "targets": "all",
-        "externalBin": [
-            "binaries/quant-api",
-            "binaries/quant-cli"
-        ],
+        "externalBin": ["binaries/quant-api", "binaries/quant-cli"],
         "icon": [
             "icons/32x32.png",
             "icons/128x128.png",
@@ -45,7 +44,7 @@
         ],
         "windows": {
             "nsis": {
-                "installMode": "perMachine"
+                "installMode": "currentUser"
             }
         }
     }

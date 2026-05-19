@@ -29,6 +29,8 @@ export const fonts = {
     table: {
         // Column headers
         header: "12px",
+        // Compact table text (metrics table)
+        sm: "13px",
         // Main text in rows (names, descriptions)
         body: "13.5px",
         // Money amounts in transaction rows
@@ -36,7 +38,7 @@ export const fonts = {
         // Badges (EGRESO/INGRESO, ARS/USD)
         badge: "12px",
         // Secondary metadata (dates, categories, subcategories)
-        meta: "11.5px",
+        meta: "12.5px",
         // Prominent amounts (Net Worth list)
         lg: "14px",
         // Large KPI values

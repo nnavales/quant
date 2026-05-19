@@ -49,6 +49,8 @@ export function TransactionList({ transactions, sort, order, onSort, onDelete, o
             borderRadius: radius.lg,
             overflow: "hidden",
             backgroundColor: colors.bg.surface,
+            borderTop: `1px solid ${colors.fill}`,
+            borderRight: `1px solid ${colors.fill}`,
         }}>
             <table style={tableStyle}>
             <thead style={theadStyle}>

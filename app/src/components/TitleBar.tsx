@@ -1,8 +1,6 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { colors } from "@/styles/colors";
-
-const appWindow = getCurrentWindow();
 
 const titleBarStyle: React.CSSProperties = {
     display: "flex",
@@ -12,18 +10,28 @@ const titleBarStyle: React.CSSProperties = {
     flexShrink: 0,
     backgroundColor: colors.bg.base,
     userSelect: "none",
-    paddingRight: "2px",
 };
 
-const dragRegionStyle: React.CSSProperties = {
-    height: "100%",
+const dragRegionStyle = {
     flex: 1,
-};
+    height: "100%",
+    WebkitAppRegion: "drag",
+} as React.CSSProperties;
 
-const winBtnStyle: React.CSSProperties = {
+const buttonContainerStyle = {
+    display: "flex",
+    alignItems: "stretch",
+    height: "100%",
+    position: "relative",
+    zIndex: 1000,
+    WebkitAppRegion: "no-drag",
+} as React.CSSProperties;
+
+const winBtnStyle = {
     width: "46px",
     height: "100%",
     border: "none",
+    outline: "none",
     backgroundColor: "transparent",
     color: colors.fg.dim,
     cursor: "pointer",
@@ -31,54 +39,95 @@ const winBtnStyle: React.CSSProperties = {
     alignItems: "center",
     justifyContent: "center",
     fontSize: "11px",
-    transition: "background-color 0.1s",
-};
+    transition: "background-color 120ms ease",
+    WebkitAppRegion: "no-drag",
+} as React.CSSProperties;
 
 export function TitleBar() {
+    const appWindow = getCurrentWindow();
+
     const [isMaximized, setIsMaximized] = useState(false);
 
     useEffect(() => {
-        appWindow.isMaximized().then(setIsMaximized);
-        const unlisten = appWindow.onResized(() => {
-            appWindow.isMaximized().then(setIsMaximized);
-        });
-        return () => {
-            unlisten.then((fn) => fn());
+        let mounted = true;
+        let unlistenResize: (() => void) | undefined;
+
+        const syncMaximized = async () => {
+            try {
+                const maximized = await appWindow.isMaximized();
+
+                if (mounted) {
+                    setIsMaximized(maximized);
+                }
+            } catch {
+                // ignore
+            }
         };
-    }, []);
+
+        syncMaximized();
+
+        appWindow.onResized(syncMaximized).then((fn) => {
+            unlistenResize = fn;
+        });
+
+        return () => {
+            mounted = false;
+            unlistenResize?.();
+        };
+    }, [appWindow]);
 
     return (
         <div style={titleBarStyle}>
             <div data-tauri-drag-region style={dragRegionStyle} />
-            <div style={{ display: "flex", height: "100%" }}>
+
+            <div style={buttonContainerStyle}>
                 <button
+                    type="button"
                     style={winBtnStyle}
-                    onClick={() => appWindow.minimize()}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                    onClick={async () => {
+                        await appWindow.minimize();
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = colors.fill;
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                    }}
                     title="Minimizar"
                 >
                     &#x2014;
                 </button>
+
                 <button
+                    type="button"
                     style={{
                         ...winBtnStyle,
                         fontSize: "12px",
                         fontWeight: 100,
                     }}
-                    onClick={() => appWindow.toggleMaximize()}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                    onClick={async () => {
+                        await appWindow.toggleMaximize();
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = colors.fill;
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                    }}
                     title={isMaximized ? "Restaurar" : "Maximizar"}
                 >
                     {isMaximized ? "\u29C9" : "\u25A1"}
                 </button>
+
                 <button
+                    type="button"
                     style={winBtnStyle}
-                    onClick={() => appWindow.close()}
+                    onClick={async () => {
+                        await appWindow.close();
+                    }}
                     onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = "#c42b1c";
-                        e.currentTarget.style.color = "#fff";
+                        e.currentTarget.style.color = "#ffffff";
                     }}
                     onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = "transparent";

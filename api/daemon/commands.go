@@ -15,11 +15,6 @@ func Install() error {
 		return fmt.Errorf("daemon install is not available in dev mode")
 	}
 
-	updatedCfg := config.Config{Mode: "service"}
-	if err := config.EditConfigFile(updatedCfg); err != nil {
-		return fmt.Errorf("failed to update config file: %w", err)
-	}
-
 	svc, err := openService()
 	if err != nil {
 		return fmt.Errorf("failed to create service: %w", err)
@@ -29,7 +24,13 @@ func Install() error {
 		return fmt.Errorf("failed to install service: %w", err)
 	}
 
+	updatedCfg := config.Config{Mode: "service"}
+	if err := config.EditConfigFile(updatedCfg); err != nil {
+		return fmt.Errorf("failed to update config file: %w", err)
+	}
+
 	if err := svc.Start(); err != nil {
+		_ = svc.Uninstall()
 		return fmt.Errorf("failed to start service: %w", err)
 	}
 
@@ -50,6 +51,10 @@ func Uninstall() error {
 	if err := svc.Uninstall(); err != nil {
 		return fmt.Errorf("failed to uninstall service: %w", err)
 	}
+
+	_ = config.EditConfigFile(config.Config{
+		Mode: "user",
+	})
 
 	fmt.Println("Quant service uninstalled.")
 	fmt.Println("Note: config and data were not removed.")
@@ -123,6 +128,8 @@ func Logs() error {
 	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+
 	for scanner.Scan() {
 		fmt.Println(scanner.Text())
 	}

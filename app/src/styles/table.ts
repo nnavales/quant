@@ -5,7 +5,8 @@ import { fonts } from "@/styles/fonts";
 export const tableStyle: React.CSSProperties = {
     width: "100%",
     tableLayout: "fixed",
-    borderCollapse: "collapse",
+    borderCollapse: "separate",
+    borderSpacing: 0,
     fontSize: fonts.table.body,
     backgroundColor: colors.bg.surface,
 };
@@ -30,7 +31,8 @@ export const thStyle = (
     cursor: sortable ? "pointer" : "default",
     userSelect: sortable ? "none" : "auto",
     transition: "color 0.15s",
-    border: `1px solid ${colors.fill}`,
+    borderBottom: `1px solid ${colors.fill}`,
+    borderLeft: `1px solid ${colors.fill}`,
 });
 
 export const sortableThStyle: React.CSSProperties = {

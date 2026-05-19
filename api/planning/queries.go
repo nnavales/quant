@@ -4,24 +4,46 @@ const (
 	QueryCreateInput = `
 		INSERT INTO planning_inputs (
 			id,
-			month,
+			year,
 			description,
 			type,
-			amount,
 			currency,
+			january,
+			february,
+			march,
+			april,
+			may,
+			june,
+			july,
+			august,
+			september,
+			october,
+			november,
+			december,
 			created_at
 		)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	QueryGetInputByID = `
 		SELECT
 			id,
-			month,
+			year,
 			description,
 			type,
-			amount,
 			currency,
+			january,
+			february,
+			march,
+			april,
+			may,
+			june,
+			july,
+			august,
+			september,
+			october,
+			november,
+			december,
 			created_at,
 			updated_at
 		FROM planning_inputs
@@ -31,40 +53,72 @@ const (
 	QueryListInputs = `
 		SELECT
 			id,
-			month,
+			year,
 			description,
 			type,
-			amount,
 			currency,
+			january,
+			february,
+			march,
+			april,
+			may,
+			june,
+			july,
+			august,
+			september,
+			october,
+			november,
+			december,
 			created_at,
 			updated_at
 		FROM planning_inputs
-		ORDER BY month ASC, created_at ASC
+		ORDER BY year DESC, description ASC
 	`
 
 	QueryListInputsByYear = `
 		SELECT
 			id,
-			month,
+			year,
 			description,
 			type,
-			amount,
 			currency,
+			january,
+			february,
+			march,
+			april,
+			may,
+			june,
+			july,
+			august,
+			september,
+			october,
+			november,
+			december,
 			created_at,
 			updated_at
 		FROM planning_inputs
-		WHERE substr(month, 1, 4) = ?
-		ORDER BY month ASC, created_at ASC
+		WHERE year = ?
+		ORDER BY description ASC
 	`
 
 	QueryUpdateInput = `
 		UPDATE planning_inputs
 		SET
-			month = ?,
 			description = ?,
 			type = ?,
-			amount = ?,
 			currency = ?,
+			january = ?,
+			february = ?,
+			march = ?,
+			april = ?,
+			may = ?,
+			june = ?,
+			july = ?,
+			august = ?,
+			september = ?,
+			october = ?,
+			november = ?,
+			december = ?,
 			updated_at = ?
 		WHERE id = ?
 	`
@@ -105,5 +159,113 @@ const (
 	QueryDeleteRate = `
 		DELETE FROM planning_exchange_rates
 		WHERE month = ?
+	`
+
+	QueryCreateGoal = `
+		INSERT INTO planning_goals (
+			id,
+			year,
+			metric,
+			january,
+			february,
+			march,
+			april,
+			may,
+			june,
+			july,
+			august,
+			september,
+			october,
+			november,
+			december,
+			created_at
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`
+
+	QueryGetGoalByID = `
+		SELECT
+			id,
+			year,
+			metric,
+			january,
+			february,
+			march,
+			april,
+			may,
+			june,
+			july,
+			august,
+			september,
+			october,
+			november,
+			december,
+			created_at,
+			updated_at
+		FROM planning_goals
+		WHERE id = ?
+	`
+
+	QueryListGoalsByYear = `
+		SELECT
+			id,
+			year,
+			metric,
+			january,
+			february,
+			march,
+			april,
+			may,
+			june,
+			july,
+			august,
+			september,
+			october,
+			november,
+			december,
+			created_at,
+			updated_at
+		FROM planning_goals
+		WHERE year = ?
+		ORDER BY metric ASC
+	`
+
+	QueryUpdateGoal = `
+		UPDATE planning_goals
+		SET
+			metric = ?,
+			january = ?,
+			february = ?,
+			march = ?,
+			april = ?,
+			may = ?,
+			june = ?,
+			july = ?,
+			august = ?,
+			september = ?,
+			october = ?,
+			november = ?,
+			december = ?,
+			updated_at = ?
+		WHERE id = ?
+	`
+
+	QueryDeleteGoal = `
+		DELETE FROM planning_goals
+		WHERE id = ?
+	`
+
+	QueryGetPlanningConfig = `
+		SELECT year, initial_capital, updated_at
+		FROM planning_config
+		WHERE year = ?
+	`
+
+	QueryUpsertPlanningConfig = `
+		INSERT INTO planning_config (year, initial_capital, updated_at)
+		VALUES (?, ?, ?)
+		ON CONFLICT(year) DO UPDATE SET
+			initial_capital = excluded.initial_capital,
+			updated_at = excluded.updated_at
 	`
 )

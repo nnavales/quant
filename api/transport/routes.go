@@ -107,6 +107,7 @@ func addRoutes(mux *http.ServeMux,
 	mux.HandleFunc("GET /historical-entries", h.ListHistoricalEntries)
 
 	mux.HandleFunc("GET /dashboard", dh.GetKPIs)
+	mux.HandleFunc("GET /dashboard/metrics", dh.GetMetrics)
 	mux.HandleFunc("GET /dashboard/kpi/{kpi}/evolution", dh.GetKPIEvolution)
 	mux.HandleFunc("GET /dashboard/dimension/{dimension}", dh.GetDimensionSeries)
 
@@ -141,13 +142,23 @@ func addRoutes(mux *http.ServeMux,
 	mux.HandleFunc("PATCH /planning/inputs/{id}", pl.UpdateInput)
 	mux.HandleFunc("DELETE /planning/inputs/{id}", pl.DeleteInput)
 
+	mux.HandleFunc("POST /planning/goals", pl.CreateGoal)
+	mux.HandleFunc("GET /planning/goals/{id}", pl.GetGoal)
+	mux.HandleFunc("GET /planning/goals", pl.ListGoalsByYear)
+	mux.HandleFunc("PATCH /planning/goals/{id}", pl.UpdateGoal)
+	mux.HandleFunc("DELETE /planning/goals/{id}", pl.DeleteGoal)
+
 	mux.HandleFunc("POST /planning/exchange-rates", pl.CreateRate)
 	mux.HandleFunc("GET /planning/exchange-rates/{date}", pl.GetRateByDate)
 	mux.HandleFunc("GET /planning/exchange-rates", pl.ListRatesByYear)
 	mux.HandleFunc("PATCH /planning/exchange-rates/{date}", pl.UpdateRate)
 	mux.HandleFunc("DELETE /planning/exchange-rates/{date}", pl.DeleteRate)
 
-	mux.HandleFunc("GET /planning/year/{year}", pl.GetPlanningYear)
+	mux.HandleFunc("POST /planning/goals/generate", pl.GenerateGoals)
+	mux.HandleFunc("GET /planning/config/{year}", pl.GetPlanningConfig)
+	mux.HandleFunc("PATCH /planning/config/{year}", pl.SetPlanningConfig)
+	mux.HandleFunc("GET /planning/plan/{year}", pl.GetPlanYear)
+	mux.HandleFunc("GET /planning/forecast/{year}", pl.GetForecastYear)
 }
 
 func handlerHealthz(w http.ResponseWriter, r *http.Request) {

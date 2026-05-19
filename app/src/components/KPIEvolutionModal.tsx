@@ -10,9 +10,7 @@ import { CustomSelect } from "@/components/ui/Select";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import ReactECharts from "echarts-for-react";
-import type { KPI } from "@/api_client/types";
-
-/* ──────────── Simple Bar Chart Modal (DashboardPage) ──────────── */
+import type { KPI, MetricCell } from "@/api_client/types";
 
 const KPI_LABELS: Record<string, string> = {
     capital_total: "Balance",
@@ -156,6 +154,7 @@ const KPI_MODAL_KPIS: Record<string, KPI> = {
     "Gastos YTD": "expenses_ytd",
     "Ahorro Neto YTD": "net_savings_ytd",
     "Balance Total": "total_capital",
+    "Patrimonio Neto": "total_capital",
 };
 
 type ViewMode = "ytd" | "monthly" | "current_year";
@@ -181,12 +180,28 @@ const formatCompactCurrency = (value: number): string => {
 interface KPIEvolutionModalProps {
     kpi: string;
     onClose: () => void;
+    metricMonths?: MetricCell[];
+    accentColor?: string;
 }
 
-export function KPIEvolutionModal({ kpi, onClose }: KPIEvolutionModalProps) {
+export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: KPIEvolutionModalProps) {
     const { data: dashboardData, isLoading, isError } = useDashboard();
     const [viewMode, setViewMode] = useState<ViewMode>("current_year");
     const [metricType, setMetricType] = useState<MetricType>("total");
+    const isMultiSeries = !!metricMonths && metricMonths.length > 0;
+    const formatX = (v: string) => {
+        if (isMultiSeries || viewMode === "ytd") return v;
+        const p = v.split("-");
+        if (p.length === 2) {
+            const m = parseInt(p[1]);
+            if (m >= 1 && m <= 12) {
+                const mn = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][m - 1];
+                if (viewMode === "monthly") return `${mn} '${p[0].slice(-2)}`;
+                return mn;
+            }
+        }
+        return v;
+    };
     const kpiKey = KPI_MODAL_KPIS[kpi];
     const currentYear = new Date().getFullYear();
 
@@ -274,11 +289,43 @@ export function KPIEvolutionModal({ kpi, onClose }: KPIEvolutionModalProps) {
 
     const chartColor = colorMap[config.key] || colors.accent.cyan;
 
+    const seriesColors: Record<string, string> = {
+        Real: accentColor ?? chartColor,
+        FCST: colors.accent.orange,
+        Plan: colors.accent.purple,
+        LY: colors.fg.dim,
+    };
+
+    const multiSeriesMonths = isMultiSeries
+        ? metricMonths.map((_, i) => {
+              const d = new Date();
+              d.setMonth(i);
+              const name = d.toLocaleDateString("es-AR", { month: "short" }).replace(".", "");
+              return name.charAt(0).toUpperCase() + name.slice(1);
+          })
+        : [];
+    const multiSeriesOptions = isMultiSeries
+        ? (["Real", "FCST", "Plan", "LY"] as const).map((name) => ({
+              name,
+              data: metricMonths.map((m) => {
+                  if (name === "Real") return m.real ?? null;
+                  if (name === "FCST") return m.fcst ?? null;
+                  if (name === "Plan") return m.plan ?? null;
+                  return m.ly ?? null;
+              }),
+              color: seriesColors[name],
+          }))
+        : [];
+
     const titleMap: Record<string, string> = {
         "Ingresos YTD": "Ingresos",
         "Gastos YTD": "Gastos",
         "Ahorro Neto YTD": "Ahorro Neto",
         "Balance Total": "Balance",
+        "Capital": "Evolución de Capital",
+        "Ahorro": "Evolución del Ahorro",
+        "Egresos": "Evolución de Egresos",
+        "Ingresos": "Evolución de Ingresos",
     };
     const title = titleMap[kpi] || kpi;
 
@@ -302,29 +349,22 @@ export function KPIEvolutionModal({ kpi, onClose }: KPIEvolutionModalProps) {
                     style={{
                         display: "flex",
                         justifyContent: "space-between",
-                        alignItems: "center",
+                        alignItems: "flex-start",
                         marginBottom: spacing[4],
                     }}
                 >
-                    <div>
-                        <h2
-                            style={{
-                                fontSize: fonts.size.lg,
-                                fontWeight: 600,
-                                color: colors.fg.base,
-                            }}
-                        >
-                            {title}
-                        </h2>
+                    <div style={{ display: "flex", flexDirection: "column", gap: spacing[1] }}>
                         <div style={{ display: "flex", alignItems: "center", gap: spacing[3] }}>
-                            <p style={{ fontSize: fonts.size.xs, color: colors.fg.dim }}>
-                                {viewMode === "current_year"
-                                    ? "Año en curso (acumulado)"
-                                    : viewMode === "ytd"
-                                      ? "Comparativo año a año"
-                                      : "Histórico mensual completo"}
-                            </p>
-                            <div style={{ minHeight: "28px", display: "flex", alignItems: "center" }}>
+                            <h2
+                                style={{
+                                    fontSize: fonts.size.lg,
+                                    fontWeight: 600,
+                                    color: colors.fg.base,
+                                }}
+                            >
+                                {title}
+                            </h2>
+                            <div style={{ display: "flex", alignItems: "center" }}>
                                 {isIncomeOrExpense && viewMode === "current_year" && (
                                     <CustomSelect
                                         value={metricType}
@@ -339,53 +379,96 @@ export function KPIEvolutionModal({ kpi, onClose }: KPIEvolutionModalProps) {
                                 )}
                             </div>
                         </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: spacing[3] }}>
+                            <p style={{ fontSize: fonts.size.xs, color: colors.fg.dim, margin: 0 }}>
+                                {isMultiSeries
+                                    ? "Real · Forecast · Plan · Año anterior — comparativa mensual"
+                                    : viewMode === "current_year"
+                                      ? "Año en curso (acumulado)"
+                                      : viewMode === "ytd"
+                                        ? "Comparativo año a año"
+                                        : "Histórico mensual completo"}
+                            </p>
+                        </div>
                     </div>
-                    <Button
-                        variant="plain"
-                        onClick={onClose}
-                    >
-                        <X size={20} />
-                    </Button>
-                </div>
-                <div style={{ display: "flex", gap: spacing[1], marginBottom: spacing[4] }}>
-                    {[
-                        { key: "current_year", label: "YTD" },
-                        { key: "ytd", label: "Total (Año a Año)" },
-                        { key: "monthly", label: "Total (Mes a Mes)" },
-                    ].map((m) => (
+                    <div style={{ display: "flex", alignItems: "center", gap: spacing[2], flexShrink: 0 }}>
+                        {!isMultiSeries && (
+                            <div style={{
+                                position: "relative",
+                                display: "flex",
+                                borderRadius: "8px",
+                                background: colors.fill,
+                                overflow: "hidden",
+                                cursor: "pointer",
+                                userSelect: "none",
+                            }}>
+                                <div style={{
+                                    position: "absolute",
+                                    top: 0,
+                                    left: `calc(${["current_year", "ytd", "monthly"].indexOf(viewMode)} * (100% / 3))`,
+                                    width: "calc(100% / 3)",
+                                    height: "100%",
+                                    borderRadius: "7px",
+                                    background: colors.bg.surface,
+                                    boxShadow: "0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)",
+                                    transition: "left 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                                    pointerEvents: "none",
+                                }} />
+                                {[
+                                    { key: "current_year", label: "YTD" },
+                                    { key: "ytd", label: "YoY" },
+                                    { key: "monthly", label: "MoM" },
+                                ].map((m) => (
+                                    <div
+                                        key={m.key}
+                                        onClick={() => setViewMode(m.key as ViewMode)}
+                                        style={{
+                                            position: "relative",
+                                            zIndex: 1,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            flex: 1,
+                                            padding: "3px 10px",
+                                            whiteSpace: "nowrap",
+                                            fontSize: fonts.size.xs,
+                                            fontWeight: 500,
+                                            color: viewMode === m.key ? colors.fg.base : colors.fg.dim,
+                                            transition: "color 0.2s",
+                                            lineHeight: "18px",
+                                        }}
+                                    >
+                                        {m.label}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                         <Button
-                            key={m.key}
-                            variant="tab"
-                            active={viewMode === m.key}
-                            size="sm"
-                            onClick={() => setViewMode(m.key as ViewMode)}
+                            variant="plain"
+                            onClick={onClose}
                         >
-                            {m.label}
+                            <X size={20} />
                         </Button>
-                    ))}
+                    </div>
                 </div>
-                <div style={{ height: "380px" }}>
+                <div style={{ height: "400px" }}>
                     <ReactECharts
                         option={{
                             backgroundColor: "transparent",
                             grid: { top: 20, right: 20, bottom: 30, left: 60 },
+                            legend: isMultiSeries ? { data: ["Real", "FCST", "Plan", "LY"], textStyle: { color: colors.fg.dim, fontSize: fonts.size.xs }, top: 0, right: 0 } : undefined,
                             xAxis: {
                                 type: "category",
-                                data: chartData.map((d) => d.month),
+                                data: isMultiSeries ? multiSeriesMonths : chartData.map((d) => d.month),
                                 axisLine: { lineStyle: { color: colors.fill } },
                                 axisTick: { show: false },
                                 axisLabel: {
                                     color: colors.fg.dim,
                                     fontSize: fonts.size.xs,
-                                    formatter: (v: string) => {
-                                        if (viewMode === "ytd") return v;
-                                        const p = v.split("-");
-                                        return p[1] ? `${p[1]}-${p[0].slice(2)}` : v;
-                                    },
-                                    interval:
-                                        viewMode === "monthly"
-                                            ? Math.floor(chartData.length / 8)
-                                            : "auto",
+                                    formatter: (v: string) => formatX(v),
+                                    interval: !isMultiSeries && viewMode === "monthly"
+                                        ? Math.floor(chartData.length / 8)
+                                        : "auto",
                                 },
                             },
                             yAxis: {
@@ -407,36 +490,70 @@ export function KPIEvolutionModal({ kpi, onClose }: KPIEvolutionModalProps) {
                                 borderColor: colors.fill,
                                 textStyle: { color: colors.fg.base },
                                 formatter: (params: Array<{ seriesName: string; value: number; name: string; color: string }>) => {
+                                    if (isMultiSeries) {
+                                        let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0].name)}</div>`;
+                                        params.forEach((p) => {
+                                            if (p.value === null || p.value === undefined) return;
+                                            html += `<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-weight:600">${p.seriesName}: ${Math.round(p.value).toLocaleString("es-AR")}</span></div>`;
+                                        });
+                                        return html;
+                                    }
                                     const p = params[0];
-                                    return `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${p.name}</div><div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-weight:600">${Math.round(p.value).toLocaleString("es-AR")}</span></div>`;
+                                    return `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(p.name)}</div><div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-weight:600">${Math.round(p.value).toLocaleString("es-AR")}</span></div>`;
                                 },
                             },
-                            series: [
-                                {
-                                    data: chartData.map((d) => d.displayValue),
-                                    type: "line",
-                                    smooth: true,
-                                    symbol: "circle",
-                                    symbolSize: 6,
-                                    showSymbol: false,
-                                    emphasis: { showSymbol: true, scale: 1.5 },
-                                    lineStyle: { color: chartColor, width: 2.5 },
-                                    itemStyle: { color: chartColor, borderWidth: 0 },
-                                    areaStyle: {
-                                        color: {
-                                            type: "linear",
-                                            x: 0,
-                                            y: 0,
-                                            x2: 0,
-                                            y2: 1,
-                                            colorStops: [
-                                                { offset: 0, color: `${chartColor}30` },
-                                                { offset: 1, color: `${chartColor}00` },
-                                            ],
-                                        },
-                                    },
-                                },
-                            ],
+                            series: isMultiSeries
+                                ? multiSeriesOptions.map((s) => ({
+                                      name: s.name,
+                                      data: s.data,
+                                      type: "line",
+                                      smooth: true,
+                                      symbol: "circle",
+                                      symbolSize: 6,
+                                      showSymbol: false,
+                                      emphasis: { showSymbol: true, scale: 1.5 },
+                                      lineStyle: { color: seriesColors[s.name], width: s.name === "Real" ? 2.5 : 1.5 },
+                                      itemStyle: { color: seriesColors[s.name], borderWidth: 0 },
+                                      areaStyle: s.name === "Real" ? {
+                                          color: {
+                                              type: "linear",
+                                              x: 0,
+                                              y: 0,
+                                              x2: 0,
+                                              y2: 1,
+                                              colorStops: [
+                                                  { offset: 0, color: `${seriesColors[s.name]}30` },
+                                                  { offset: 1, color: `${seriesColors[s.name]}00` },
+                                              ],
+                                          },
+                                      } : undefined,
+                                  }))
+                                : [
+                                      {
+                                          data: chartData.map((d) => d.displayValue),
+                                          type: "line",
+                                          smooth: true,
+                                          symbol: "circle",
+                                          symbolSize: 6,
+                                          showSymbol: false,
+                                          emphasis: { showSymbol: true, scale: 1.5 },
+                                          lineStyle: { color: chartColor, width: 2.5 },
+                                          itemStyle: { color: chartColor, borderWidth: 0 },
+                                          areaStyle: {
+                                              color: {
+                                                  type: "linear",
+                                                  x: 0,
+                                                  y: 0,
+                                                  x2: 0,
+                                                  y2: 1,
+                                                  colorStops: [
+                                                      { offset: 0, color: `${chartColor}30` },
+                                                      { offset: 1, color: `${chartColor}00` },
+                                                  ],
+                                              },
+                                          },
+                                      },
+                                  ],
                         }}
                         style={{ height: "100%", width: "100%" }}
                         opts={{ renderer: "svg" }}

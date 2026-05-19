@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Settings, TrendingUp, LayoutDashboard, PieChart } from "lucide-react";
+import { ArrowLeftRight, Settings, TrendingUp, LayoutDashboard, NotebookPen, BarChart3, Activity } from "lucide-react";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 
@@ -9,11 +9,13 @@ interface SidebarProps {
 }
 
 const navItems = [
-    { id: "dashboard", icon: LayoutDashboard, label: "Inicio" },
-    { id: "analysis", icon: PieChart, label: "Análisis" },
-    { id: "transactions", icon: ArrowLeftRight, label: "Transacciones" },
-    { id: "economic", icon: TrendingUp, label: "Económico" },
-];
+     { id: "analysis", icon: LayoutDashboard, label: "Inicio" },
+     { id: "evolution", icon: Activity, label: "Evolución" },
+     { id: "metrics", icon: BarChart3, label: "Métricas" },
+     { id: "planning", icon: NotebookPen, label: "Planning" },
+     { id: "transactions", icon: ArrowLeftRight, label: "Transacciones" },
+     { id: "economic", icon: TrendingUp, label: "Económico" },
+ ];
 
 const sidebarStyle: React.CSSProperties = {
     width: "60px",

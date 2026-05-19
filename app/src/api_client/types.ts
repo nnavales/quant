@@ -1,3 +1,139 @@
+export interface PlanningInput {
+    id: string;
+    year: number;
+    description: string;
+    type: "income" | "expense";
+    currency: "ARS" | "USD";
+    january: string;
+    february: string;
+    march: string;
+    april: string;
+    may: string;
+    june: string;
+    july: string;
+    august: string;
+    september: string;
+    october: string;
+    november: string;
+    december: string;
+    created_at: string;
+    updated_at: string | null;
+}
+
+export interface PlanningInputReq {
+    year?: number;
+    description?: string;
+    type?: "income" | "expense";
+    currency?: "ARS" | "USD";
+    january?: string;
+    february?: string;
+    march?: string;
+    april?: string;
+    may?: string;
+    june?: string;
+    july?: string;
+    august?: string;
+    september?: string;
+    october?: string;
+    november?: string;
+    december?: string;
+}
+
+export interface PlanningGoal {
+    id: string;
+    year: number;
+    metric: "income" | "expense";
+    january: string;
+    february: string;
+    march: string;
+    april: string;
+    may: string;
+    june: string;
+    july: string;
+    august: string;
+    september: string;
+    october: string;
+    november: string;
+    december: string;
+    created_at: string;
+    updated_at: string | null;
+}
+
+export interface PlanningGoalReq {
+    year?: number;
+    metric?: "income" | "expense";
+    january?: string;
+    february?: string;
+    march?: string;
+    april?: string;
+    may?: string;
+    june?: string;
+    july?: string;
+    august?: string;
+    september?: string;
+    october?: string;
+    november?: string;
+    december?: string;
+}
+
+export interface PlanningExchangeRate {
+    month: string;
+    exchange_rate: number;
+    updated_at: string | null;
+}
+
+export interface ExchangeRateReq {
+    month?: string;
+    exchange_rate?: number;
+}
+
+export interface PlanningConfig {
+    year: number;
+    initial_capital: string;
+    updated_at: string | null;
+}
+
+export interface PlanningConfigReq {
+    initial_capital?: string;
+}
+
+export interface PlanningMonthData {
+    month: number;
+    income: string;
+    expense: string;
+    savings: string;
+    capital: string;
+}
+
+export interface PlanningTotals {
+    income: string;
+    expense: string;
+    savings: string;
+    capital: string;
+}
+
+export interface PlanningYear {
+    year: number;
+    inputs: PlanningInput[];
+    months: PlanningMonthData[];
+    totals: PlanningTotals;
+}
+
+export interface PlanningGoalYear {
+     year: number;
+     initial_capital: string;
+     months: PlanningMonthData[];
+     goals: PlanningGoal[];
+     totals: PlanningTotals;
+ }
+
+export interface GenerateGoalsReq {
+    year: number;
+    initial_capital: string;
+    extra_income: string;
+    extra_expense: string;
+}
+
 export type TransactionType = "income" | "expense";
 export type TransactionFrequency = "fixed" | "variable";
 export type Currency = "ARS" | "USD";
@@ -363,10 +499,49 @@ export interface DimensionSeries {
 }
 
 export interface DimensionSeriesResponse {
-    dimension: Dimension;
-    type: "income" | "expense";
-    data: DimensionSeries[];
-}
+     dimension: Dimension;
+     type: "income" | "expense";
+     data: DimensionSeries[];
+ }
+
+ // ============================================
+ // Dashboard Metrics Comparison Types
+ // ============================================
+
+ export interface MetricCell {
+     real?: number;
+     fcst?: number;
+     plan?: number;
+     ly?: number;
+     lm?: number;
+     vs_fcst?: number;
+     vs_fcst_pct?: number;
+     vs_plan?: number;
+     vs_plan_pct?: number;
+     vs_ly?: number;
+     vs_ly_pct?: number;
+     vs_lm?: number;
+     vs_lm_pct?: number;
+ }
+
+ export interface MetricSeries {
+     months: MetricCell[];
+     mtd: MetricCell;
+     ytd: MetricCell;
+     fy: MetricCell;
+ }
+
+export interface MetricComparisonDashboard {
+     year: number;
+     income: MetricSeries;
+     expense: MetricSeries;
+     savings: MetricSeries;
+     capital: MetricSeries;
+     income_fixed: MetricSeries;
+     expense_fixed: MetricSeries;
+     income_variable: MetricSeries;
+     expense_variable: MetricSeries;
+ }
 
 // ============================================
 // Networth Types

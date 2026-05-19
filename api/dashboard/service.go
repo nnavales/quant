@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/nnavales/quant/api/planning"
 	"github.com/nnavales/quant/api/timeutils"
 )
 
@@ -17,6 +18,47 @@ func NewService(repo Repository) *Service {
 	return &Service{
 		repo: repo,
 	}
+}
+
+func (s *Service) GetMetrics(ctx context.Context, forecast *planning.PlanningYear, plan *planning.PlanningGoalYear) (MetricComparisonDashboard, error) {
+	tbl, err := s.repo.GetFinanceSummary(ctx, nil)
+	if err != nil {
+		return MetricComparisonDashboard{}, fmt.Errorf("failed to get finance summary: %w", err)
+	}
+	var monthlySeries []MonthlyData
+	for _, r := range tbl {
+		monthlySeries = append(monthlySeries, rowToMonthlyData(r))
+	}
+
+	var monthlyPlanSeries []MonthlyPlanData
+	if plan != nil {
+		for _, r := range plan.Months {
+			var mpRow MonthlyPlanData
+			mpRow.Month = r.Month
+			mpRow.IncomePlan = r.Income.ToFloat()
+			mpRow.ExpensePlan = r.Expense.ToFloat()
+			mpRow.SavingsPlan = r.Savings.ToFloat()
+			mpRow.CapitalPlan = r.Capital.ToFloat()
+
+			monthlyPlanSeries = append(monthlyPlanSeries, mpRow)
+		}
+	}
+
+	var monthlyForecastSeries []MonthlyForecastData
+	for _, r := range forecast.Months {
+		var mfRow MonthlyForecastData
+		mfRow.Month = r.Month
+		mfRow.IncomeForecast = r.Income.ToFloat()
+		mfRow.ExpenseForecast = r.Expense.ToFloat()
+		mfRow.SavingsForecast = r.Savings.ToFloat()
+		mfRow.CapitalForecast = r.Capital.ToFloat()
+
+		monthlyForecastSeries = append(monthlyForecastSeries, mfRow)
+	}
+
+	metrics := BuildMetricsDashboard(monthlySeries, monthlyForecastSeries, monthlyPlanSeries)
+
+	return metrics, nil
 }
 
 func (s *Service) GetKPIs(ctx context.Context) (DashboardResponse, error) {

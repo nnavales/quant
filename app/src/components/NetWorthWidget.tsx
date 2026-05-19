@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNetWorth, useCreateAsset, useUpdateAsset, useDeleteAsset } from "@/hooks";
 import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
@@ -8,7 +8,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { Dropdown } from "@/components/ui/Dropdown";
-import { Plus, X, Droplets, Package, Trash2 } from "lucide-react";
+import { Plus, X, Droplets, Package, Trash2, Search, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { Currency, AssetType, NetWorth } from "@/api_client/types";
 
@@ -42,7 +42,7 @@ interface AddAssetFormProps {
     onClose: () => void;
 }
 
-function AddAssetForm({ onClose }: AddAssetFormProps) {
+export function AddAssetForm({ onClose }: AddAssetFormProps) {
     const [name, setName] = useState("");
     const [amount, setAmount] = useState("");
     const [currency, setCurrency] = useState<Currency>("USD");
@@ -237,11 +237,11 @@ function AssetRow({ asset }: AssetRowProps) {
         }).format(num);
     };
 
-    const inputStyle: React.CSSProperties = {
+    const inEdit: React.CSSProperties = {
         backgroundColor: "transparent",
         border: "none",
         color: colors.fg.base,
-        fontSize: fonts.table.body,
+        fontSize: fonts.size.base,
         outline: "none",
         padding: "1px 2px",
         width: "100%",
@@ -253,7 +253,7 @@ function AssetRow({ asset }: AssetRowProps) {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: `${spacing[1]} ${spacing[2]}`,
+                padding: `${spacing[2]} ${spacing[2]}`,
                 borderRadius: radius.md,
                 cursor: "pointer",
                 transition: "all 0.15s ease",
@@ -261,7 +261,7 @@ function AssetRow({ asset }: AssetRowProps) {
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.bg.base)}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
         >
-            <div style={{ display: "flex", alignItems: "center", gap: spacing[2], flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: spacing[2], flex: 1, minWidth: 0 }}>
                 <span
                     onClick={() => {
                         const newType = asset.type === "liquid" ? "physical" : "liquid";
@@ -276,9 +276,9 @@ function AssetRow({ asset }: AssetRowProps) {
                     style={{ cursor: "pointer", display: "flex", alignItems: "center" }}
                 >
                     {asset.type === "liquid" ? (
-                        <Droplets size={14} color={colors.accent.cyan} opacity={0.8} />
+                        <Droplets size={15} color={colors.accent.cyan} opacity={0.8} />
                     ) : (
-                        <Package size={14} color={colors.accent.purple} opacity={0.8} />
+                        <Package size={15} color={colors.accent.purple} opacity={0.8} />
                     )}
                 </span>
                 <div style={{ display: "flex", alignItems: "center", gap: 0, flexShrink: 1, minWidth: 0 }}>
@@ -289,12 +289,12 @@ function AssetRow({ asset }: AssetRowProps) {
                             onChange={(e) => setEditValue(e.target.value)}
                             onBlur={saveEdit}
                             onKeyDown={handleKeyDown}
-                            style={{ ...inputStyle, flex: 1 }}
+                            style={{ ...inEdit, flex: 1 }}
                         />
                     ) : (
                         <span
-                            onClick={() => startEdit("name")}
-                            style={{ color: colors.fg.base, fontSize: fonts.table.body, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                            onDoubleClick={() => startEdit("name")}
+                            style={{ color: colors.fg.base, fontSize: fonts.size.base, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
                         >
                             {asset.name}
                         </span>
@@ -310,7 +310,7 @@ function AssetRow({ asset }: AssetRowProps) {
                         onBlur={saveEdit}
                         onKeyDown={handleKeyDown}
                         style={{
-                            ...inputStyle,
+                            ...inEdit,
                             fontFamily: fonts.family.display,
                             textAlign: "right",
                             width: "70px",
@@ -318,8 +318,8 @@ function AssetRow({ asset }: AssetRowProps) {
                     />
                 ) : (
                     <span
-                        onClick={() => startEdit("amount")}
-                        style={{ fontFamily: fonts.family.display, color: colors.fg.dim, fontSize: fonts.table.amount, textAlign: "right" }}
+                        onDoubleClick={() => startEdit("amount")}
+                        style={{ fontFamily: fonts.family.display, color: colors.fg.dim, fontSize: fonts.size.base, textAlign: "right" }}
                     >
                         {formatAmount(asset.amount)}
                     </span>
@@ -336,19 +336,16 @@ function AssetRow({ asset }: AssetRowProps) {
                         );
                     }}
                     style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor: colors.bg.surface,
-                        color: colors.fg.dim,
-                        fontSize: fonts.table.badge,
+                        fontSize: fonts.size.sm,
+                        padding: `${spacing[1]} ${spacing[2]}`,
+                        borderRadius: radius.md,
+                        textTransform: "uppercase",
+                        fontWeight: 500,
+                        backgroundColor: colors.fill,
+                        color: asset.currency === "ARS" ? colors.accent.cyan : colors.accent.green,
                         lineHeight: 1,
-                        padding: "2px 0",
-                        borderRadius: radius.sm,
-                        flexShrink: 0,
                         cursor: "pointer",
-                        width: "40px",
-                        boxSizing: "border-box",
+                        flexShrink: 0,
                     }}
                 >
                     {asset.currency}
@@ -358,7 +355,7 @@ function AssetRow({ asset }: AssetRowProps) {
                     title="Eliminar"
                     onClick={() => setDeleteConfirm(true)}
                 >
-                    <Trash2 size={12} />
+                    <Trash2 size={14} />
                 </Button>
             </div>
 
@@ -376,7 +373,7 @@ function AssetRow({ asset }: AssetRowProps) {
 
 /* ──────────── NetWorthWidget ──────────── */
 
-function NetWorthWidget({ networthData }: { networthData: NetWorth }) {
+function NetWorthWidget({ networthData, hideFrame = false }: { networthData: NetWorth; hideFrame?: boolean }) {
     const [showAddForm, setShowAddForm] = useState(false);
     const formatUSD = (value: string) => {
         return new Intl.NumberFormat("es-AR", {
@@ -396,13 +393,33 @@ function NetWorthWidget({ networthData }: { networthData: NetWorth }) {
     const liquidColor = colors.accent.cyan;
     const physicalColor = colors.accent.purple;
 
+    const assets = networthData.assets || [];
+
+    const [searchQuery, setSearchQuery] = useState("");
+    const [typeFilter, setTypeFilter] = useState<"all" | "liquid" | "physical">("all");
+    const [sortAsc, setSortAsc] = useState(true);
+
+    const filteredAssets = useMemo(() => {
+        let list = assets;
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            list = list.filter((a) => a.name.toLowerCase().includes(q));
+        }
+        if (typeFilter !== "all") {
+            list = list.filter((a) => a.type === typeFilter);
+        }
+        return list.sort((a, b) => {
+            return a.name.localeCompare(b.name) * (sortAsc ? 1 : -1);
+        });
+    }, [assets, searchQuery, sortAsc, typeFilter]);
+
     return (
         <div
             style={{
-                backgroundColor: colors.bg.surface,
-                borderRadius: radius.lg,
+                backgroundColor: hideFrame ? undefined : colors.bg.surface,
+                borderRadius: hideFrame ? undefined : radius.lg,
                 padding: spacing[4],
-                border: `1px solid ${colors.border}`,
+                border: hideFrame ? undefined : `1px solid ${colors.border}`,
                 display: "flex",
                 flexDirection: "column",
                 gap: spacing[4],
@@ -410,117 +427,155 @@ function NetWorthWidget({ networthData }: { networthData: NetWorth }) {
                 boxSizing: "border-box",
             }}
         >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: fonts.size.sm, color: colors.fg.base, textTransform: "uppercase", fontWeight: 500, letterSpacing: "0.5px" }}>Net Worth</span>
-                <Button
-                    variant="chip"
-                    color="cyan"
-                    size="sm"
-                    iconLeft={<Plus size={14} />}
-                    onClick={() => setShowAddForm(true)}
-                >
-                    Agregar
-                </Button>
-            </div>
-
-            <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: fonts.size.xs, color: colors.fg.dim, marginBottom: spacing[1], letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                    Total Assets
-                </div>
-                <div style={{ fontSize: fonts.size["2xl"], fontWeight: 700, fontFamily: fonts.family.display, color: colors.fg.base, letterSpacing: "-0.02em", lineHeight: 1 }}>
-                    {formatUSD(networthData.total_usd)}
-                </div>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: spacing[2] }}>
-                <div
-                    style={{
-                        backgroundColor: colors.widget.cyanBg,
-                        borderRadius: radius.md,
-                        padding: spacing[3],
-                        border: `1px solid ${colors.widget.cyanBorder}`,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: spacing[1],
-                    }}
-                >
-                    <div style={{ display: "flex", alignItems: "center", gap: spacing[1] }}>
-                        <Droplets size={14} color={liquidColor} />
-                        <span style={{ fontSize: fonts.size.xs, color: colors.fg.dim }}>Líquido</span>
-                        <span style={{ marginLeft: "auto", fontSize: fonts.size.xs, color: liquidColor, fontWeight: 600 }}>
-                            {liquidPct.toFixed(0)}%
-                        </span>
-                    </div>
-                    <div style={{ fontFamily: fonts.family.display, fontSize: fonts.size.lg, color: colors.fg.base, fontWeight: 600, lineHeight: 1.2 }}>
-                        {formatUSD(networthData.liquid_usd)}
-                    </div>
-                </div>
-                <div
-                    style={{
-                        backgroundColor: colors.widget.purpleBg,
-                        borderRadius: radius.md,
-                        padding: spacing[3],
-                        border: `1px solid ${colors.widget.purpleBorder}`,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: spacing[1],
-                    }}
-                >
-                    <div style={{ display: "flex", alignItems: "center", gap: spacing[1] }}>
-                        <Package size={14} color={physicalColor} />
-                        <span style={{ fontSize: fonts.size.xs, color: colors.fg.dim }}>Físico</span>
-                        <span style={{ marginLeft: "auto", fontSize: fonts.size.xs, color: physicalColor, fontWeight: 600 }}>
-                            {physicalPct.toFixed(0)}%
-                        </span>
-                    </div>
-                    <div style={{ fontFamily: fonts.family.display, fontSize: fonts.size.lg, color: colors.fg.base, fontWeight: 600, lineHeight: 1.2 }}>
-                        {formatUSD(networthData.physical_usd)}
-                    </div>
-                </div>
-            </div>
-
-            <div style={{ display: "flex", height: 6, borderRadius: radius.md, overflow: "hidden", backgroundColor: colors.bg.base }}>
-                <div style={{ width: `${liquidPct}%`, backgroundColor: liquidColor, transition: "width 0.5s ease" }} />
-                <div style={{ width: `${physicalPct}%`, backgroundColor: physicalColor, transition: "width 0.5s ease" }} />
-            </div>
-
-            {networthData.assets && networthData.assets.length > 0 && (
-                <div style={{ borderTop: `1px solid ${colors.fill}`, paddingTop: spacing[3], display: "flex", flexDirection: "column", gap: spacing[2] }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: fonts.size.xs, fontWeight: 600, color: colors.fg.base }}>Activos ({networthData.assets.length})</span>
-                        <span
-                            style={{
-                                fontSize: fonts.table.badge,
-                                color: colors.fg.dim,
-                                backgroundColor: colors.bg.surface,
-                                padding: "1px 6px",
-                                borderRadius: radius.sm,
-                                border: `1px solid ${colors.fill}`,
-                            }}
-                        >
-                            Presiona para editar
-                        </span>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: spacing[1], maxHeight: "244px", overflowY: "auto", paddingRight: spacing[1], paddingBottom: spacing[1], boxSizing: "border-box" }}>
-                        {networthData.assets.map((asset) => (
-                            <AssetRow key={asset.id} asset={asset} />
-                        ))}
-                    </div>
+            {!hideFrame && (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: spacing[3], borderBottom: `1px solid ${colors.border}` }}>
+                    <span style={{ fontSize: fonts.size.sm, color: colors.fg.base, textTransform: "uppercase", fontWeight: 500, letterSpacing: "0.5px" }}>Net Worth</span>
+                    <Button
+                        variant="chip"
+                        color="cyan"
+                        size="sm"
+                        iconLeft={<Plus size={14} />}
+                        onClick={() => setShowAddForm(true)}
+                    >
+                        Agregar
+                    </Button>
                 </div>
             )}
 
-            {showAddForm && <AddAssetForm onClose={() => setShowAddForm(false)} />}
+            <div style={{ display: "flex", flexDirection: "column", gap: spacing[3] }}>
+                <div style={{ fontFamily: fonts.family.display, fontSize: fonts.size["2xl"], color: colors.fg.base, fontWeight: 700, lineHeight: 1.1 }}>
+                    {formatUSD(networthData.total_usd)}
+                </div>
+                <div>
+                    <div style={{ display: "flex", height: 6, borderRadius: radius.md, overflow: "hidden", backgroundColor: colors.bg.base }}>
+                        <div style={{ width: `${liquidPct}%`, backgroundColor: liquidColor, transition: "width 0.5s ease" }} />
+                        <div style={{ width: `${physicalPct}%`, backgroundColor: physicalColor, transition: "width 0.5s ease" }} />
+                    </div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: spacing[2] }}>
+                    <div
+                        style={{
+                            backgroundColor: colors.widget.cyanBg,
+                            borderRadius: radius.md,
+                            padding: spacing[2],
+                            border: `1px solid ${colors.widget.cyanBorder}`,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: spacing[1],
+                        }}
+                    >
+                        <Droplets size={15} color={liquidColor} />
+                        <span style={{ fontSize: fonts.size.xs, color: colors.fg.dim, flexShrink: 0 }}>Líquido</span>
+                        <span style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {formatUSD(networthData.liquid_usd)}
+                        </span>
+                        <span style={{ marginLeft: "auto", fontSize: fonts.size.xs, color: liquidColor, fontWeight: 600, flexShrink: 0 }}>
+                            {liquidPct.toFixed(0)}%
+                        </span>
+                    </div>
+                    <div
+                        style={{
+                            backgroundColor: colors.widget.purpleBg,
+                            borderRadius: radius.md,
+                            padding: spacing[2],
+                            border: `1px solid ${colors.widget.purpleBorder}`,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: spacing[1],
+                        }}
+                    >
+                        <Package size={15} color={physicalColor} />
+                        <span style={{ fontSize: fonts.size.xs, color: colors.fg.dim, flexShrink: 0 }}>Físico</span>
+                        <span style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {formatUSD(networthData.physical_usd)}
+                        </span>
+                        <span style={{ marginLeft: "auto", fontSize: fonts.size.xs, color: physicalColor, fontWeight: 600, flexShrink: 0 }}>
+                            {physicalPct.toFixed(0)}%
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {(hideFrame || (!hideFrame && assets.length > 0)) && (
+                <div style={{ borderTop: `1px solid ${colors.fill}`, paddingTop: spacing[3], flex: 1, minHeight: 0, display: "flex", flexDirection: "column", gap: spacing[3] }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: spacing[2], flexShrink: 0 }}>
+                        <span style={{ fontSize: fonts.size.sm, fontWeight: 600, color: colors.fg.base }}>
+                            Activos ({assets.length})
+                        </span>
+                        {assets.length > 0 && (
+                            <>
+                                <div style={{ display: "flex", alignItems: "center", gap: spacing[1], flexShrink: 0 }}>
+                                    {(["all", "liquid", "physical"] as const).map((t) => (
+                                        <button
+                                            key={t}
+                                            onClick={() => setTypeFilter(t)}
+                                            style={{
+                                                background: "none",
+                                                border: "none",
+                                                cursor: "pointer",
+                                                fontSize: fonts.size.sm,
+                                                color: typeFilter === t ? (t === "liquid" ? colors.accent.cyan : t === "physical" ? colors.accent.purple : colors.fg.base) : colors.fg.dim,
+                                                fontWeight: typeFilter === t ? 600 : 400,
+                                                padding: `${spacing[1]} ${spacing[3]}`,
+                                                borderRadius: radius.md,
+                                                backgroundColor: typeFilter === t ? (t === "liquid" ? colors.variant.cyan.bg : t === "physical" ? `${colors.accent.purple}18` : colors.fill) : "transparent",
+                                                transition: "all 0.15s",
+                                            }}
+                                        >
+                                            {t === "all" ? "Todo" : t === "liquid" ? "Líquido" : "Físico"}
+                                        </button>
+                                    ))}
+                                </div>
+                                <button
+                                    onClick={() => setSortAsc((a) => !a)}
+                                    style={{ display: "flex", alignItems: "center", gap: spacing[1], background: "none", border: "none", cursor: "pointer", fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 600, padding: `${spacing[1]} ${spacing[3]}`, borderRadius: radius.md, backgroundColor: colors.fill, transition: "all 0.15s" }}
+                                >
+                                    <ArrowUpDown size={13} />
+                                    {sortAsc ? "A-Z" : "Z-A"}
+                                </button>
+                                <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: spacing[1], backgroundColor: colors.bg.surface, borderRadius: radius.md, padding: `0 ${spacing[2]}`, border: `1px solid ${colors.border}`, maxWidth: "160px" }}>
+                                    <Search size={14} color={colors.fg.dim} />
+                                    <input
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder="Buscar..."
+                                        style={{ background: "none", border: "none", outline: "none", color: colors.fg.base, fontSize: fonts.size.sm, width: "100%", padding: `${spacing[1]} 0`, fontFamily: fonts.family.text }}
+                                    />
+                                </div>
+                            </>
+                        )}
+                    </div>
+                    {filteredAssets.length > 0 ? (
+                        <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: spacing[1], paddingRight: spacing[1], boxSizing: "border-box", maxHeight: hideFrame ? undefined : "244px" }}>
+                            {filteredAssets.map((asset) => (
+                                <AssetRow key={asset.id} asset={asset} />
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <span style={{ color: colors.fg.dim, fontSize: fonts.size.sm }}>
+                                {searchQuery ? "Sin resultados" : "Sin activos registrados"}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {!hideFrame && showAddForm && <AddAssetForm onClose={() => setShowAddForm(false)} />}
         </div>
     );
 }
 
 /* ──────────── NetWorthWidgetContainer ──────────── */
 
-export function NetWorthWidgetContainer() {
+export function NetWorthWidgetContainer({ hideFrame = false }: { hideFrame?: boolean }) {
     const { data, isLoading, isError } = useNetWorth();
     const [showAddForm, setShowAddForm] = useState(false);
 
     if (isLoading) {
+        if (hideFrame) {
+            return <div style={{ color: colors.fg.dim, textAlign: "center", padding: spacing[4] }}>Cargando Net Worth...</div>;
+        }
         return (
             <div style={{ backgroundColor: colors.bg.surface, borderRadius: radius.lg, padding: spacing[4], border: `1px solid ${colors.border}`, height: "100%", minHeight: "420px", boxSizing: "border-box" }}>
                 <div style={{ color: colors.fg.dim, textAlign: "center", padding: spacing[4] }}>Cargando Net Worth...</div>
@@ -529,6 +584,9 @@ export function NetWorthWidgetContainer() {
     }
 
     if (isError) {
+        if (hideFrame) {
+            return <div style={{ color: colors.accent.red, textAlign: "center", padding: spacing[4] }}>Error al cargar Net Worth</div>;
+        }
         return (
             <div style={{ backgroundColor: colors.bg.surface, borderRadius: radius.lg, padding: spacing[4], border: `1px solid ${colors.border}`, height: "100%", minHeight: "420px", boxSizing: "border-box" }}>
                 <div style={{ color: colors.accent.red, textAlign: "center", padding: spacing[4] }}>Error al cargar Net Worth</div>
@@ -537,6 +595,13 @@ export function NetWorthWidgetContainer() {
     }
 
     if (!data) {
+        if (hideFrame) {
+            return (
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ color: colors.fg.dim, fontSize: fonts.size.sm }}>Sin activos registrados</span>
+                </div>
+            );
+        }
         return (
             <>
                 <div
@@ -553,7 +618,7 @@ export function NetWorthWidgetContainer() {
                         boxSizing: "border-box",
                     }}
                 >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: spacing[3], borderBottom: `1px solid ${colors.border}` }}>
                         <span style={{ fontSize: fonts.size.sm, color: colors.fg.base, textTransform: "uppercase", fontWeight: 500, letterSpacing: "0.5px" }}>Net Worth</span>
                         <Button variant="chip" color="cyan" size="sm" iconLeft={<Plus size={14} />} onClick={() => setShowAddForm(true)}>
                             Agregar
@@ -568,5 +633,5 @@ export function NetWorthWidgetContainer() {
         );
     }
 
-    return <NetWorthWidget networthData={data} />;
+    return <NetWorthWidget networthData={data} hideFrame={hideFrame} />;
 }

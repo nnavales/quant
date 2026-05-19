@@ -190,6 +190,10 @@ func (m *Money) Scan(src any) error {
 	switch v := src.(type) {
 	case int64:
 		*m = Money(v)
+	case int:
+		*m = Money(int64(v))
+	case float64:
+		*m = Money(math.Round(v))
 	case []byte:
 		parsed, err := ParseAmountToCents(string(v))
 		if err != nil {

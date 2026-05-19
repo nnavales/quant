@@ -21,11 +21,22 @@ func NewSQLiteRepo(db *sql.DB) *SQLiteRepo {
 func (r *SQLiteRepo) CreateInput(ctx context.Context, i PlanningInput) (*PlanningInput, error) {
 	_, err := r.db.ExecContext(ctx, QueryCreateInput,
 		i.ID,
-		i.Month,
+		i.Year,
 		i.Description,
 		i.Type,
-		i.Amount,
 		i.Currency,
+		i.January,
+		i.February,
+		i.March,
+		i.April,
+		i.May,
+		i.June,
+		i.July,
+		i.August,
+		i.September,
+		i.October,
+		i.November,
+		i.December,
 		i.CreatedAt,
 	)
 	if err != nil {
@@ -41,11 +52,22 @@ func (r *SQLiteRepo) GetInput(ctx context.Context, id string) (*PlanningInput, e
 	var i PlanningInput
 	err := r.db.QueryRowContext(ctx, QueryGetInputByID, id).Scan(
 		&i.ID,
-		&i.Month,
+		&i.Year,
 		&i.Description,
 		&i.Type,
-		&i.Amount,
 		&i.Currency,
+		&i.January,
+		&i.February,
+		&i.March,
+		&i.April,
+		&i.May,
+		&i.June,
+		&i.July,
+		&i.August,
+		&i.September,
+		&i.October,
+		&i.November,
+		&i.December,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -70,11 +92,22 @@ func (r *SQLiteRepo) ListInputs(ctx context.Context) ([]PlanningInput, error) {
 		var i PlanningInput
 		err := rows.Scan(
 			&i.ID,
-			&i.Month,
+			&i.Year,
 			&i.Description,
 			&i.Type,
-			&i.Amount,
 			&i.Currency,
+			&i.January,
+			&i.February,
+			&i.March,
+			&i.April,
+			&i.May,
+			&i.June,
+			&i.July,
+			&i.August,
+			&i.September,
+			&i.October,
+			&i.November,
+			&i.December,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		)
@@ -88,11 +121,21 @@ func (r *SQLiteRepo) ListInputs(ctx context.Context) ([]PlanningInput, error) {
 
 func (r *SQLiteRepo) UpdateInput(ctx context.Context, i PlanningInput, now time.Time) (*PlanningInput, error) {
 	_, err := r.db.ExecContext(ctx, QueryUpdateInput,
-		i.Month,
 		i.Description,
 		i.Type,
-		i.Amount,
 		i.Currency,
+		i.January,
+		i.February,
+		i.March,
+		i.April,
+		i.May,
+		i.June,
+		i.July,
+		i.August,
+		i.September,
+		i.October,
+		i.November,
+		i.December,
 		now,
 		i.ID,
 	)
@@ -115,11 +158,22 @@ func (r *SQLiteRepo) ListInputsByYear(ctx context.Context, year string) ([]Plann
 		var i PlanningInput
 		err := rows.Scan(
 			&i.ID,
-			&i.Month,
+			&i.Year,
 			&i.Description,
 			&i.Type,
-			&i.Amount,
 			&i.Currency,
+			&i.January,
+			&i.February,
+			&i.March,
+			&i.April,
+			&i.May,
+			&i.June,
+			&i.July,
+			&i.August,
+			&i.September,
+			&i.October,
+			&i.November,
+			&i.December,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		)
@@ -222,6 +276,169 @@ func (r *SQLiteRepo) UpdateRate(ctx context.Context, i ExchangeRateInput, now ti
 
 func (r *SQLiteRepo) DeleteRate(ctx context.Context, date timeutils.YearMonth) error {
 	result, err := r.db.ExecContext(ctx, QueryDeleteRate, date)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return apperrors.ErrNotFound
+	}
+	return nil
+}
+
+func (r *SQLiteRepo) CreateGoal(ctx context.Context, g PlanningGoal) (*PlanningGoal, error) {
+	_, err := r.db.ExecContext(ctx, QueryCreateGoal,
+		g.ID,
+		g.Year,
+		g.Metric,
+		g.January,
+		g.February,
+		g.March,
+		g.April,
+		g.May,
+		g.June,
+		g.July,
+		g.August,
+		g.September,
+		g.October,
+		g.November,
+		g.December,
+		g.CreatedAt,
+	)
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return nil, apperrors.ErrDuplicate
+		}
+		return nil, err
+	}
+	return &g, nil
+}
+
+func (r *SQLiteRepo) GetGoal(ctx context.Context, id string) (*PlanningGoal, error) {
+	var g PlanningGoal
+	err := r.db.QueryRowContext(ctx, QueryGetGoalByID, id).Scan(
+		&g.ID,
+		&g.Year,
+		&g.Metric,
+		&g.January,
+		&g.February,
+		&g.March,
+		&g.April,
+		&g.May,
+		&g.June,
+		&g.July,
+		&g.August,
+		&g.September,
+		&g.October,
+		&g.November,
+		&g.December,
+		&g.CreatedAt,
+		&g.UpdatedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, err
+	}
+	return &g, nil
+}
+
+func (r *SQLiteRepo) ListGoalsByYear(ctx context.Context, year string) ([]PlanningGoal, error) {
+	rows, err := r.db.QueryContext(ctx, QueryListGoalsByYear, year)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var goals []PlanningGoal
+	for rows.Next() {
+		var g PlanningGoal
+		err := rows.Scan(
+			&g.ID,
+			&g.Year,
+			&g.Metric,
+			&g.January,
+			&g.February,
+			&g.March,
+			&g.April,
+			&g.May,
+			&g.June,
+			&g.July,
+			&g.August,
+			&g.September,
+			&g.October,
+			&g.November,
+			&g.December,
+			&g.CreatedAt,
+			&g.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		goals = append(goals, g)
+	}
+	return goals, rows.Err()
+}
+
+func (r *SQLiteRepo) UpdateGoal(ctx context.Context, g PlanningGoal, now time.Time) (*PlanningGoal, error) {
+	_, err := r.db.ExecContext(ctx, QueryUpdateGoal,
+		g.Metric,
+		g.January,
+		g.February,
+		g.March,
+		g.April,
+		g.May,
+		g.June,
+		g.July,
+		g.August,
+		g.September,
+		g.October,
+		g.November,
+		g.December,
+		now,
+		g.ID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	g.UpdatedAt = &now
+	return &g, nil
+}
+
+func (r *SQLiteRepo) GetPlanningConfig(ctx context.Context, year int) (*PlanningConfig, error) {
+	var c PlanningConfig
+	err := r.db.QueryRowContext(ctx, QueryGetPlanningConfig, year).Scan(
+		&c.Year,
+		&c.InitialCapital,
+		&c.UpdatedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, err
+	}
+	return &c, nil
+}
+
+func (r *SQLiteRepo) UpsertPlanningConfig(ctx context.Context, c PlanningConfig) (*PlanningConfig, error) {
+	_, err := r.db.ExecContext(ctx, QueryUpsertPlanningConfig,
+		c.Year,
+		c.InitialCapital,
+		c.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
+}
+
+func (r *SQLiteRepo) DeleteGoal(ctx context.Context, id string) error {
+	result, err := r.db.ExecContext(ctx, QueryDeleteGoal, id)
 	if err != nil {
 		return err
 	}
