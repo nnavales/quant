@@ -1,7 +1,7 @@
 {
     "$schema": "https://schema.tauri.app/config/2",
     "productName": "Quant",
-    "version": "0.6.4",
+    "version": "0.6.5",
     "identifier": "com.nnavales.quant",
     "build": {
         "beforeDevCommand": "bun run dev",
@@ -34,7 +34,10 @@
     "bundle": {
         "active": true,
         "targets": "all",
-        "externalBin": ["binaries/quant-api", "binaries/quant-cli"],
+        "externalBin": [
+            "binaries/quant-api",
+            "binaries/quant-cli"
+        ],
         "icon": [
             "icons/32x32.png",
             "icons/128x128.png",

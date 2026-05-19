@@ -6,7 +6,7 @@ import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { Button } from "@/components/ui/Button";
 
-const CURRENT_VERSION = "0.6.4";
+const CURRENT_VERSION = "0.6.5";
 const UPDATE_CHECK_URL = "https://api.github.com/repos/nnavales/quant/releases?per_page=1";
 
 export function UpdateChecker() {
