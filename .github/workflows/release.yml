@@ -44,13 +44,12 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+          cache: true
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
-          cache: npm
-          cache-dependency-path: app/package-lock.json
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
