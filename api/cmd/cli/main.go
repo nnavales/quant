@@ -7,7 +7,6 @@ import (
 
 	"github.com/nnavales/quant/api/cli"
 	"github.com/nnavales/quant/api/config"
-	"github.com/nnavales/quant/api/daemon"
 )
 
 func main() {
@@ -19,11 +18,6 @@ func main() {
 	binName := cfg.Name + "-cli"
 
 	args := os.Args[1:]
-
-	if len(args) > 0 && args[0] == "daemon" {
-		runDaemonCommand(args[1:])
-		return
-	}
 
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" {
 		if len(args) >= 2 && args[0] == "help" && args[1] != "help" && args[1] != "--help" {
@@ -59,51 +53,4 @@ func main() {
 	if err := cmd.Run(cfg, args[2:]); err != nil {
 		fmt.Println(err)
 	}
-}
-
-func runDaemonCommand(args []string) {
-	if len(args) == 0 {
-		printDaemonHelp()
-		return
-	}
-
-	var err error
-	switch args[0] {
-	case "install":
-		err = daemon.Install()
-	case "uninstall":
-		err = daemon.Uninstall()
-	case "start":
-		err = daemon.Start()
-	case "stop":
-		err = daemon.Stop()
-	case "status":
-		err = daemon.Status()
-	case "logs":
-		err = daemon.Logs()
-	case "help", "--help":
-		printDaemonHelp()
-		return
-	default:
-		fmt.Printf("unknown daemon command: %s\n", args[0])
-		printDaemonHelp()
-		os.Exit(1)
-	}
-
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		os.Exit(1)
-	}
-}
-
-func printDaemonHelp() {
-	fmt.Println("Usage: quant-cli daemon <command>")
-	fmt.Println("")
-	fmt.Println("Commands:")
-	fmt.Println("  install      Install and start the background service")
-	fmt.Println("  uninstall    Stop and remove the background service")
-	fmt.Println("  start        Start the background service")
-	fmt.Println("  stop         Stop the background service")
-	fmt.Println("  status       Show service status")
-	fmt.Println("  logs         Show service logs")
 }

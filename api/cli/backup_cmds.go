@@ -34,12 +34,12 @@ func backupExportRun(cfg config.Config, args []string) error {
 	url := fmt.Sprintf("http://127.0.0.1:%d/api/backup/export", cfg.Port)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Quant app (user mode)\n  - Run 'quant-cli daemon start' (service mode)\n  - Run 'quant-cli daemon install' to enable background service\n\n(%w)", url, err)
+		return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Quant app\n\n(%w)", url, err)
 	}
 
 	res, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Quant app (user mode)\n  - Run 'quant-cli daemon start' (service mode)\n  - Run 'quant-cli daemon install' to enable background service\n\n(%w)", url, err)
+		return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Quant app\n\n(%w)", url, err)
 	}
 	defer res.Body.Close()
 
@@ -101,13 +101,13 @@ func backupImportRun(cfg config.Config, args []string) error {
 func sendCSVImport(url string, reader io.Reader) error {
 	req, err := http.NewRequest(http.MethodPost, url, reader)
 	if err != nil {
-		return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Quant app (user mode)\n  - Run 'quant-cli daemon start' (service mode)\n  - Run 'quant-cli daemon install' to enable background service\n\n(%w)", url, err)
+		return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Quant app\n\n(%w)", url, err)
 	}
 	req.Header.Set("Content-Type", "text/csv")
 
 	res, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Quant app (user mode)\n  - Run 'quant-cli daemon start' (service mode)\n  - Run 'quant-cli daemon install' to enable background service\n\n(%w)", url, err)
+		return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Quant app\n\n(%w)", url, err)
 	}
 	defer res.Body.Close()
 

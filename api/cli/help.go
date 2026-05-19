@@ -12,7 +12,6 @@ var resourceDescriptions = map[string]string{
 	"category":    "Manage categories",
 	"subcategory": "Manage subcategories",
 	"channel":     "Manage channels",
-	"daemon":      "Manage background service",
 	"historical":  "Manage historical entries",
 	"installment": "Manage installment groups",
 	"networth":    "Net worth summary",
@@ -59,19 +58,6 @@ func PrintResourceHelp(binName, resource string) {
 	if !ok {
 		fmt.Printf("Unknown resource: %s\n", resource)
 		PrintHelp(binName)
-		return
-	}
-
-	if resource == "daemon" {
-		fmt.Printf("Usage:  %s daemon <command>\n\n", binName)
-		fmt.Printf("%s\n\n", desc)
-		fmt.Println("Commands:")
-		fmt.Println("  install      Install and start the background service")
-		fmt.Println("  uninstall    Stop and remove the background service")
-		fmt.Println("  start        Start the background service")
-		fmt.Println("  stop         Stop the background service")
-		fmt.Println("  status       Show service status")
-		fmt.Println("  logs         Show service logs")
 		return
 	}
 

@@ -410,7 +410,7 @@ func (c CommandSpec) Run(cfg config.Config, args []string) error {
 		url := fmt.Sprintf("http://127.0.0.1:%d/api%s", cfg.Port, endpoint)
 		code, res, err := requestToAPI(c.Method, url, body)
 		if err != nil {
-			return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Quant app (user mode)\n  - Run 'quant-cli daemon start' (service mode)\n  - Run 'quant-cli daemon install' to enable background service\n\n(%w)", url, err)
+			return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Quant app\n\n(%w)", url, err)
 		}
 		defer res.Close()
 		if code >= 400 {
@@ -424,7 +424,7 @@ func (c CommandSpec) Run(cfg config.Config, args []string) error {
 	url := fmt.Sprintf("http://127.0.0.1:%d/api%s", cfg.Port, endpoint)
 	code, res, err := requestToAPI(c.Method, url, nil)
 	if err != nil {
-		return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Quant app (user mode)\n  - Run 'quant-cli daemon start' (service mode)\n  - Run 'quant-cli daemon install' to enable background service\n\n(%w)", url, err)
+		return fmt.Errorf("Error: could not connect to API at %s.\n\nThe server is not running.\nOptions:\n  - Open the Quant app\n\n(%w)", url, err)
 	}
 	defer res.Close()
 	if code >= 400 {
