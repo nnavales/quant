@@ -76,9 +76,10 @@ interface MetricCardProps {
     delta?: number | null;
     points?: TimeSeriesPoint[];
     footer?: string | null;
+    inverseTrend?: boolean;
 }
 
-export function MetricCard({ title, loading, error, onRefresh, children, delta, points, footer }: MetricCardProps) {
+export function MetricCard({ title, loading, error, onRefresh, children, delta, points, footer, inverseTrend = false }: MetricCardProps) {
     if (loading) {
         return (
             <div style={cardStyle}>
@@ -109,11 +110,11 @@ export function MetricCard({ title, loading, error, onRefresh, children, delta, 
                 )}
             </div>
             {children}
-            <div style={deltaWrap}>
+            <div className="selectable" style={deltaWrap}>
                 {delta != null && delta !== 0 && (
-                    <div style={{ display: "flex", alignItems: "center", gap: "4px", color: positive ? colors.accent.green : colors.accent.red }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "4px", color: positive !== inverseTrend ? colors.accent.green : colors.accent.red }}>
                         {positive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                        <span style={{ fontWeight: 500 }}>{positive ? "+" : ""}{formatNumber(delta)}%</span>
+                        <span className="selectable" style={{ fontWeight: 500 }}>{positive ? "+" : ""}{formatNumber(delta)}%</span>
                     </div>
                 )}
             </div>

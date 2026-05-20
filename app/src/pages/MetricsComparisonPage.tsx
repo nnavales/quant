@@ -13,7 +13,7 @@ import {
     TrendingUp,
 } from "lucide-react";
 import { formatCurrency } from "@/utils/format";
-import type { MetricCell } from "@/api_client";
+import type { MetricCell, MetricComparisonDashboard } from "@/api_client";
 
 export function MetricsComparisonPage() {
     const currentYear = new Date().getFullYear();
@@ -33,7 +33,14 @@ export function MetricsComparisonPage() {
         : undefined;
 
     const kpis = useMemo(() => {
-        if (!metricsData) return null;
+        if (!metricsData) {
+            return {
+                capital: {},
+                savings: {},
+                expense: {},
+                income: {},
+            };
+        }
 
         const sumClosed = (months: MetricCell[] | undefined, field: "vs_plan" | "vs_fcst"): number | undefined => {
             if (!months || months.length === 0) return undefined;
@@ -83,14 +90,9 @@ export function MetricsComparisonPage() {
             <div style={{ padding: spacing[4], color: colors.fg.dim }}>Cargando métricas...</div>
         );
     }
-    if (metricsError || !metricsData || !metricsData.income?.months?.length) {
+    if (metricsError) {
         return (
             <div style={{ padding: spacing[4], color: colors.accent.red }}>Error al cargar métricas</div>
-        );
-    }
-    if (!kpis) {
-        return (
-            <div style={{ padding: spacing[4], color: colors.fg.dim }}>Sin datos</div>
         );
     }
 
@@ -213,7 +215,7 @@ export function MetricsComparisonPage() {
                 />
             </div>
 
-            <MetricsComparisonTable data={metricsData} />
+            <MetricsComparisonTable data={metricsData ?? {} as MetricComparisonDashboard} />
         </div>
     );
 }

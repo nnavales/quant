@@ -43,7 +43,7 @@ export function InflationSection({ onRefresh: _ }: { onRefresh?: () => void }) {
         : null;
 
     return (
-        <MetricCard title="Inflación Mensual" loading={false} onRefresh={handleRefresh} delta={data.delta?.pct} points={data.series?.points} footer={monthLabel}>
+        <MetricCard title="Inflación Mensual" loading={false} onRefresh={handleRefresh} delta={data.delta?.pct} points={data.series?.points} footer={monthLabel} inverseTrend>
             <div style={shared.valueStyle}>{formatNumber(data.last?.value ?? 0)}%</div>
         </MetricCard>
     );
@@ -124,7 +124,7 @@ export function CountryRiskSection({ onRefresh: _ }: { onRefresh?: () => void })
     }
 
     return (
-        <MetricCard title="Riesgo País" loading={false} onRefresh={handleRefresh} delta={data.variation} footer={data.date ? `Fecha: ${formatDateStr(data.date, userDateFormat)}` : null}>
+        <MetricCard title="Riesgo País" loading={false} onRefresh={handleRefresh} delta={data.variation} footer={data.date ? `Fecha: ${formatDateStr(data.date, userDateFormat)}` : null} inverseTrend>
             <div style={shared.valueStyle}>{data.value}</div>
         </MetricCard>
     );

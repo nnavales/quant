@@ -160,60 +160,59 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
                 </tr>
             </thead>
             <tbody>
-                {entries.map((entry, idx) => {
-                    const zebraBg = idx % 2 === 1 ? colors.bg.base : "transparent";
+                {entries.map((entry) => {
                     return (
                     <tr
                         key={entry.month}
-                        style={{ transition: "background-color 0.15s", backgroundColor: zebraBg }}
+                        style={{ transition: "background-color 0.15s", backgroundColor: "transparent" }}
                         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.bg.hover)}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = zebraBg)}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
                     >
                         <td style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("10%"), whiteSpace: "nowrap", cursor: "pointer" }} onClick={toggleMonthFormat}>
-                            {formatMonth(entry.month, useFullMonthFormat, userDateFormat)}
+                            <span className="selectable">{formatMonth(entry.month, useFullMonthFormat, userDateFormat)}</span>
                         </td>
                         <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("10%") }}>
                             <Tooltip content={formatAmount(entry.income)}>
-                                <span style={incomeStyle}>{formatAmount(entry.income)}</span>
+                                <span className="selectable" style={incomeStyle}>{formatAmount(entry.income)}</span>
                             </Tooltip>
                         </td>
                         <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("9%") }}>
                             <Tooltip content={formatAmount(entry.income_fixed)}>
-                                <span style={moneyAltStyle}>{formatAmount(entry.income_fixed)}</span>
+                                <span className="selectable" style={moneyAltStyle}>{formatAmount(entry.income_fixed)}</span>
                             </Tooltip>
                         </td>
                         <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("9%") }}>
                             <Tooltip content={formatAmount(entry.income_variable)}>
-                                <span style={moneyAltStyle}>{formatAmount(entry.income_variable)}</span>
+                                <span className="selectable" style={moneyAltStyle}>{formatAmount(entry.income_variable)}</span>
                             </Tooltip>
                         </td>
                         <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("10%") }}>
                             <Tooltip content={formatAmount(entry.expense)}>
-                                <span style={expenseStyle}>{formatAmount(entry.expense)}</span>
+                                <span className="selectable" style={expenseStyle}>{formatAmount(entry.expense)}</span>
                             </Tooltip>
                         </td>
                         <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("9%") }}>
                             <Tooltip content={formatAmount(entry.expense_fixed)}>
-                                <span style={moneyAltStyle}>{formatAmount(entry.expense_fixed)}</span>
+                                <span className="selectable" style={moneyAltStyle}>{formatAmount(entry.expense_fixed)}</span>
                             </Tooltip>
                         </td>
                         <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("9%") }}>
                             <Tooltip content={formatAmount(entry.expense_variable)}>
-                                <span style={moneyAltStyle}>{formatAmount(entry.expense_variable)}</span>
+                                <span className="selectable" style={moneyAltStyle}>{formatAmount(entry.expense_variable)}</span>
                             </Tooltip>
                         </td>
                         <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("8%") }}>
                             <Tooltip content={formatAmount(entry.savings)}>
-                                <span style={moneyStyle}>{formatAmount(entry.savings)}</span>
+                                <span className="selectable" style={moneyStyle}>{formatAmount(entry.savings)}</span>
                             </Tooltip>
                         </td>
                         <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("7%") }}>
                             <Tooltip content={entry.exchange_rate % 1 === 0 ? String(entry.exchange_rate) : entry.exchange_rate.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}>
-                                <span style={{ fontFamily: fonts.family.display, fontSize: fonts.table.meta, color: colors.fg.dim, opacity: 0.7, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{entry.exchange_rate % 1 === 0 ? String(entry.exchange_rate) : entry.exchange_rate.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.table.meta, color: colors.fg.dim, opacity: 0.7, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{entry.exchange_rate % 1 === 0 ? String(entry.exchange_rate) : entry.exchange_rate.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </Tooltip>
                         </td>
                         <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("10%") }}>
-                            <span style={{
+                            <span className="selectable" style={{
                                 fontSize: fonts.table.badge,
                                 padding: `${spacing[1]} ${spacing[2]}`,
                                 borderRadius: radius.md,

@@ -96,7 +96,6 @@ export function RecentTransactions({ limit = 8, onAddIncome, onAddExpense }: Rec
                     const isIncome = t.type === "income";
                     const displayAmount = isIncome ? `+${t.amount}` : `-${t.amount}`;
                     const dateFormatted = formatDateStr(t.date, userDateFormat);
-                    const zebraBg = idx % 2 === 1 ? colors.bg.base : undefined;
 
                     return (
                         <div
@@ -108,7 +107,6 @@ export function RecentTransactions({ limit = 8, onAddIncome, onAddExpense }: Rec
                                 padding: `${spacing[3]} ${spacing[1]}`,
                                 borderBottom: idx < transactions.length - 1 ? `1px solid ${colors.fill}` : "none",
                                 minWidth: 0,
-                                backgroundColor: zebraBg,
                             }}
                         >
                             {/* Icon */}
@@ -135,6 +133,7 @@ export function RecentTransactions({ limit = 8, onAddIncome, onAddExpense }: Rec
 
                             {/* Date */}
                             <span
+                                className="selectable"
                                 style={{
                                     fontSize: fonts.size.sm,
                                     color: colors.fg.dim,
@@ -148,6 +147,7 @@ export function RecentTransactions({ limit = 8, onAddIncome, onAddExpense }: Rec
                             {/* Description with Category/Channel inline */}
                             <div style={{ display: "flex", alignItems: "center", gap: spacing[2], minWidth: 0, flex: 1 }}>
                                 <span
+                                    className="selectable"
                                     style={{
                                         fontSize: fonts.table.body,
                                         color: colors.fg.base,
@@ -162,6 +162,7 @@ export function RecentTransactions({ limit = 8, onAddIncome, onAddExpense }: Rec
                                     {t.description || "Sin descripción"}
                                 </span>
                                 <span
+                                    className="selectable"
                                     style={{
                                         fontSize: fonts.size.sm,
                                         color: colors.fg.dim,
@@ -178,6 +179,7 @@ export function RecentTransactions({ limit = 8, onAddIncome, onAddExpense }: Rec
                                     <>
                                         <span style={{ color: colors.fill, flexShrink: 0 }}>•</span>
                                         <span
+                                            className="selectable"
                                             style={{
                                                 fontSize: fonts.size.sm,
                                                 color: colors.fg.dim,
@@ -196,6 +198,7 @@ export function RecentTransactions({ limit = 8, onAddIncome, onAddExpense }: Rec
 
                             {/* Amount — fixed, pushed to far right */}
                             <span
+                                className="selectable"
                                 style={{
                                     fontSize: fonts.table.body,
                                     fontFamily: fonts.family.display,

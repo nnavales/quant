@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { TransactionRowDTO } from "@/api_client";
-import { Pencil, CreditCard, Trash2 } from "lucide-react";
+import { Pencil, CreditCard, Trash2, Check } from "lucide-react";
 import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { parseLocalDate, formatDateStr, getDateFormat } from "@/utils/date";
@@ -24,6 +24,8 @@ interface TransactionRowProps {
     onStartEdit: () => void;
     onFinishEdit: () => void;
     index: number;
+    isSelected?: boolean;
+    onToggleSelect?: (shiftKey: boolean) => void;
 }
 
 const trStyle: React.CSSProperties = {
@@ -96,9 +98,9 @@ export function TransactionRow({
     isEditing,
     onStartEdit,
     onFinishEdit,
-    index,
+    isSelected = false,
+    onToggleSelect,
 }: TransactionRowProps) {
-    const zebraBg = index % 2 === 1 ? colors.bg.base : "transparent";
     const [textFormat, setTextFormat] = useState<DateTextFormat>(() => getStoredTextFormat());
     const { data: userConfig } = useUserConfig();
     const userDateFormat = getDateFormat(userConfig?.date_format);
@@ -166,22 +168,53 @@ export function TransactionRow({
     return (
         <>
             <tr
-                style={{ ...trStyle, backgroundColor: zebraBg }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.bg.hover)}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = zebraBg)}
+                style={{ ...trStyle, backgroundColor: isSelected ? colors.bg.selected : "transparent" }}
+                onMouseEnter={(e) => {
+                    if (!isSelected) {
+                        e.currentTarget.style.backgroundColor = colors.bg.hover;
+                    }
+                }}
+                onMouseLeave={(e) => {
+                    if (!isSelected) {
+                        e.currentTarget.style.backgroundColor = "";
+                    }
+                }}
             >
+                {/* Selección */}
+                <td style={{ ...tdStyle, width: "36px", minWidth: "36px", maxWidth: "36px", position: "relative" }}>
+                    <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", lineHeight: 0 }}>
+                        <div
+                            onClick={(e) => onToggleSelect?.(e.shiftKey)}
+                            style={{
+                                width: "14px",
+                                height: "14px",
+                                borderRadius: "4px",
+                                border: `1.5px solid ${isSelected ? colors.fg.base : colors.border}`,
+                                backgroundColor: isSelected ? colors.fg.base : "transparent",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer",
+                                transition: "all 0.12s",
+                            }}
+                        >
+                            {isSelected && <Check size={10} color={colors.bg.base} strokeWidth={3} />}
+                        </div>
+                    </div>
+                </td>
                 {/* Fecha */}
                 <td
                     style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("9%"), cursor: "pointer" }}
                     onClick={handleFormatClick}
                     title="Cambiar formato"
                 >
-                    {formatDateCell(transaction.date, textFormat, userDateFormat)}
+                    <span className="selectable">{formatDateCell(transaction.date, textFormat, userDateFormat)}</span>
                 </td>
                 {/* Descripción */}
                 <td style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("18%"), overflow: "hidden" }}>
                     <Tooltip content={transaction.description || "Sin descripción"}>
                         <span
+                            className="selectable"
                             style={{
                                 fontWeight: 500,
                                 display: "block",
@@ -204,6 +237,7 @@ export function TransactionRow({
                 {/* Tipo */}
                 <td style={{ ...tdStyle, ...fixedWidthStyle("6%") }}>
                     <span
+                        className="selectable"
                         style={{
                             ...badgeStyle,
                             backgroundColor: colors.fill,
@@ -217,6 +251,7 @@ export function TransactionRow({
                 <td style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("12%"), overflow: "hidden" }}>
                     <Tooltip content={transaction.category_name || "-"}>
                         <span
+                            className="selectable"
                             style={{
                                 display: "block",
                                 overflow: "hidden",
@@ -230,6 +265,7 @@ export function TransactionRow({
                     {transaction.subcategory_name && (
                         <Tooltip content={transaction.subcategory_name}>
                             <div
+                                className="selectable"
                                 style={{
                                     ...subStyle,
                                     overflow: "hidden",
@@ -246,6 +282,7 @@ export function TransactionRow({
                 <td style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("12%"), overflow: "hidden" }}>
                     <Tooltip content={transaction.channel_name}>
                         <span
+                            className="selectable"
                             style={{
                                 display: "block",
                                 overflow: "hidden",
@@ -259,6 +296,7 @@ export function TransactionRow({
                     {transaction.account_name && (
                         <Tooltip content={transaction.account_name}>
                             <div
+                                className="selectable"
                                 style={{
                                     ...subStyle,
                                     overflow: "hidden",
@@ -275,6 +313,7 @@ export function TransactionRow({
                 <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("12%"), overflow: "hidden" }}>
                     <Tooltip content={`${transaction.currency} ${formatNumber(amount, { dynamic: true })}`}>
                         <span
+                            className="selectable"
                             style={{
                                 fontFamily: fonts.family.display,
                                 fontWeight: 500,
@@ -293,6 +332,7 @@ export function TransactionRow({
                         content={`${transaction.currency === "ARS" ? "USD" : "ARS"} ${formatNumber(alternateAmount, { dynamic: true })}`}
                     >
                         <span
+                            className="selectable"
                             style={{
                                 fontFamily: fonts.family.display,
                                 fontSize: fonts.table.meta,
@@ -311,7 +351,7 @@ export function TransactionRow({
                 </td>
                 {/* Moneda */}
                 <td style={{ ...tdStyle, ...fixedWidthStyle("5%") }}>
-                    <span style={{
+                    <span className="selectable" style={{
                         ...badgeStyle,
                         backgroundColor: colors.fill,
                         color: transaction.currency === "ARS" ? colors.accent.cyan : colors.accent.green,
@@ -329,6 +369,7 @@ export function TransactionRow({
                         }
                     >
                         <span
+                            className="selectable"
                             style={{
                                 fontFamily: fonts.family.display,
                                 fontSize: fonts.table.meta,
@@ -349,7 +390,7 @@ export function TransactionRow({
                 {/* Frecuencia */}
                 <td style={{ ...tdStyle, ...fixedWidthStyle("5%") }}>
                     {transaction.frequency === "fixed" ? (
-                        <span
+                        <span className="selectable"
                             style={{
                                 ...badgeStyle,
                                 backgroundColor: colors.fill,
@@ -359,7 +400,7 @@ export function TransactionRow({
                             Fijo
                         </span>
                     ) : transaction.frequency === "variable" ? (
-                        <span
+                        <span className="selectable"
                             style={{
                                 ...badgeStyle,
                                 backgroundColor: colors.fill,
@@ -375,6 +416,7 @@ export function TransactionRow({
                 {/* Estado */}
                 <td style={{ ...tdStyle, ...fixedWidthStyle("7%") }}>
                     <span
+                        className="selectable"
                         onClick={handleTogglePaid}
                         style={{
                             ...badgeStyle,
@@ -384,7 +426,6 @@ export function TransactionRow({
                                 : colors.accent.orange,
                             cursor: "pointer",
                             display: "inline-block",
-                            userSelect: "none",
                         }}
                     >
                         {transaction.is_paid ? (transaction.type === "income" ? "Recibido" : "Pagado") : "Pendiente"}

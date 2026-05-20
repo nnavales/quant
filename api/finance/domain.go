@@ -36,6 +36,7 @@ type Repository interface {
 	DeleteTransactionsByInstallmentGroup(ctx context.Context, groupID string, fromInstallment int) error
 	ListHistoricalEntries(ctx context.Context, filter *Filter) (*HistoricalListResponse, error)
 
+	BulkDeleteTransactionAggregate(ctx context.Context, ids []string) error
 	ListHistoricalEntriesRaw(ctx context.Context) ([]HistoricalRowDTO, error)
 	ListTransactionsAggRaw(ctx context.Context) ([]TransactionRowDTO, error)
 }

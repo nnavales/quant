@@ -140,6 +140,7 @@ export function KPICard({
                 )}
             </div>
             <div
+                className="selectable"
                 style={{
                     fontSize,
                     fontWeight: 700,
@@ -161,13 +162,13 @@ export function KPICard({
                 >
                     {change !== null && (
                         <div style={{ color: isPositive ? colors.accent.green : colors.accent.red }}>
-                            <span style={{ fontWeight: 500 }}>{isPositive ? "▲" : "▼"} {Math.abs(change).toFixed(1)}%</span>{" "}
+                            <span className="selectable" style={{ fontWeight: 500 }}>{isPositive ? "▲" : "▼"} {Math.abs(change).toFixed(1)}%</span>{" "}
                             <span style={{ color: colors.fg.dim }}>{changeLabel || "vs período anterior"}</span>
                         </div>
                     )}
                     {(changeDiff !== undefined || changeDiffLabel !== undefined) && (
                         <div>
-                            {changeDiff !== undefined && <span style={{ color: changeDiffColor ?? colors.fg.dim }}>{changeDiff}</span>}
+                            {changeDiff !== undefined && <span className="selectable" style={{ color: changeDiffColor ?? colors.fg.dim }}>{changeDiff}</span>}
                             {changeDiffLabel !== undefined && <span style={{ color: colors.fg.dim }}>{" "}{changeDiffLabel}</span>}
                         </div>
                     )}

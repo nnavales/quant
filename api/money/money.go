@@ -77,6 +77,29 @@ func FormatAmount(cents int64) string {
 	return fmt.Sprintf("%s%d.%02d", sign, cents/100, cents%100)
 }
 
+func FormatAmountESAr(cents int64) string {
+	sign := ""
+	if cents < 0 {
+		sign = "-"
+		cents = -cents
+	}
+
+	whole := cents / 100
+	frac := cents % 100
+
+	s := strconv.FormatInt(whole, 10)
+	if len(s) > 3 {
+		var parts []string
+		for len(s) > 3 {
+			parts = append([]string{s[len(s)-3:]}, parts...)
+			s = s[:len(s)-3]
+		}
+		parts = append([]string{s}, parts...)
+		return fmt.Sprintf("%s%s,%02d", sign, strings.Join(parts, "."), frac)
+	}
+	return fmt.Sprintf("%s%d,%02d", sign, whole, frac)
+}
+
 func (m *Money) USDToARS(rate float64) Money {
 	return Money(math.Round(float64(*m) * rate))
 }
@@ -103,6 +126,10 @@ func (m Money) Cents() int64 {
 
 func (m Money) String() string {
 	return FormatAmount(int64(m))
+}
+
+func (m Money) StringESAr() string {
+	return FormatAmountESAr(int64(m))
 }
 
 func (m Money) IsZero() bool {

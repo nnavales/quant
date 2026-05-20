@@ -41,6 +41,30 @@ func (r *SQLiteRepo) CreatePreset(ctx context.Context, p Preset) (*Preset, error
 	return &p, nil
 }
 
+func (r *SQLiteRepo) CreatePresetTx(ctx context.Context, tx *sql.Tx, p Preset) (*Preset, error) {
+	_, err := tx.ExecContext(ctx, QueryCreatePreset,
+		p.ID,
+		p.Name,
+		p.Description,
+		p.Type,
+		p.Frequency,
+		p.CategoryID,
+		p.SubcategoryID,
+		p.ChannelID,
+		p.AccountID,
+		p.IsPaid,
+		p.Currency,
+		p.CreatedAt,
+	)
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return nil, apperrors.ErrDuplicate
+		}
+		return nil, err
+	}
+	return &p, nil
+}
+
 func (r *SQLiteRepo) GetPresetByID(ctx context.Context, id string) (*Preset, error) {
 	var p Preset
 	err := r.db.QueryRowContext(ctx, QueryGetPresetByID, id).Scan(

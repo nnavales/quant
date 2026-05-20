@@ -226,6 +226,7 @@ export function AnalysisPage() {
                     segments={["YTD", "MTD"]}
                     changeLabel="vs mismo período año anterior"
                     toggleChangeLabel="vs mes anterior"
+                    inverseTrend
                 />
                 <KPICardToggle
                     label="Ingresos"

@@ -103,6 +103,7 @@ func addRoutes(mux *http.ServeMux,
 	mux.HandleFunc("GET /transaction-aggregates/{id}", h.GetTransactionAggregate)
 	mux.HandleFunc("PATCH /transaction-aggregates/{id}", h.UpdateTransactionAggregate)
 	mux.HandleFunc("DELETE /transaction-aggregates/{id}", h.DeleteTransactionAggregate)
+	mux.HandleFunc("DELETE /transaction-aggregates/bulk", h.BulkDeleteTransactionAggregate)
 	mux.HandleFunc("POST /transaction-aggregates/cancel-installments", h.CancelInstallments)
 	mux.HandleFunc("GET /historical-entries", h.ListHistoricalEntries)
 

@@ -48,6 +48,17 @@
     padding: 0;
 }
 
+html, body, #root {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+input, textarea, select,
+.selectable {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
 html {
     scrollbar-gutter: stable;
     scroll-behavior: smooth;

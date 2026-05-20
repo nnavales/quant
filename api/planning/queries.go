@@ -142,6 +142,12 @@ const (
 		WHERE month = ?
 	`
 
+	QueryListRates = `
+		SELECT month, rate, updated_at
+		FROM planning_exchange_rates
+		ORDER BY month DESC
+	`
+
 	QueryListRatesByYear = `
 		SELECT month, rate, updated_at
 		FROM planning_exchange_rates
@@ -206,6 +212,29 @@ const (
 		WHERE id = ?
 	`
 
+	QueryListGoals = `
+		SELECT
+			id,
+			year,
+			metric,
+			january,
+			february,
+			march,
+			april,
+			may,
+			june,
+			july,
+			august,
+			september,
+			october,
+			november,
+			december,
+			created_at,
+			updated_at
+		FROM planning_goals
+		ORDER BY year DESC, metric ASC
+	`
+
 	QueryListGoalsByYear = `
 		SELECT
 			id,
@@ -259,6 +288,12 @@ const (
 		SELECT year, initial_capital, updated_at
 		FROM planning_config
 		WHERE year = ?
+	`
+
+	QueryListPlanningConfigs = `
+		SELECT year, initial_capital, updated_at
+		FROM planning_config
+		ORDER BY year DESC
 	`
 
 	QueryUpsertPlanningConfig = `

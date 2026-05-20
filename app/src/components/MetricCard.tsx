@@ -42,7 +42,7 @@ export function MetricCard({ title, icon: Icon, iconColor, real, fcst, plan, ly,
                 </span>
             </div>
 
-            <div style={{
+            <div className="selectable" style={{
                 fontSize: compact ? fonts.size.xl : fonts.size["3xl"],
                 fontWeight: 700,
                 fontFamily: fonts.family.display,
@@ -56,7 +56,7 @@ export function MetricCard({ title, icon: Icon, iconColor, real, fcst, plan, ly,
             <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap" }}>
                 {fcst !== undefined && (
                     <Tooltip content={`Proyectado: ${formatCurrency(fcst)}`}>
-                        <span style={{
+                        <span className="selectable" style={{
                             fontSize: fonts.size.xs,
                             padding: "1px 6px",
                             borderRadius: "4px",
@@ -70,7 +70,7 @@ export function MetricCard({ title, icon: Icon, iconColor, real, fcst, plan, ly,
                 )}
                 {plan !== undefined && (
                     <Tooltip content={`Plan: ${formatCurrency(plan)}`}>
-                        <span style={{
+                        <span className="selectable" style={{
                             fontSize: fonts.size.xs,
                             padding: "1px 6px",
                             borderRadius: "4px",
@@ -84,7 +84,7 @@ export function MetricCard({ title, icon: Icon, iconColor, real, fcst, plan, ly,
                 )}
                 {ly !== undefined && (
                     <Tooltip content={`Anterior: ${formatCurrency(ly)}`}>
-                        <span style={{
+                        <span className="selectable" style={{
                             fontSize: fonts.size.xs,
                             padding: "1px 6px",
                             borderRadius: "4px",

@@ -145,7 +145,7 @@ export function PlanningPlanTable({
                                                         style={{ width: "100%", padding: 0, border: "none", backgroundColor: "transparent", color: colors.fg.base, fontSize: fonts.table.amount, fontFamily: fonts.family.text, textAlign: "right", outline: "none", cursor: "text" }} />
                                                 ) : hasVal ? (
                                                     <Tooltip content={fmt(val)}>
-                                                        <span style={{ display: "block", width: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{fmt(val)}</span>
+                                                        <span className="selectable" style={{ display: "block", width: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{fmt(val)}</span>
                                                     </Tooltip>
                                                 ) : (
                                                     <span style={{ color: "rgba(255,255,255,0.1)" }}>—</span>
@@ -202,7 +202,7 @@ const numInc = incVal ? parseFloat(incVal) : 0;
                                             <td key={m} style={{ ...cellValue, color: showClr, fontWeight: 500, width: "7%", height: "35px", boxSizing: "border-box" }}>
                                                 {val ? (
                                                     <Tooltip content={fmt(val)}>
-                                                        <span style={{ display: "block", width: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{fmt(val)}</span>
+                                                        <span className="selectable" style={{ display: "block", width: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{fmt(val)}</span>
                                                     </Tooltip>
                                                 ) : (
                                                     <span style={{ color: "rgba(255,255,255,0.1)" }}>—</span>

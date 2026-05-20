@@ -317,12 +317,12 @@ function CellTooltip({ data }: { data: TooltipData }) {
                                     style={{
                                         fontFamily: fonts.family.display,
                                         fontWeight: 600,
-                                        color:
-                                            (r.pct ?? 0) > 0
-                                                ? colors.accent.green
-                                                : (r.pct ?? 0) < 0
-                                                  ? colors.accent.red
-                                                  : colors.fg.dim,
+                                        color: (() => {
+                                            if (r.pct === null || r.pct === undefined) return colors.fg.dim;
+                                            const isExpense = data.accentColor === colors.accent.red;
+                                            const isGood = isExpense ? r.pct < 0 : r.pct > 0;
+                                            return isGood ? colors.accent.green : colors.accent.red;
+                                        })(),
                                         whiteSpace: "nowrap",
                                         textAlign: "right",
                                     }}
@@ -352,6 +352,7 @@ interface DataCellProps {
     borderTop?: string;
     tintClass?: string;
     isMtd?: boolean;
+    inverseTrend?: boolean;
 }
 
 function DataCell({
@@ -369,6 +370,7 @@ function DataCell({
     borderTop,
     tintClass,
     isMtd,
+    inverseTrend = false,
 }: DataCellProps) {
     const isPct = field.toString().includes("pct");
     const val = getCell(cell, field) as number | undefined;
@@ -388,9 +390,9 @@ function DataCell({
     } else if (isPct || field.toString().startsWith("vs")) {
         textColor =
             isPositiveVal === true
-                ? colors.accent.green
+                ? (inverseTrend ? colors.accent.red : colors.accent.green)
                 : isPositiveVal === false
-                  ? colors.accent.red
+                  ? (inverseTrend ? colors.accent.green : colors.accent.red)
                   : colors.fg.dim;
     } else if (isSummary) {
         textColor = colors.fg.base;
@@ -453,6 +455,7 @@ function DataCell({
             onMouseLeave={() => onHover(null)}
         >
             <span
+                className="selectable"
                 style={{
                     display: "block",
                     overflow: "hidden",
@@ -483,6 +486,7 @@ interface DataRowProps {
     currentMonth: number;
     hideMtd?: boolean;
     hideFy?: boolean;
+    inverseTrend?: boolean;
 }
 
 function DataRow({
@@ -499,6 +503,7 @@ function DataRow({
     currentMonth,
     hideMtd,
     hideFy,
+    inverseTrend = false,
 }: DataRowProps) {
     const labelColor = isPrimary ? accentColor : isComparison ? colors.fg.dim : colors.fg.base;
 
@@ -551,6 +556,7 @@ function DataRow({
                     monthLabel={MONTHS[i]}
                     onHover={onHover}
                     isDimmed={i > currentMonth}
+                    inverseTrend={inverseTrend}
                 />
             ))}
             <DataCell
@@ -564,6 +570,7 @@ function DataRow({
                 onHover={onHover}
                 isMtd={true}
                 summaryBorderLeft={`1px solid ${colors.border}`}
+                inverseTrend={inverseTrend}
             />
             <DataCell
                 cell={ytd}
@@ -575,6 +582,7 @@ function DataRow({
                 monthLabel="YTD"
                 onHover={onHover}
                 summaryBorderLeft={`1px solid ${colors.fill}`}
+                inverseTrend={inverseTrend}
             />
             <DataCell
                 cell={hideFy ? undefined : fy}
@@ -586,6 +594,7 @@ function DataRow({
                 monthLabel="FY"
                 onHover={onHover}
                 summaryBorderLeft={`1px solid ${colors.fill}`}
+                inverseTrend={inverseTrend}
             />
         </tr>
     );
@@ -601,6 +610,7 @@ interface SimpleMetricBlockProps {
     currentMonth: number;
     hideMtd?: boolean;
     hideFy?: boolean;
+    inverseTrend?: boolean;
 }
 
 function SimpleMetricBlock({
@@ -613,6 +623,7 @@ function SimpleMetricBlock({
     currentMonth,
     hideMtd,
     hideFy,
+    inverseTrend = false,
 }: SimpleMetricBlockProps) {
     if (!series || !series.months) return null;
 
@@ -752,6 +763,7 @@ function SimpleMetricBlock({
                         currentMonth={currentMonth}
                         hideMtd={hideMtd}
                         hideFy={hideFy}
+                        inverseTrend={inverseTrend}
                     />
                     <SimpleDataRow
                         label="LM"
@@ -765,6 +777,7 @@ function SimpleMetricBlock({
                         currentMonth={currentMonth}
                         hideMtd={hideMtd}
                         hideFy={hideFy}
+                        inverseTrend={inverseTrend}
                     />
                 </>
             )}
@@ -784,6 +797,7 @@ function SimpleMetricBlock({
                         currentMonth={currentMonth}
                         hideMtd={hideMtd}
                         hideFy={hideFy}
+                        inverseTrend={inverseTrend}
                     />
                     <SimpleDataRow
                         label="vs LY %"
@@ -798,6 +812,7 @@ function SimpleMetricBlock({
                         currentMonth={currentMonth}
                         hideMtd={hideMtd}
                         hideFy={hideFy}
+                        inverseTrend={inverseTrend}
                     />
                     <SimpleDataRow
                         label="vs LM"
@@ -812,6 +827,7 @@ function SimpleMetricBlock({
                         currentMonth={currentMonth}
                         hideMtd={hideMtd}
                         hideFy={hideFy}
+                        inverseTrend={inverseTrend}
                     />
                     <SimpleDataRow
                         label="vs LM %"
@@ -826,6 +842,7 @@ function SimpleMetricBlock({
                         currentMonth={currentMonth}
                         hideMtd={hideMtd}
                         hideFy={hideFy}
+                        inverseTrend={inverseTrend}
                     />
                 </>
             )}
@@ -846,6 +863,7 @@ function SimpleDataRow({
     currentMonth,
     hideMtd,
     hideFy,
+    inverseTrend,
 }: {
     label: string;
     values: MetricCell[];
@@ -859,6 +877,7 @@ function SimpleDataRow({
     currentMonth: number;
     hideMtd?: boolean;
     hideFy?: boolean;
+    inverseTrend?: boolean;
 }) {
     const labelColor = isComparison ? colors.fg.dim : colors.fg.base;
     return (
@@ -907,6 +926,7 @@ function SimpleDataRow({
                     monthLabel={MONTHS[i]}
                     onHover={onHover}
                     isDimmed={i > currentMonth}
+                    inverseTrend={inverseTrend}
                 />
             ))}
             <DataCell
@@ -920,6 +940,7 @@ function SimpleDataRow({
                 onHover={onHover}
                 isMtd={true}
                 summaryBorderLeft={`1px solid ${colors.border}`}
+                inverseTrend={inverseTrend}
             />
             <DataCell
                 cell={ytd}
@@ -931,6 +952,7 @@ function SimpleDataRow({
                 monthLabel="YTD"
                 onHover={onHover}
                 summaryBorderLeft={`1px solid ${colors.fill}`}
+                inverseTrend={inverseTrend}
             />
             <DataCell
                 cell={hideFy ? undefined : fy}
@@ -942,6 +964,7 @@ function SimpleDataRow({
                 monthLabel="FY"
                 onHover={onHover}
                 summaryBorderLeft={`1px solid ${colors.fill}`}
+                inverseTrend={inverseTrend}
             />
         </tr>
     );
@@ -977,6 +1000,7 @@ interface MetricBlockProps {
     currentMonth: number;
     hideMtd?: boolean;
     hideFy?: boolean;
+    inverseTrend?: boolean;
 }
 
 function MetricBlock({
@@ -995,6 +1019,7 @@ function MetricBlock({
     currentMonth,
     hideMtd,
     hideFy,
+    inverseTrend = false,
 }: MetricBlockProps) {
     if (!series || !series.months) return null;
 
@@ -1161,6 +1186,7 @@ function MetricBlock({
                         isPrimary={false}
                         onHover={onHover}
                         currentMonth={currentMonth}
+                        inverseTrend={inverseTrend}
                     />
                     <DataRow
                         label="Plan"
@@ -1173,6 +1199,7 @@ function MetricBlock({
                         isPrimary={false}
                         onHover={onHover}
                         currentMonth={currentMonth}
+                        inverseTrend={inverseTrend}
                     />
                     <DataRow
                         label="LY"
@@ -1185,6 +1212,7 @@ function MetricBlock({
                         isPrimary={false}
                         onHover={onHover}
                         currentMonth={currentMonth}
+                        inverseTrend={inverseTrend}
                     />
                 </>
             )}
@@ -1203,6 +1231,7 @@ function MetricBlock({
                         isComparison={true}
                         onHover={onHover}
                         currentMonth={currentMonth}
+                        inverseTrend={inverseTrend}
                     />
                     <DataRow
                         label="vs FCST %"
@@ -1216,6 +1245,7 @@ function MetricBlock({
                         isComparison={true}
                         onHover={onHover}
                         currentMonth={currentMonth}
+                        inverseTrend={inverseTrend}
                     />
                     <DataRow
                         label="vs Plan"
@@ -1229,6 +1259,7 @@ function MetricBlock({
                         isComparison={true}
                         onHover={onHover}
                         currentMonth={currentMonth}
+                        inverseTrend={inverseTrend}
                     />
                     <DataRow
                         label="vs Plan %"
@@ -1242,6 +1273,7 @@ function MetricBlock({
                         isComparison={true}
                         onHover={onHover}
                         currentMonth={currentMonth}
+                        inverseTrend={inverseTrend}
                     />
                     <DataRow
                         label="vs LY"
@@ -1255,6 +1287,7 @@ function MetricBlock({
                         isComparison={true}
                         onHover={onHover}
                         currentMonth={currentMonth}
+                        inverseTrend={inverseTrend}
                     />
                     <DataRow
                         label="vs LY %"
@@ -1268,6 +1301,7 @@ function MetricBlock({
                         isComparison={true}
                         onHover={onHover}
                         currentMonth={currentMonth}
+                        inverseTrend={inverseTrend}
                     />
                 </>
             )}
@@ -1291,6 +1325,7 @@ function MetricBlock({
                             currentMonth={currentMonth}
                             hideMtd={hideMtd}
                             hideFy={hideFy}
+                            inverseTrend={subKey.startsWith("expense")}
                         />
                     );
                 })}
@@ -1477,6 +1512,7 @@ export function MetricsComparisonTable({ data }: MetricsComparisonTableProps) {
                                 currentMonth={currentMonth}
                                 hideMtd={key === "capital"}
                                 hideFy={key === "capital" && !data.capital?.fy?.real}
+                                inverseTrend={key === "expense"}
                             />
                         );
                     })}

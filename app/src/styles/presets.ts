@@ -39,6 +39,7 @@ function buildScheme(input: PresetInput): ColorScheme {
     const surface = isLight ? shift(base, 32) : shift(base, -2);
     const header = isLight ? shift(surface, -25) : shift(surface, -2);
     const hover = isLight ? shift(surface, -35) : shift(surface, 3);
+    const selected = isLight ? shift(surface, -50) : shift(surface, 10);
     const border = isLight ? shift(base, -22) : shift(base, 12);
     const fill = isLight ? shift(base, -12) : shift(base, 6);
 
@@ -73,6 +74,7 @@ function buildScheme(input: PresetInput): ColorScheme {
             surface,
             header,
             hover,
+            selected,
         },
         border,
         fill,

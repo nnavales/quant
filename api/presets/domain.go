@@ -2,6 +2,7 @@ package presets
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -41,6 +42,7 @@ type Filter struct {
 
 type Repository interface {
 	CreatePreset(ctx context.Context, p Preset) (*Preset, error)
+	CreatePresetTx(ctx context.Context, tx *sql.Tx, p Preset) (*Preset, error)
 	GetPresetByID(ctx context.Context, id string) (*Preset, error)
 	GetPresetByName(ctx context.Context, name string) (*Preset, error)
 	ListPresets(ctx context.Context, filter Filter) ([]Preset, error)

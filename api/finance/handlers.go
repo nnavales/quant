@@ -181,3 +181,26 @@ func (h *Handler) CreateBulkTransactionAggregate(w http.ResponseWriter, r *http.
 	}
 	w.WriteHeader(http.StatusCreated)
 }
+
+func (h *Handler) BulkDeleteTransactionAggregate(w http.ResponseWriter, r *http.Request) {
+	type idsReq struct {
+		IDs []string `json:"ids"`
+	}
+	req, err := httpx.DecodeJSON[idsReq](r.Body)
+	if err != nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid request", err)
+		return
+	}
+
+	if len(req.IDs) <= 0 {
+		httpx.WriteError(w, r, http.StatusBadRequest, "ids required", nil)
+		return
+	}
+
+	err = h.service.BulkDeleteTransactionAggregate(r.Context(), req.IDs)
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}

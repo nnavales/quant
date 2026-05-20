@@ -31,6 +31,7 @@ export interface KPICardToggleProps {
     toggleChangeDiffLabel?: string;
     segments?: [string, string];
     toggleChangeLabel?: string;
+    inverseTrend?: boolean;
 }
 
 export function KPICardToggle({
@@ -58,6 +59,7 @@ export function KPICardToggle({
     toggleChangeDiff,
     toggleChangeDiffColor,
     toggleChangeDiffLabel,
+    inverseTrend = false,
 }: KPICardToggleProps) {
     const [showToggle, setShowToggle] = useState(false);
 
@@ -200,6 +202,7 @@ export function KPICardToggle({
             </div>
             <div style={{ display: "flex", alignItems: "baseline", gap: spacing[2] }}>
                 <div
+                    className="selectable"
                     style={{
                         fontSize,
                         fontWeight: 700,
@@ -214,6 +217,7 @@ export function KPICardToggle({
                 )}
                 {!hasSegments && otherValue !== undefined && otherValue !== null && !compact && (
                     <span
+                        className="selectable"
                         onClick={(e) => {
                             e.stopPropagation();
                             setShowToggle(prev => !prev);
@@ -241,22 +245,22 @@ export function KPICardToggle({
                     }}
                 >
                     {change !== null && (
-                        <div style={{ color: isPositive ? colors.accent.green : colors.accent.red }}>
-                            <span style={{ fontWeight: 500 }}>{isPositive ? "▲" : "▼"} {Math.abs(change).toFixed(1)}%</span>{" "}
+                        <div style={{ color: inverseTrend ? (isPositive ? colors.accent.red : colors.accent.green) : (isPositive ? colors.accent.green : colors.accent.red) }}>
+                            <span className="selectable" style={{ fontWeight: 500 }}>{isPositive ? "▲" : "▼"} {Math.abs(change).toFixed(1)}%</span>{" "}
                             <span style={{ color: colors.fg.dim }}>{showToggle && toggleChangeLabel ? toggleChangeLabel : (changeLabel || "vs período anterior")}</span>
                         </div>
                     )}
                     {showToggle ? (
                         (toggleChangeDiff ?? toggleChangeDiffLabel) !== undefined && (
                             <div>
-                                {toggleChangeDiff !== undefined && <span style={{ color: toggleChangeDiffColor ?? colors.fg.dim }}>{toggleChangeDiff}</span>}
+                                {toggleChangeDiff !== undefined && <span className="selectable" style={{ color: toggleChangeDiffColor ?? colors.fg.dim }}>{toggleChangeDiff}</span>}
                                 {toggleChangeDiffLabel !== undefined && <span style={{ color: colors.fg.dim }}>{" "}{toggleChangeDiffLabel}</span>}
                             </div>
                         )
                     ) : (
                         (changeDiff ?? changeDiffLabel) !== undefined && (
                             <div>
-                                {changeDiff !== undefined && <span style={{ color: changeDiffColor ?? colors.fg.dim }}>{changeDiff}</span>}
+                                {changeDiff !== undefined && <span className="selectable" style={{ color: changeDiffColor ?? colors.fg.dim }}>{changeDiff}</span>}
                                 {changeDiffLabel !== undefined && <span style={{ color: colors.fg.dim }}>{" "}{changeDiffLabel}</span>}
                             </div>
                         )

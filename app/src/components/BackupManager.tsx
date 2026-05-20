@@ -9,6 +9,7 @@ import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
 import { cardStyle } from "@/styles/layout";
+import { CustomSelect } from "@/components/ui/Select";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
 import { downloadDir } from "@tauri-apps/api/path";
@@ -26,9 +27,60 @@ const resourceOptions = [
     { id: "transactions" as const, label: "Transacciones" },
     { id: "historical" as const, label: "Datos históricos" },
     { id: "networth" as const, label: "Patrimonio" },
+    { id: "presets" as const, label: "Plantillas" },
+    { id: "planning-inputs" as const, label: "Forecast" },
+    { id: "planning-goals" as const, label: "Plan" },
+    { id: "planning-exchange-rates" as const, label: "Planning - Cotizaciones" },
+    { id: "planning-config" as const, label: "Planning - Capital Inicial" },
 ];
 
+type ResourceId = typeof resourceOptions[number]["id"];
+
 const csvDocs: Record<string, { columns: string; description: React.ReactNode; example: string }> = {
+    "planning-inputs": {
+        columns: "year,description,type,currency,january,february,march,april,may,june,july,august,september,october,november,december",
+        description: (
+            <ul style={{ color: colors.fg.dim, fontSize: fonts.size.sm, margin: 0, paddingLeft: spacing[4], lineHeight: 1.6 }}>
+                <li><strong>year</strong>: año (ej: 2026)</li>
+                <li><strong>description</strong>: descripción del item (máx 50 caracteres)</li>
+                <li><strong>type</strong>: <code style={{ color: colors.fg.base }}>income</code> o <code style={{ color: colors.fg.base }}>expense</code></li>
+                <li><strong>currency</strong>: <code style={{ color: colors.fg.base }}>ARS</code> o <code style={{ color: colors.fg.base }}>USD</code></li>
+                <li><strong>january</strong> a <strong>december</strong>: montos mensuales en centavos (enteros)</li>
+            </ul>
+        ),
+        example: "2026,Alquiler,expense,ARS,150000,150000,150000,150000,150000,150000,150000,150000,150000,150000,150000,150000",
+    },
+    "planning-goals": {
+        columns: "year,metric,january,february,march,april,may,june,july,august,september,october,november,december",
+        description: (
+            <ul style={{ color: colors.fg.dim, fontSize: fonts.size.sm, margin: 0, paddingLeft: spacing[4], lineHeight: 1.6 }}>
+                <li><strong>year</strong>: año (ej: 2026)</li>
+                <li><strong>metric</strong>: <code style={{ color: colors.fg.base }}>income</code> o <code style={{ color: colors.fg.base }}>expense</code></li>
+                <li><strong>january</strong> a <strong>december</strong>: metas mensuales en centavos (enteros)</li>
+            </ul>
+        ),
+        example: "2026,income,500000,500000,500000,500000,500000,500000,500000,500000,500000,500000,500000,500000",
+    },
+    "planning-exchange-rates": {
+        columns: "month,rate",
+        description: (
+            <ul style={{ color: colors.fg.dim, fontSize: fonts.size.sm, margin: 0, paddingLeft: spacing[4], lineHeight: 1.6 }}>
+                <li><strong>month</strong>: formato YYYY-MM (ej: 2026-01)</li>
+                <li><strong>rate</strong>: tipo de cambio ARS/USD</li>
+            </ul>
+        ),
+        example: "2026-01,1200.50",
+    },
+    "planning-config": {
+        columns: "year,initial_capital",
+        description: (
+            <ul style={{ color: colors.fg.dim, fontSize: fonts.size.sm, margin: 0, paddingLeft: spacing[4], lineHeight: 1.6 }}>
+                <li><strong>year</strong>: año (ej: 2026)</li>
+                <li><strong>initial_capital</strong>: capital inicial en centavos</li>
+            </ul>
+        ),
+        example: "2026,10000000",
+    },
     historical: {
         columns: "month,income,income_variable,income_fixed,expense,expense_fixed,expense_variable,exchange_rate,savings,source",
         description: (
@@ -75,12 +127,28 @@ const csvDocs: Record<string, { columns: string; description: React.ReactNode; e
         ),
         example: "Billetera USD,3500,USD,liquid",
     },
+    presets: {
+        columns: "name,description,type,frequency,category,subcategory,channel,account,is_done,currency",
+        description: (
+            <ul style={{ color: colors.fg.dim, fontSize: fonts.size.sm, margin: 0, paddingLeft: spacing[4], lineHeight: 1.6 }}>
+                <li><strong>name</strong>: nombre de la plantilla</li>
+                <li><strong>description</strong>: descripción</li>
+                <li><strong>type</strong>: <code style={{ color: colors.fg.base }}>income</code> o <code style={{ color: colors.fg.base }}>expense</code></li>
+                <li><strong>frequency</strong>: <code style={{ color: colors.fg.base }}>fixed</code> o <code style={{ color: colors.fg.base }}>variable</code></li>
+                <li><strong>category / subcategory</strong>: nombre de categoría y subcategoría</li>
+                <li><strong>channel / account</strong>: nombre del canal y cuenta</li>
+                <li><strong>is_done</strong>: <code style={{ color: colors.fg.base }}>true</code> o <code style={{ color: colors.fg.base }}>false</code></li>
+                <li><strong>currency</strong>: <code style={{ color: colors.fg.base }}>ARS</code> o <code style={{ color: colors.fg.base }}>USD</code></li>
+            </ul>
+        ),
+        example: "Sueldo,,income,fixed,,,Transferencia,Cuenta sueldo,false,ARS",
+    },
 };
 
 export function BackupManager() {
-    const [selectedResource, setSelectedResource] = useState<"transactions" | "historical" | "networth">("transactions");
+    const [selectedResource, setSelectedResource] = useState<ResourceId>("planning-inputs");
     const [showDocs, setShowDocs] = useState(false);
-    const [docTab, setDocTab] = useState<"transactions" | "historical" | "networth">("historical");
+    const [docTab, setDocTab] = useState<ResourceId>("historical");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const exportMutation = useExportBackup();
@@ -220,67 +288,119 @@ export function BackupManager() {
                     style={{
                         backgroundColor: colors.bg.surface,
                         borderRadius: radius.lg,
-                        padding: spacing[6],
-                        maxWidth: "560px",
+                        padding: 0,
+                        maxWidth: "640px",
                         width: "100%",
                         border: `1px solid ${colors.fill}`,
+                        overflow: "hidden",
                     }}
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: spacing[4] }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: spacing[2] }}>
-                            <FileText size={18} color={colors.accent.teal} />
-                            <h3 style={{ margin: 0, fontSize: fonts.size.lg, fontWeight: 600, color: colors.fg.base }}>Formato CSV</h3>
-                        </div>
-                        <button
-                            onClick={() => setShowDocs(false)}
-                            style={{ background: "none", border: "none", color: colors.fg.dim, cursor: "pointer", padding: spacing[1], display: "flex" }}
-                        >
-                            <X size={18} />
-                        </button>
-                    </div>
-
-                    <div style={{ display: "flex", gap: spacing[1], marginBottom: spacing[4] }}>
-                        {resourceOptions.map((opt) => (
+                    <div style={{ padding: spacing[6], paddingBottom: spacing[4], borderBottom: `1px solid ${colors.fill}` }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: spacing[3] }}>
+                                <div style={{ width: 36, height: 36, borderRadius: radius.md, backgroundColor: `${colors.accent.teal}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    <FileText size={18} color={colors.accent.teal} />
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: 0, fontSize: fonts.size.lg, fontWeight: 600, color: colors.fg.base }}>Formato CSV</h3>
+                                    <p style={{ margin: `${spacing[1]} 0 0`, fontSize: fonts.size.sm, color: colors.fg.dim }}>
+                                        Columnas, ejemplo y referencia rápida
+                                    </p>
+                                </div>
+                            </div>
                             <button
-                                key={opt.id}
-                                onClick={() => setDocTab(opt.id)}
-                                style={{
-                                    flex: 1,
-                                    padding: `${spacing[2]} ${spacing[3]}`,
-                                    borderRadius: radius.md,
-                                    border: `1px solid ${docTab === opt.id ? colors.accent.cyan : colors.fill}`,
-                                    backgroundColor: docTab === opt.id ? `${colors.accent.cyan}18` : "transparent",
-                                    color: docTab === opt.id ? colors.accent.cyan : colors.fg.dim,
-                                    fontSize: fonts.size.sm,
-                                    fontWeight: docTab === opt.id ? 600 : 500,
-                                    cursor: "pointer",
-                                    fontFamily: fonts.family.text,
-                                    transition: "all 0.15s",
-                                }}
+                                onClick={() => setShowDocs(false)}
+                                style={{ background: "none", border: "none", color: colors.fg.dim, cursor: "pointer", padding: spacing[1], display: "flex", borderRadius: radius.sm }}
                             >
-                                {opt.label}
+                                <X size={18} />
                             </button>
-                        ))}
+                        </div>
                     </div>
 
-                    <div style={{ backgroundColor: colors.bg.base, borderRadius: radius.md, padding: spacing[3], border: `1px solid ${colors.fill}` }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: spacing[2], marginBottom: spacing[2] }}>
-                            <span style={{ fontSize: fonts.size.sm, fontWeight: 600, color: colors.fg.base }}>{resourceOptions.find((r) => r.id === docTab)?.label}</span>
+                    <div style={{ padding: spacing[5], paddingBottom: 0 }}>
+                        <div style={{ marginBottom: spacing[2], fontSize: fonts.size.xs, fontWeight: 600, color: colors.fg.dim, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                            Tipo de datos
+                        </div>
+                        <div style={{ marginBottom: spacing[5] }}>
+                            <CustomSelect
+                                value={docTab}
+                                options={[
+                                    { value: "planning-inputs", label: "Forecast" },
+                                    { value: "planning-goals", label: "Plan" },
+                                    { value: "planning-exchange-rates", label: "Planning - Cotizaciones" },
+                                    { value: "planning-config", label: "Planning - Capital Inicial" },
+                                    { value: "transactions", label: "Transacciones" },
+                                    { value: "historical", label: "Datos históricos" },
+                                    { value: "networth", label: "Patrimonio" },
+                                    { value: "presets", label: "Plantillas" },
+                                ]}
+                                onChange={(v) => setDocTab(v as ResourceId)}
+                            />
                         </div>
 
-                        <div style={{ overflowX: "auto", marginBottom: spacing[3], backgroundColor: colors.bg.surface, borderRadius: radius.sm, border: `1px solid ${colors.fill}` }}>
-                            <div style={{ display: "flex", flexDirection: "column" }}>
-                                <code style={{ display: "block", fontSize: fonts.size.xs, color: colors.accent.cyan, padding: `${spacing[2]} ${spacing[3]}`, fontFamily: "monospace", whiteSpace: "nowrap", wordBreak: "keep-all", borderBottom: `1px solid ${colors.fill}` }}>
-                                    {doc.columns}
-                                </code>
-                                <code style={{ display: "block", fontSize: fonts.size.xs, color: colors.fg.base, padding: `${spacing[2]} ${spacing[3]}`, fontFamily: "monospace", whiteSpace: "nowrap", wordBreak: "keep-all" }}>
+                        <div style={{ marginBottom: spacing[4] }}>
+                            <div style={{ fontSize: fonts.size.xs, fontWeight: 600, color: colors.fg.dim, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: spacing[2] }}>
+                                Columnas
+                            </div>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: spacing[1] }}>
+                                {doc.columns.split(",").map((col, i) => (
+                                    <span
+                                        key={i}
+                                        style={{
+                                            padding: `${spacing[0]} ${spacing[2]}`,
+                                            borderRadius: radius.sm,
+                                            backgroundColor: `${colors.accent.cyan}12`,
+                                            color: colors.accent.cyan,
+                                            fontSize: fonts.size.xs,
+                                            fontFamily: "monospace",
+                                            fontWeight: 500,
+                                            lineHeight: "24px",
+                                            whiteSpace: "nowrap",
+                                        }}
+                                    >
+                                        {col}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div style={{ marginBottom: spacing[4] }}>
+                            <div style={{ fontSize: fonts.size.xs, fontWeight: 600, color: colors.fg.dim, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: spacing[2] }}>
+                                Ejemplo
+                            </div>
+                            <div style={{
+                                backgroundColor: colors.bg.base,
+                                borderRadius: radius.md,
+                                border: `1px solid ${colors.fill}`,
+                                padding: spacing[3],
+                                overflowX: "auto",
+                            }}>
+                                <code style={{
+                                    fontSize: fonts.size.xs,
+                                    color: colors.fg.dim,
+                                    fontFamily: "monospace",
+                                    whiteSpace: "nowrap",
+                                    lineHeight: 1.6,
+                                }}>
                                     {doc.example}
                                 </code>
                             </div>
                         </div>
 
-                        {doc.description}
+                        <div style={{ marginBottom: spacing[5] }}>
+                            <div style={{ fontSize: fonts.size.xs, fontWeight: 600, color: colors.fg.dim, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: spacing[2] }}>
+                                Referencia
+                            </div>
+                            <div style={{
+                                backgroundColor: colors.bg.base,
+                                borderRadius: radius.md,
+                                border: `1px solid ${colors.fill}`,
+                                padding: spacing[3],
+                            }}>
+                                {doc.description}
+                            </div>
+                        </div>
                     </div>
                 </ModalContent>
             </Modal>

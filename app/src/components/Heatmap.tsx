@@ -277,7 +277,7 @@ export function Heatmap({
                                     textOverflow: "ellipsis",
                                 }}
                             >
-                                {category}
+                                <span className="selectable">{category}</span>
                             </td>
                             {months.map((month) => {
                                 const { value, composition } = heatmapData[category]?.[month] || {
@@ -320,6 +320,7 @@ export function Heatmap({
                                         onMouseLeave={() => setHoveredCell(null)}
                                     >
                                         <span
+                                            className="selectable"
                                             style={{
                                                 display: "block",
                                                 overflow: "hidden",

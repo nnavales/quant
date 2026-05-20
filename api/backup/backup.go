@@ -5,9 +5,14 @@ import (
 )
 
 type Data struct {
-	Transactions      []Transaction
-	HistoricalEntries []HistoricalEntry
-	NetWorth          []Asset
+	Transactions             []Transaction
+	HistoricalEntries        []HistoricalEntry
+	NetWorth                 []Asset
+	Presets                  []Preset
+	PlanningInputs           []PlanningInputBackup
+	PlanningGoals            []PlanningGoalBackup
+	PlanningExchangeRates    []PlanningExchangeRateBackup
+	PlanningConfigs          []PlanningConfigBackup
 }
 
 type Transaction struct {
@@ -47,4 +52,88 @@ type Asset struct {
 	Amount   money.Money `json:"amount" csv:"amount"`
 	Currency string      `json:"currency" csv:"currency"`
 	Type     string      `json:"type" csv:"type"`
+}
+
+type EntityRef struct {
+	Category    string
+	Subcategory string
+	Channel     string
+	Account     string
+}
+
+func (t Transaction) EntityRef() EntityRef {
+	return EntityRef{
+		Category:    t.Category,
+		Subcategory: t.Subcategory,
+		Channel:     t.Channel,
+		Account:     t.Account,
+	}
+}
+
+func (p Preset) EntityRef() EntityRef {
+	return EntityRef{
+		Category:    p.Category,
+		Subcategory: p.Subcategory,
+		Channel:     p.Channel,
+		Account:     p.Account,
+	}
+}
+
+type Preset struct {
+	Name        string `json:"name" csv:"name"`
+	Desription  string `json:"Description" csv:"description"`
+	Type        string `json:"type" csv:"type"`
+	Frequency   string `json:"frequency" csv:"frequency"`
+	Category    string `json:"category" csv:"category"`
+	Subcategory string `json:"subcategory" csv:"subcategory"`
+	Channel     string `json:"channel" csv:"channel"`
+	Account     string `json:"account" csv:"account"`
+	IsDone      bool   `json:"is_done" csv:"is_done"`
+	Currency    string `json:"currency" csv:"currency"`
+}
+
+type PlanningInputBackup struct {
+	Year        int         `json:"year" csv:"year"`
+	Description string      `json:"description" csv:"description"`
+	Type        string      `json:"type" csv:"type"`
+	Currency    string      `json:"currency" csv:"currency"`
+	January     money.Money `json:"january" csv:"january"`
+	February    money.Money `json:"february" csv:"february"`
+	March       money.Money `json:"march" csv:"march"`
+	April       money.Money `json:"april" csv:"april"`
+	May         money.Money `json:"may" csv:"may"`
+	June        money.Money `json:"june" csv:"june"`
+	July        money.Money `json:"july" csv:"july"`
+	August      money.Money `json:"august" csv:"august"`
+	September   money.Money `json:"september" csv:"september"`
+	October     money.Money `json:"october" csv:"october"`
+	November    money.Money `json:"november" csv:"november"`
+	December    money.Money `json:"december" csv:"december"`
+}
+
+type PlanningGoalBackup struct {
+	Year      int         `json:"year" csv:"year"`
+	Metric    string      `json:"metric" csv:"metric"`
+	January   money.Money `json:"january" csv:"january"`
+	February  money.Money `json:"february" csv:"february"`
+	March     money.Money `json:"march" csv:"march"`
+	April     money.Money `json:"april" csv:"april"`
+	May       money.Money `json:"may" csv:"may"`
+	June      money.Money `json:"june" csv:"june"`
+	July      money.Money `json:"july" csv:"july"`
+	August    money.Money `json:"august" csv:"august"`
+	September money.Money `json:"september" csv:"september"`
+	October   money.Money `json:"october" csv:"october"`
+	November  money.Money `json:"november" csv:"november"`
+	December  money.Money `json:"december" csv:"december"`
+}
+
+type PlanningExchangeRateBackup struct {
+	Month string  `json:"month" csv:"month"`
+	Rate  float64 `json:"rate" csv:"rate"`
+}
+
+type PlanningConfigBackup struct {
+	Year           int         `json:"year" csv:"year"`
+	InitialCapital money.Money `json:"initial_capital" csv:"initial_capital"`
 }

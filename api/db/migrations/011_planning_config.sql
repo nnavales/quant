@@ -7,3 +7,5 @@ CREATE TABLE planning_config (
 
 -- +goose Down
 DROP TABLE planning_config;
+
+

@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { TransactionFilters, HistoricalFilters } from "@/api_client";
 import type { TransactionRowDTO } from "@/api_client/types";
 import { TransactionList } from "@/components/TransactionList";
 import { TransactionFilters as TransactionFiltersComponent } from "@/components/TransactionFilters";
 import { TransactionModal } from "@/components/TransactionModal";
 import { HistoricalTab } from "@/components/HistoricalTab";
-import { Plus, Upload } from "lucide-react";
+import { Plus, Upload, Trash2, X } from "lucide-react";
 import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { Button } from "@/components/ui/Button";
@@ -13,11 +13,14 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
     useTransactionAggregates,
     useDeleteTransaction,
+    useBulkDeleteTransactions,
     useCancelInstallments,
     useHistoricalEntries,
 } from "@/hooks";
-import { spacing, colors } from "@/styles";
+import { spacing, colors, radius } from "@/styles";
 import { fonts } from "@/styles/fonts";
+
+const Sep = () => <span style={{ color: colors.border, width: "1px", height: "18px", display: "inline-block" }} />;
 
 type Tab = "transacciones" | "historico";
 
@@ -34,15 +37,82 @@ export function TransactionsPage() {
     }>({ open: false, type: "expense" });
     const [showBulkImport, setShowBulkImport] = useState(false);
     const [historicalFilters] = useState<HistoricalFilters>({ page: 1, limit: 15 });
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [lastClickedIndex, setLastClickedIndex] = useState<number | null>(null);
+
+    const toggleSelect = (id: string, idx: number, shiftKey: boolean) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (shiftKey && lastClickedIndex !== null) {
+                const start = Math.min(lastClickedIndex, idx);
+                const end = Math.max(lastClickedIndex, idx);
+                let allSelected = true;
+                for (let i = start; i <= end; i++) {
+                    if (!next.has(transactions[i].id)) {
+                        allSelected = false;
+                        break;
+                    }
+                }
+                for (let i = start; i <= end; i++) {
+                    if (allSelected) next.delete(transactions[i].id);
+                    else next.add(transactions[i].id);
+                }
+            } else {
+                if (next.has(id)) next.delete(id);
+                else next.add(id);
+            }
+            return next;
+        });
+        if (!shiftKey) {
+            setLastClickedIndex(idx);
+        }
+    };
+
+    const clearSelection = () => setSelectedIds(new Set());
+
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") clearSelection();
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, []);
 
     const { data, isLoading, isError, error } = useTransactionAggregates(filters);
     const { data: historicalData } = useHistoricalEntries(historicalFilters);
     const deleteMutation = useDeleteTransaction();
     const cancelMutation = useCancelInstallments();
+    const bulkDeleteMutation = useBulkDeleteTransactions();
 
     const transactions = data?.data ?? [];
     const total = data?.total ?? 0;
     const historicalTotal = historicalData?.total ?? 0;
+
+    const selectionSummary = useMemo(() => {
+        if (selectedIds.size === 0) return null;
+        const selected = transactions.filter((t) => selectedIds.has(t.id));
+        let arsSum = 0;
+        let usdSum = 0;
+        for (const t of selected) {
+            const amount = parseFloat(t.amount);
+            if (t.currency === "ARS") arsSum += amount;
+            else usdSum += amount;
+        }
+        const arsUsdConverted = selected
+            .filter((t) => t.currency === "USD")
+            .reduce((sum, t) => sum + parseFloat(t.amount) * t.exchange_rate, 0);
+        return { count: selected.length, arsSum, usdSum, totalArs: arsSum + arsUsdConverted };
+    }, [selectedIds, transactions]);
+    const isAllSelected = transactions.length > 0 && selectedIds.size === transactions.length;
+    const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+
+    const toggleSelectAll = () => {
+        if (isAllSelected) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(transactions.map((t) => t.id)));
+        }
+    };
 
     const handleFiltersChange = (newFilters: TransactionFilters) => {
         setFilters((prev) => ({ ...newFilters, limit: prev.limit }));
@@ -84,6 +154,20 @@ export function TransactionsPage() {
             onError: (err) => {
                 toast(getApiErrorMessage(err));
                 setDeleteConfirm(null);
+            },
+        });
+    };
+
+    const confirmBulkDelete = () => {
+        bulkDeleteMutation.mutate([...selectedIds], {
+            onSuccess: () => {
+                setBulkDeleteConfirm(false);
+                setSelectedIds(new Set());
+                toast(`${selectionSummary?.count} transacciones eliminadas`, "success");
+            },
+            onError: (err) => {
+                toast(getApiErrorMessage(err));
+                setBulkDeleteConfirm(false);
             },
         });
     };
@@ -219,6 +303,7 @@ export function TransactionsPage() {
                                 {getApiErrorMessage(error) || "Error"}
                             </div>
                         ) : (
+                            <>
                             <TransactionList
                                 transactions={transactions}
                                 sort={sort}
@@ -226,8 +311,96 @@ export function TransactionsPage() {
                                 onSort={handleSort}
                                 onDelete={handleDelete}
                                 onCancelInstallments={handleCancelInstallments}
+                                selectedIds={selectedIds}
+                                onToggleSelect={toggleSelect}
+                                onToggleSelectAll={toggleSelectAll}
+                                isAllSelected={isAllSelected}
                             />
-                        )}
+                            {selectionSummary && (
+                                <div
+                                    style={{
+                                        position: "fixed",
+                                        bottom: spacing[4],
+                                        right: spacing[4],
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: spacing[4],
+                                        padding: `${spacing[2]} ${spacing[4]}`,
+                                        backgroundColor: colors.bg.header,
+                                        border: `1px solid ${colors.border}`,
+                                        borderRadius: radius.md,
+                                        outline: `1px solid ${colors.fill}`,
+                                        fontSize: "13px",
+                                        color: colors.fg.dim,
+                                        zIndex: 1000,
+                                        WebkitFontSmoothing: "antialiased",
+                                        MozOsxFontSmoothing: "grayscale",
+                                    }}
+                                >
+                                    <span style={{ display: "flex", alignItems: "center", gap: spacing[1] }}>
+                                        <span className="selectable" style={{ fontWeight: 600, color: colors.fg.base, whiteSpace: "nowrap" }}>
+                                            {selectionSummary.count}
+                                        </span>
+                                        <span>seleccionadas</span>
+                                    </span>
+                                    <Sep />
+                                    <span style={{ display: "flex", alignItems: "center", gap: spacing[2] }}>
+                                        <span style={{ color: colors.fg.base, fontWeight: 500 }}>ARS</span>
+                                        <span className="selectable" style={{ fontFamily: fonts.family.display, fontWeight: 700, color: colors.fg.base, whiteSpace: "nowrap" }}>
+                                            {selectionSummary.totalArs.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </span>
+                                    </span>
+                                    <span style={{ flex: 1 }} />
+                                    <span style={{ display: "flex", alignItems: "center", gap: spacing[1], marginLeft: spacing[2] }}>
+                                        <button
+                                            onClick={() => setBulkDeleteConfirm(true)}
+                                            onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
+                                            onMouseLeave={(e) => e.currentTarget.style.opacity = "0.45"}
+                                            style={{
+                                                background: "none",
+                                                border: "none",
+                                                cursor: "pointer",
+                                                color: colors.fg.dim,
+                                                padding: spacing[1],
+                                                lineHeight: 1,
+                                                borderRadius: radius.sm,
+                                                opacity: 0.45,
+                                                transition: "opacity 0.15s, background-color 0.15s",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                            }}
+                                            title="Eliminar seleccionadas"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                        <button
+                                            onClick={clearSelection}
+                                            onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
+                                            onMouseLeave={(e) => e.currentTarget.style.opacity = "0.45"}
+                                            style={{
+                                                background: "none",
+                                                border: "none",
+                                                cursor: "pointer",
+                                                color: colors.fg.dim,
+                                                padding: spacing[1],
+                                                lineHeight: 1,
+                                                borderRadius: radius.sm,
+                                                opacity: 0.45,
+                                                transition: "opacity 0.15s, background-color 0.15s",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                            }}
+                                            title="Limpiar selección"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </span>
+                                </div>
+                            )}
+                        </>
+                    )}
                     </div>
                 </>
             ) : (
@@ -248,6 +421,17 @@ export function TransactionsPage() {
                         ? `¿Eliminar esta cuota (${deleteConfirm.installment_number}/${deleteConfirm.total_installments})? Se eliminarán todas las cuotas relacionadas.`
                         : "¿Eliminar esta transacción?"
                 }
+            />
+
+            <ConfirmDialog
+                isOpen={bulkDeleteConfirm}
+                onClose={() => setBulkDeleteConfirm(false)}
+                onConfirm={confirmBulkDelete}
+                title="Confirmar eliminación"
+                description={`¿Eliminar ${selectionSummary?.count} transacciones? Esta acción no se puede deshacer.`}
+                isLoading={bulkDeleteMutation.isPending}
+                destructive
+                requireHold
             />
 
             <ConfirmDialog

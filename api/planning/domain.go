@@ -2,6 +2,7 @@ package planning
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -121,23 +122,30 @@ type Repository interface {
 	ListInputs(ctx context.Context) ([]PlanningInput, error)
 	ListInputsByYear(ctx context.Context, year string) ([]PlanningInput, error)
 	CreateInput(ctx context.Context, i PlanningInput) (*PlanningInput, error)
+	CreateInputTx(ctx context.Context, tx *sql.Tx, i PlanningInput) (*PlanningInput, error)
 	UpdateInput(ctx context.Context, i PlanningInput, now time.Time) (*PlanningInput, error)
 	DeleteInput(ctx context.Context, id string) error
 
 	GetRateByDate(ctx context.Context, date timeutils.YearMonth) (*ExchangeRateInput, error)
+	ListRates(ctx context.Context) ([]ExchangeRateInput, error)
 	ListRatesByYear(ctx context.Context, year string) ([]ExchangeRateInput, error)
 	CreateRate(ctx context.Context, i ExchangeRateInput) (*ExchangeRateInput, error)
+	CreateRateTx(ctx context.Context, tx *sql.Tx, i ExchangeRateInput) (*ExchangeRateInput, error)
 	UpdateRate(ctx context.Context, i ExchangeRateInput, now time.Time) (*ExchangeRateInput, error)
 	DeleteRate(ctx context.Context, date timeutils.YearMonth) error
 
 	GetGoal(ctx context.Context, id string) (*PlanningGoal, error)
+	ListGoals(ctx context.Context) ([]PlanningGoal, error)
 	ListGoalsByYear(ctx context.Context, year string) ([]PlanningGoal, error)
 	CreateGoal(ctx context.Context, g PlanningGoal) (*PlanningGoal, error)
+	CreateGoalTx(ctx context.Context, tx *sql.Tx, g PlanningGoal) (*PlanningGoal, error)
 	UpdateGoal(ctx context.Context, g PlanningGoal, now time.Time) (*PlanningGoal, error)
 	DeleteGoal(ctx context.Context, id string) error
 
 	GetPlanningConfig(ctx context.Context, year int) (*PlanningConfig, error)
+	ListPlanningConfigs(ctx context.Context) ([]PlanningConfig, error)
 	UpsertPlanningConfig(ctx context.Context, c PlanningConfig) (*PlanningConfig, error)
+	UpsertPlanningConfigTx(ctx context.Context, tx *sql.Tx, c PlanningConfig) (*PlanningConfig, error)
 }
 
 type PlanningYear struct {

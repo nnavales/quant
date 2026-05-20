@@ -87,7 +87,7 @@ function renderCell(item: any, col: ColumnDef, _tab: CompareTab) {
         case "entity": {
             const name = item.entity || item.name || "";
             return (
-                <span style={{
+                <span className="selectable" style={{
                     fontSize: fonts.size.sm,
                     color: colors.fg.base,
                     fontWeight: 500,
@@ -100,15 +100,15 @@ function renderCell(item: any, col: ColumnDef, _tab: CompareTab) {
             );
         }
         case "sell":
-            return <span style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 600 }}>${formatNumber(item.sell)}</span>;
+            return <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 600 }}>${formatNumber(item.sell)}</span>;
         case "buy":
-            return <span style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 600 }}>${formatNumber(item.buy)}</span>;
+            return <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 600 }}>${formatNumber(item.buy)}</span>;
         case "pct_variation": {
             const v = item.pct_variation;
             const isPos = v > 0;
             const isNeg = v < 0;
             return (
-                <span style={{
+                <span className="selectable" style={{
                     fontFamily: fonts.family.display,
                     fontSize: fonts.size.sm,
                     color: isPos ? colors.accent.green : isNeg ? colors.accent.red : colors.fg.dim,
@@ -119,19 +119,19 @@ function renderCell(item: any, col: ColumnDef, _tab: CompareTab) {
             );
         }
         case "tem":
-            return <span style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 600 }}>{formatNumber(item.tem)}%</span>;
+            return <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 600 }}>{formatNumber(item.tem)}%</span>;
         case "tea":
-            return <span style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 600 }}>{formatNumber(item.tea)}%</span>;
+            return <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 600 }}>{formatNumber(item.tea)}%</span>;
         case "tna":
-            return <span style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 600 }}>{formatNumber(item.tna)}%</span>;
+            return <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 600 }}>{formatNumber(item.tna)}%</span>;
         case "term":
-            return <span style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.dim }}>{item.min_term}–{item.max_term}</span>;
+            return <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.dim }}>{item.min_term}–{item.max_term}</span>;
         case "daily":
-            return <span style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 600 }}>{item.daily_rate?.toFixed(3)}%</span>;
+            return <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 600 }}>{item.daily_rate?.toFixed(3)}%</span>;
         case "limit":
-            return <span style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.dim }}>{item.limit ? `$${formatNumber(item.limit)}` : "–"}</span>;
+            return <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.dim }}>{item.limit ? `$${formatNumber(item.limit)}` : "–"}</span>;
         default:
-            return <span style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.dim }}>–</span>;
+            return <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.dim }}>–</span>;
     }
 }
 
@@ -493,7 +493,6 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                             </div>
                         )}
                         {sorted.map((item, i) => {
-                            const zebraBg = i % 2 === 1 ? colors.bg.base : undefined;
                             return (
                             <div
                                 key={(item as any).slug || (item as any).name || i}
@@ -506,13 +505,12 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                                         cursor: "default",
                                         height: ROW_HEIGHT,
                                         boxSizing: "border-box",
-                                        backgroundColor: zebraBg,
                                     }}
                                 onMouseEnter={(e) => {
                                     e.currentTarget.style.backgroundColor = colors.bg.hover;
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = zebraBg || "transparent";
+                                    e.currentTarget.style.backgroundColor = "";
                                 }}
                             >
                                 {columns.map((col) => (

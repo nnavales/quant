@@ -69,6 +69,11 @@ func (h *Handler) Import(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch resource {
+	case "presets":
+		if err := h.service.ImportPresets(r.Context(), reader); err != nil {
+			httpx.WriteServiceError(w, r, err)
+			return
+		}
 	case "transactions":
 		if err := h.service.ImportTransactions(r.Context(), reader); err != nil {
 			httpx.WriteServiceError(w, r, err)
@@ -81,6 +86,26 @@ func (h *Handler) Import(w http.ResponseWriter, r *http.Request) {
 		}
 	case "networth":
 		if err := h.service.ImportNetworth(r.Context(), reader); err != nil {
+			httpx.WriteServiceError(w, r, err)
+			return
+		}
+	case "planning-inputs":
+		if err := h.service.ImportPlanningInputs(r.Context(), reader); err != nil {
+			httpx.WriteServiceError(w, r, err)
+			return
+		}
+	case "planning-goals":
+		if err := h.service.ImportPlanningGoals(r.Context(), reader); err != nil {
+			httpx.WriteServiceError(w, r, err)
+			return
+		}
+	case "planning-exchange-rates":
+		if err := h.service.ImportPlanningExchangeRates(r.Context(), reader); err != nil {
+			httpx.WriteServiceError(w, r, err)
+			return
+		}
+	case "planning-config":
+		if err := h.service.ImportPlanningConfigs(r.Context(), reader); err != nil {
 			httpx.WriteServiceError(w, r, err)
 			return
 		}

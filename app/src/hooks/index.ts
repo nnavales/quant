@@ -33,8 +33,11 @@ import {
 } from "@/api_client";
 import { type HistoricalFilters } from "@/api_client";
 
-function invalidateKeys(queryClient: QueryClient, keys: string[]) {
-    keys.forEach((key) => queryClient.invalidateQueries({ queryKey: [key], refetchType: "all" }));
+function invalidateKeys(queryClient: QueryClient, keys: (string | string[])[]) {
+    keys.forEach((key) => {
+        const qk = typeof key === "string" ? [key] : key;
+        queryClient.invalidateQueries({ queryKey: qk, refetchType: "all" });
+    });
 }
 
 export function useTransactionAggregates(filters: TransactionFilters) {
@@ -80,6 +83,17 @@ export function useDeleteTransaction() {
 
     return useMutation({
         mutationFn: (id: string) => transactionAggregates.delete(id),
+        onSuccess: () => {
+            invalidateKeys(queryClient, ["transaction-aggregates", "transactions", "dashboard", "networth"]);
+        },
+    });
+}
+
+export function useBulkDeleteTransactions() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (ids: string[]) => transactionAggregates.bulkDelete(ids),
         onSuccess: () => {
             invalidateKeys(queryClient, ["transaction-aggregates", "transactions", "dashboard", "networth"]);
         },
@@ -720,7 +734,7 @@ export function useImportBackup() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ resource, file }: { resource: "transactions" | "historical" | "networth"; file: File }) =>
+        mutationFn: ({ resource, file }: { resource: "transactions" | "historical" | "networth" | "presets" | "planning-inputs" | "planning-goals" | "planning-exchange-rates" | "planning-config"; file: File }) =>
             backup.import(resource, file),
         onSuccess: () => {
             invalidateKeys(queryClient, [
@@ -734,6 +748,8 @@ export function useImportBackup() {
                 "subcategories",
                 "channels",
                 "accounts",
+                "presets",
+                ["planning"],
             ]);
         },
     });

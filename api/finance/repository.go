@@ -400,6 +400,10 @@ func (r *SQLiteRepo) CancelInstallments(ctx context.Context, groupID string, fro
 		CreatedAt:     now,
 	}
 
+	if err := newEntry.Validate(); err != nil {
+		return err
+	}
+
 	if err := createEntry(ctx, tx, &newEntry); err != nil {
 		return mapDBError(err)
 	}
@@ -1039,4 +1043,31 @@ func createEntry(ctx context.Context, tx *sql.Tx, e *entries.Entry) error {
 		return err
 	}
 	return nil
+}
+
+func (r *SQLiteRepo) BulkDeleteTransactionAggregate(ctx context.Context, ids []string) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+	for _, id := range ids {
+		t, err := getTransactionByID(ctx, tx, id)
+		if err != nil {
+			return mapDBError(err)
+		}
+
+		if t.InstallmentGroupID != nil {
+			if err := deleteInstallmentGroup(ctx, tx, *t.InstallmentGroupID); err != nil {
+				return mapDBError(err)
+			}
+		} else {
+			if err := deleteTransaction(ctx, tx, t.ID); err != nil {
+				return mapDBError(err)
+			}
+		}
+	}
+
+	return tx.Commit()
 }

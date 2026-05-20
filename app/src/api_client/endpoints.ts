@@ -154,6 +154,7 @@ export const transactionAggregates = {
     update: (id: string, data: Partial<TransactionAggregateReq>) =>
         api.patch<TransactionRowDTO>(`/transaction-aggregates/${id}`, data),
     delete: (id: string) => api.delete<void>(`/transaction-aggregates/${id}`),
+    bulkDelete: (ids: string[]) => api.delete<void>("/transaction-aggregates/bulk", { ids }),
     cancelInstallments: (data: CancelInstallmentsReq) =>
         api.post<void>("/transaction-aggregates/cancel-installments", data),
 };
@@ -365,7 +366,7 @@ export const backup = {
         api.clientInstance.get("/backup/export", {
             responseType: "blob",
         }),
-    import: (resource: "transactions" | "historical" | "networth", file: File) => {
+    import: (resource: "transactions" | "historical" | "networth" | "presets" | "planning-inputs" | "planning-goals" | "planning-exchange-rates" | "planning-config", file: File) => {
         const formData = new FormData();
         formData.append("file", file);
         return api.clientInstance.post(`/backup/import/${resource}`, formData, {

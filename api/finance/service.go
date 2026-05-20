@@ -494,3 +494,10 @@ func (s *Service) BulkCreateTransactionAggregate(ctx context.Context, req BulkTr
 
 	return nil
 }
+
+func (s *Service) BulkDeleteTransactionAggregate(ctx context.Context, ids []string) error {
+	if err := s.repo.BulkDeleteTransactionAggregate(ctx, ids); err != nil {
+		return fmt.Errorf("failed to bulk delete transaction aggregate: %w", err)
+	}
+	return nil
+}

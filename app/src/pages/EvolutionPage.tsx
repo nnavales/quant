@@ -283,9 +283,6 @@ export function EvolutionPage() {
     if (dashLoading) {
         return <div style={{ padding: spacing[4], color: colors.fg.dim }}>Cargando evolución...</div>;
     }
-    if (!data || monthlySeries.length === 0) {
-        return <div style={{ padding: spacing[4], color: colors.fg.dim }}>Sin datos suficientes</div>;
-    }
 
     const card: React.CSSProperties = {
         backgroundColor: colors.bg.surface,

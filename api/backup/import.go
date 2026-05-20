@@ -15,6 +15,8 @@ import (
 	"github.com/nnavales/quant/api/installments"
 	"github.com/nnavales/quant/api/money"
 	"github.com/nnavales/quant/api/networth"
+	"github.com/nnavales/quant/api/planning"
+	"github.com/nnavales/quant/api/presets"
 	"github.com/nnavales/quant/api/timeutils"
 	"github.com/nnavales/quant/api/transactions"
 	"github.com/oklog/ulid/v2"
@@ -41,9 +43,92 @@ This file contains the functions for transforming the data:
 		"income_fixed", "expense", "expense_fixed",
 		"expense_variable", "exchange_rate", "savings",
 		"source",
+
+	presets.csv format:
+		"name", "description", "type", "frequency",
+		"category", "subcategory", "channel", "account",
+		"is_paid", "currency"
+
+	planning_config.csv:
+		"year", "initial_capital"
+
+	planning_goals.csv:
+		"year", "metric",
+		"january", "february", "march", "april",
+		"may", "june", "july", "august",
+		"september", "october", "november", "december"
+
+	planning_exchange_rates.csv:
+		"month", "rate"
+
+	planning_inputs.csv:
+		"year", "description", "type", "currency",
+		"january", "february", "march", "april",
+		"may", "june", "july", "august",
+		"september", "october", "november", "december"
 */
 
 var ErrInvalidCSV = errors.New("invalid csv")
+
+func fromCSVtoPresets(r io.Reader) ([]Preset, error) {
+	csvr := csv.NewReader(r)
+	records, err := csvr.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read csv: %w", err)
+	}
+
+	var presets []Preset
+	for i, row := range records {
+		if i == 0 {
+			continue
+		}
+
+		if len(row) != 10 {
+			return nil, fmt.Errorf("row %d: expected 10 columns, got %d: %w", i+1, len(row), ErrInvalidCSV)
+		}
+
+		preset := Preset{
+			Name:        row[0],
+			Desription:  row[1],
+			Type:        row[2],
+			Frequency:   row[3],
+			Category:    row[4],
+			Subcategory: row[5],
+			Channel:     row[6],
+			Account:     row[7],
+			Currency:    row[9],
+		}
+
+		switch preset.Type {
+		case "income", "expense":
+		default:
+			return nil, fmt.Errorf("row %d: invalid type %q: must be 'income' or 'expense': %w", i+1, preset.Type, ErrInvalidCSV)
+		}
+		switch preset.Frequency {
+		case "fixed", "variable", "":
+		default:
+			return nil, fmt.Errorf("row %d: invalid frequency %q: must be 'fixed' or 'variable': %w", i+1, preset.Frequency, ErrInvalidCSV)
+		}
+		switch preset.Currency {
+		case "ARS", "USD", "":
+		default:
+			return nil, fmt.Errorf("row %d: invalid currency %q: must be 'ARS' or 'USD': %w", i+1, preset.Currency, ErrInvalidCSV)
+		}
+
+		if row[8] != "" {
+			b, err := strconv.ParseBool(row[8])
+			if err != nil {
+				return nil, fmt.Errorf("row %d: invalid is_done: %w", i+1, err)
+			}
+			preset.IsDone = b
+		}
+
+		presets = append(presets, preset)
+	}
+
+	return presets, nil
+
+}
 
 func fromCSVtoTransactions(r io.Reader) ([]Transaction, error) {
 	csvr := csv.NewReader(r)
@@ -361,6 +446,10 @@ func toTransactionAgg(data []Transaction, catMap, subMap, chMap, accMap map[stri
 			CreatedAt:     now,
 		}
 
+		if err := e.Validate(); err != nil {
+			return nil, fmt.Errorf("invalid entry for transaction %s: %w", tx.Date, err)
+		}
+
 		aggs = append(aggs, finance.TransactionAggregate{
 			Group: nil,
 			Items: []struct {
@@ -468,6 +557,10 @@ func toTransactionAgg(data []Transaction, catMap, subMap, chMap, accMap map[stri
 				CreatedAt:     now,
 			}
 
+			if err := e.Validate(); err != nil {
+				return nil, fmt.Errorf("invalid entry for transaction %s: %w", tx.Date, err)
+			}
+
 			totalAmount = totalAmount.Add(amount)
 			items = append(items, struct {
 				Transaction transactions.Transaction
@@ -544,4 +637,230 @@ func toDomainAsset(data []Asset) ([]networth.Asset, error) {
 	}
 
 	return assets, nil
+}
+
+func toDomainPreset(data []Preset, catMap, subMap, chMap, accMap map[string]string) ([]presets.Preset, error) {
+	if len(data) == 0 {
+		return nil, nil
+	}
+
+	var domPresets []presets.Preset
+	for _, a := range data {
+		var categoryID *string
+		if a.Category != "" {
+			if id, ok := catMap[a.Category]; ok {
+				categoryID = &id
+			}
+		}
+		var subcategoryID *string
+		if a.Subcategory != "" && a.Category != "" {
+			if id, ok := subMap[catMap[a.Category]+"|"+a.Subcategory]; ok {
+				subcategoryID = &id
+			}
+		}
+
+		var channelID *string
+		if a.Channel != "" {
+			if id, ok := chMap[a.Channel]; ok {
+				channelID = &id
+			}
+		}
+		var accountID *string
+		if a.Account != "" && a.Channel != "" {
+			if id, ok := accMap[chMap[a.Channel]+"|"+a.Account]; ok {
+				accountID = &id
+			}
+		}
+
+		var freq *string
+		if a.Frequency != "" {
+			freq = &a.Frequency
+		}
+		var currency *string
+		if a.Currency != "" {
+			currency = &a.Currency
+		}
+
+		domPresets = append(domPresets, presets.Preset{
+			ID:            ulid.Make().String(),
+			Name:          a.Name,
+			Description:   &a.Desription,
+			Frequency:     freq,
+			Type:          a.Type,
+			CategoryID:    categoryID,
+			SubcategoryID: subcategoryID,
+			ChannelID:     channelID,
+			AccountID:     accountID,
+			IsPaid:        &a.IsDone,
+			Currency:      currency,
+			CreatedAt:     time.Now(),
+		})
+	}
+
+	return domPresets, nil
+}
+
+func fromCSVtoPlanningInputs(r io.Reader) ([]planning.PlanningInput, error) {
+	csvr := csv.NewReader(r)
+	records, err := csvr.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read csv: %w", err)
+	}
+
+	var inputs []planning.PlanningInput
+	for i, row := range records {
+		if i == 0 {
+			continue // skip header
+		}
+		if len(row) < 16 {
+			return nil, fmt.Errorf("%w: row %d has %d columns, expected 16", ErrInvalidCSV, i+1, len(row))
+		}
+
+		year, err := strconv.Atoi(row[0])
+		if err != nil {
+			return nil, fmt.Errorf("%w: invalid year at row %d: %s", ErrInvalidCSV, i+1, row[0])
+		}
+
+		monthVals := [12]money.Money{}
+		for j := 0; j < 12; j++ {
+			m, err := money.FromString(row[4+j])
+			if err != nil {
+				col := 4 + j
+				return nil, fmt.Errorf("%w: invalid amount at row %d column %d: %s", ErrInvalidCSV, i+1, col+1, row[4+j])
+			}
+			monthVals[j] = m
+		}
+
+		clk := timeutils.RealClock{}
+		p, err := planning.NewPlanningInput(
+			clk,
+			year,
+			row[1],
+			entries.Currency(row[3]),
+			transactions.TransactionType(row[2]),
+			monthVals,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("%w: row %d: %w", ErrInvalidCSV, i+1, err)
+		}
+
+		inputs = append(inputs, *p)
+	}
+	return inputs, nil
+}
+
+func fromCSVtoPlanningGoals(r io.Reader) ([]planning.PlanningGoal, error) {
+	csvr := csv.NewReader(r)
+	records, err := csvr.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read csv: %w", err)
+	}
+
+	var goals []planning.PlanningGoal
+	for i, row := range records {
+		if i == 0 {
+			continue
+		}
+		if len(row) < 14 {
+			return nil, fmt.Errorf("%w: row %d has %d columns, expected 14", ErrInvalidCSV, i+1, len(row))
+		}
+
+		year, err := strconv.Atoi(row[0])
+		if err != nil {
+			return nil, fmt.Errorf("%w: invalid year at row %d: %s", ErrInvalidCSV, i+1, row[0])
+		}
+
+		monthVals := [12]money.Money{}
+		for j := 0; j < 12; j++ {
+			m, err := money.FromString(row[2+j])
+			if err != nil {
+				return nil, fmt.Errorf("%w: invalid amount at row %d column %d: %s", ErrInvalidCSV, i+1, 3+j, row[2+j])
+			}
+			monthVals[j] = m
+		}
+
+		clk := timeutils.RealClock{}
+		g, err := planning.NewPlanningGoal(
+			clk,
+			year,
+			planning.GoalMetric(row[1]),
+			monthVals,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("%w: row %d: %w", ErrInvalidCSV, i+1, err)
+		}
+
+		goals = append(goals, *g)
+	}
+	return goals, nil
+}
+
+func fromCSVtoPlanningExchangeRates(r io.Reader) ([]planning.ExchangeRateInput, error) {
+	csvr := csv.NewReader(r)
+	records, err := csvr.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read csv: %w", err)
+	}
+
+	var rates []planning.ExchangeRateInput
+	for i, row := range records {
+		if i == 0 {
+			continue
+		}
+		if len(row) < 2 {
+			return nil, fmt.Errorf("%w: row %d has %d columns, expected 2", ErrInvalidCSV, i+1, len(row))
+		}
+
+		month, err := timeutils.ParseYearMonth(row[0])
+		if err != nil {
+			return nil, fmt.Errorf("%w: invalid month at row %d: %s", ErrInvalidCSV, i+1, row[0])
+		}
+
+		rate, err := strconv.ParseFloat(row[1], 64)
+		if err != nil {
+			return nil, fmt.Errorf("%w: invalid rate at row %d: %s", ErrInvalidCSV, i+1, row[1])
+		}
+
+		r, err := planning.NewExchangeRateInput(month, rate)
+		if err != nil {
+			return nil, fmt.Errorf("%w: row %d: %w", ErrInvalidCSV, i+1, err)
+		}
+
+		rates = append(rates, *r)
+	}
+	return rates, nil
+}
+
+func fromCSVtoPlanningConfigs(r io.Reader) ([]planning.PlanningConfig, error) {
+	csvr := csv.NewReader(r)
+	records, err := csvr.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read csv: %w", err)
+	}
+
+	var configs []planning.PlanningConfig
+	for i, row := range records {
+		if i == 0 {
+			continue
+		}
+		if len(row) < 2 {
+			return nil, fmt.Errorf("%w: row %d has %d columns, expected 2", ErrInvalidCSV, i+1, len(row))
+		}
+
+		year, err := strconv.Atoi(row[0])
+		if err != nil {
+			return nil, fmt.Errorf("%w: invalid year at row %d: %s", ErrInvalidCSV, i+1, row[0])
+		}
+
+		cap, err := money.FromString(row[1])
+		if err != nil {
+			return nil, fmt.Errorf("%w: invalid initial_capital at row %d: %s", ErrInvalidCSV, i+1, row[1])
+		}
+
+		configs = append(configs, planning.PlanningConfig{
+			Year:           year,
+			InitialCapital: cap,
+		})
+	}
+	return configs, nil
 }

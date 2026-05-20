@@ -82,7 +82,7 @@ func NewApp(ctx context.Context, cfg config.Runtime) (*App, error) {
 	presetsRepo := presets.NewSQLiteRepo(dbConn.DB)
 	presetsService := presets.NewService(clock, presetsRepo)
 
-	backupService := backup.NewService(dbConn.DB, financeRepo, networthRepo, historicalRepo, categoriesRepo, channelsRepo)
+	backupService := backup.NewService(dbConn.DB, financeRepo, networthRepo, historicalRepo, categoriesRepo, channelsRepo, presetsRepo, planningRepo)
 
 	if err := users.SeedDefaults(ctx, usersRepo, clock); err != nil {
 		return nil, fmt.Errorf("users.seed.error: %w", err)

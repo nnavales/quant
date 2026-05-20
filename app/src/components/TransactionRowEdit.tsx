@@ -185,8 +185,10 @@ export function TransactionRowEdit({ transaction, onSave, onCancel }: Transactio
 
     return (
         <tr style={{ ...trStyle, backgroundColor: colors.bg.surface }}>
+            {/* Checkbox placeholder */}
+            <td style={{ ...tdStyle, width: "36px", minWidth: "36px", maxWidth: "36px", borderLeft: `3px solid ${colors.accent.cyan}` }} />
             {/* Fecha */}
-            <td style={{ ...tdStyle, ...fixedWidthStyle("9%"), borderLeft: `3px solid ${colors.accent.cyan}` }}>
+            <td style={{ ...tdStyle, ...fixedWidthStyle("9%") }}>
                 <DatePicker
                     value={formData.date}
                     onChange={(value) => setFormData({ ...formData, date: value })}

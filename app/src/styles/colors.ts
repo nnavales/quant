@@ -26,6 +26,7 @@ export interface ColorScheme {
         surface: string;
         header: string;
         hover: string;
+        selected: string;
     };
     border: string;
     fill: string;
@@ -100,6 +101,7 @@ export function applyCssVars() {
     set("--bg-surface", s.bg.surface);
     set("--bg-header", s.bg.header);
     set("--bg-hover", s.bg.hover);
+    set("--bg-selected", s.bg.selected);
     set("--fg-base", s.fg.base);
     set("--fg-dim", s.fg.dim);
     set("--border", s.border);
