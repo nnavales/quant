@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { RotateCcw, X } from "lucide-react";
 import type { TransactionFilters } from "@/api_client";
 import { colors } from "@/styles/colors";
-import { spacing, radius } from "@/styles/theme";
+import { spacing } from "@/styles/theme";
 import { filterContainerStyle, dropdownItemStyle, clearButtonStyle, chipTriggerStyle } from "@/styles/filters";
 import { useCategories, useSubcategories, useChannels, useAccounts, useClickOutside, useUserConfig, useCategoryGroups, useAccountGroups } from "@/hooks";
 import { DatePicker } from "@/components/ui/DatePicker";
@@ -12,10 +12,6 @@ import { DateDropdown } from "@/components/ui/DateDropdown";
 interface TransactionFiltersProps {
     filters: TransactionFilters;
     onChange: (filters: TransactionFilters) => void;
-    total: number;
-    page: number;
-    limit: number;
-    onPageChange: (page: number) => void;
 }
 
 const filterWrapperStyle: React.CSSProperties = {
@@ -46,17 +42,12 @@ import { getTransactionDatePresets, formatShortDate } from "@/utils/date";
 export function TransactionFilters({
     filters,
     onChange,
-    total,
-    page,
-    limit,
-    onPageChange,
 }: TransactionFiltersProps) {
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
     const [searchText, setSearchText] = useState("");
     const [dateFrom, setDateFrom] = useState("");
     const [dateTo, setDateTo] = useState("");
-    const [goToPage, setGoToPage] = useState("");
 
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -103,21 +94,19 @@ export function TransactionFilters({
         setDateTo(filters.date_to || "");
     }, [filters.date_from, filters.date_to]);
 
-    const totalPages = Math.ceil(total / limit) || 1;
-
     const clearAllFilters = () => {
         setSearchText("");
         setDateFrom("");
         setDateTo("");
-        onChange({ page: 1, limit: 20 });
+        onChange({ limit: filters.limit, sort: filters.sort, order: filters.order });
     };
 
     const handleSearch = () => {
-        onChange({ ...filters, search: searchText || undefined, page: 1 });
+        onChange({ ...filters, search: searchText || undefined });
     };
 
     const hasActiveFilters = Object.keys(filters).some(
-        (k) => k !== "page" && k !== "limit" && filters[k as keyof TransactionFilters] !== undefined
+        (k) => k !== "limit" && k !== "sort" && k !== "order" && filters[k as keyof TransactionFilters] !== undefined
     );
 
     return (
@@ -142,7 +131,7 @@ export function TransactionFilters({
                             style={clearInputStyle}
                             onClick={() => {
                                 setSearchText("");
-                                onChange({ ...filters, search: undefined, page: 1 });
+                                onChange({ ...filters, search: undefined });
                             }}
                         >
                             <X size={12} />
@@ -184,7 +173,7 @@ export function TransactionFilters({
                                     ...filters,
                                     date_from: undefined,
                                     date_to: undefined,
-                                    page: 1,
+
                                 });
                                 setOpenDropdown(null);
                             }}
@@ -215,7 +204,7 @@ export function TransactionFilters({
                                         ...filters,
                                         date_from: preset.from,
                                         date_to: preset.to,
-                                        page: 1,
+    
                                     });
                                     setOpenDropdown(null);
                                 }}
@@ -245,7 +234,7 @@ export function TransactionFilters({
                                     onChange({
                                         ...filters,
                                         date_from: value || undefined,
-                                        page: 1,
+    
                                     });
                                 }}
                                 placeholder="Desde"
@@ -258,7 +247,7 @@ export function TransactionFilters({
                                     onChange({
                                         ...filters,
                                         date_to: value || undefined,
-                                        page: 1,
+    
                                     });
                                 }}
                                 placeholder="Hasta"
@@ -384,7 +373,7 @@ export function TransactionFilters({
                         options={categoriesList.map((c) => ({ id: c.id, label: c.name }))}
                         value={filters.category ?? ""}
                         onChange={(id) =>
-                            onChange({ ...filters, category: id || undefined, page: 1 })
+                            onChange({ ...filters, category: id || undefined })
                         }
                         placeholder="Categoría"
                         searchable
@@ -399,7 +388,7 @@ export function TransactionFilters({
                         groups={categoryGroups}
                         value={filters.subcategory ?? ""}
                         onChange={(id) =>
-                            onChange({ ...filters, subcategory: id || undefined, page: 1 })
+                            onChange({ ...filters, subcategory: id || undefined })
                         }
                         placeholder="Subcategoría"
                         searchable
@@ -415,7 +404,7 @@ export function TransactionFilters({
                         options={channelsList.map((c) => ({ id: c.id, label: c.name }))}
                         value={filters.channel ?? ""}
                         onChange={(id) =>
-                            onChange({ ...filters, channel: id || undefined, page: 1 })
+                            onChange({ ...filters, channel: id || undefined })
                         }
                         placeholder="Canal"
                         searchable
@@ -431,7 +420,7 @@ export function TransactionFilters({
                         groups={accountGroups}
                         value={filters.account ?? ""}
                         onChange={(id) =>
-                            onChange({ ...filters, account: id || undefined, page: 1 })
+                            onChange({ ...filters, account: id || undefined })
                         }
                         placeholder="Cuenta"
                         searchable
@@ -460,95 +449,6 @@ export function TransactionFilters({
                 )}
 
                 <div style={{ flex: 1 }} />
-
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: spacing[2],
-                        color: colors.fg.dim,
-                        fontSize: "12px",
-                        flexShrink: 0,
-                    }}
-                >
-                    <button
-                        disabled={page <= 1}
-                        onClick={() => onPageChange(page - 1)}
-                        style={{
-                            height: "28px",
-                            padding: "0 10px",
-                            backgroundColor: "transparent",
-                            border: `1px solid ${page <= 1 ? colors.overlay.white06 : colors.border}`,
-                            borderRadius: radius.md,
-                            color: colors.fg.dim,
-                            cursor: page <= 1 ? "not-allowed" : "pointer",
-                            opacity: page <= 1 ? 0.5 : 1,
-                            transition: "all 0.15s",
-                            boxSizing: "border-box",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                        }}
-                    >
-                        ‹
-                    </button>
-                    <span>
-                        {page} / {totalPages}
-                    </span>
-                    <button
-                        disabled={page >= totalPages}
-                        onClick={() => onPageChange(page + 1)}
-                        style={{
-                            height: "28px",
-                            padding: "0 10px",
-                            backgroundColor: "transparent",
-                            border: `1px solid ${page >= totalPages ? colors.overlay.white06 : colors.border}`,
-                            borderRadius: radius.md,
-                            color: colors.fg.dim,
-                            cursor: page >= totalPages ? "not-allowed" : "pointer",
-                            opacity: page >= totalPages ? 0.5 : 1,
-                            transition: "all 0.15s",
-                            boxSizing: "border-box",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                        }}
-                    >
-                        ›
-                    </button>
-                    <input
-                        type="number"
-                        min={1}
-                        max={totalPages}
-                        value={goToPage}
-                        onChange={(e) => setGoToPage(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                const newPage = parseInt(goToPage, 10);
-                                if (newPage >= 1 && newPage <= totalPages) {
-                                    onPageChange(newPage);
-                                    setGoToPage("");
-                                }
-                            }
-                        }}
-                        placeholder="ir a..."
-                        style={{
-                            width: "52px",
-                            height: "28px",
-                            marginLeft: spacing[1],
-                            padding: "0 6px",
-                            backgroundColor: "transparent",
-                            border: `1px solid ${colors.overlay.white08}`,
-                            borderRadius: radius.md,
-                            color: colors.fg.base,
-                            fontSize: "12px",
-                            textAlign: "center",
-                            outline: "none",
-                            transition: "border-color 0.15s",
-                            boxSizing: "border-box",
-                        }}
-                    />
-                </div>
             </div>
         </div>
     );

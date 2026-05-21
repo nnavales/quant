@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { TransactionFilters, HistoricalFilters } from "@/api_client";
 import type { TransactionRowDTO } from "@/api_client/types";
 import { TransactionList } from "@/components/TransactionList";
@@ -11,12 +12,13 @@ import { getApiErrorMessage } from "@/utils/apiErrors";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
-    useTransactionAggregates,
+    useInfiniteTransactions,
     useDeleteTransaction,
     useBulkDeleteTransactions,
     useCancelInstallments,
     useHistoricalEntries,
 } from "@/hooks";
+import { historical } from "@/api_client";
 import { spacing, colors, radius } from "@/styles";
 import { fonts } from "@/styles/fonts";
 
@@ -25,9 +27,9 @@ const Sep = () => <span style={{ color: colors.border, width: "1px", height: "18
 type Tab = "transacciones" | "historico";
 
 export function TransactionsPage() {
-    const [filters, setFilters] = useState<TransactionFilters>({ page: 1, limit: 15 });
-    const [sort, setSort] = useState<"date" | "amount" | "created_at" | undefined>(undefined);
-    const [order, setOrder] = useState<"asc" | "desc">("desc");
+    const queryClient = useQueryClient();
+    const [filters, setFilters] = useState<TransactionFilters>({ limit: 30, sort: "date", order: "desc" });
+    const order = filters.order ?? "desc";
     const [deleteConfirm, setDeleteConfirm] = useState<TransactionRowDTO | null>(null);
     const [cancelConfirm, setCancelConfirm] = useState<TransactionRowDTO | null>(null);
     const [activeTab, setActiveTab] = useState<Tab>("transacciones");
@@ -78,14 +80,23 @@ export function TransactionsPage() {
         return () => window.removeEventListener("keydown", onKey);
     }, []);
 
-    const { data, isLoading, isError, error } = useTransactionAggregates(filters);
+    useEffect(() => {
+        queryClient.prefetchInfiniteQuery({
+            queryKey: ["historical", "infinite", { sort: "month", order: "desc" }],
+            queryFn: ({ pageParam = 1 }: { pageParam: number }) =>
+                historical.list({ sort: "month", order: "desc", page: pageParam }),
+            initialPageParam: 1,
+        });
+    }, [queryClient]);
+
+    const { data, isLoading, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteTransactions(filters);
     const { data: historicalData } = useHistoricalEntries(historicalFilters);
     const deleteMutation = useDeleteTransaction();
     const cancelMutation = useCancelInstallments();
     const bulkDeleteMutation = useBulkDeleteTransactions();
 
-    const transactions = data?.data ?? [];
-    const total = data?.total ?? 0;
+    const transactions = useMemo(() => data?.pages.flatMap((p) => p.data) ?? [], [data?.pages]);
+    const total = data?.pages[0]?.total ?? 0;
     const historicalTotal = historicalData?.total ?? 0;
 
     const selectionSummary = useMemo(() => {
@@ -114,30 +125,9 @@ export function TransactionsPage() {
         }
     };
 
-    const handleFiltersChange = (newFilters: TransactionFilters) => {
-        setFilters((prev) => ({ ...newFilters, limit: prev.limit }));
-    };
-
-    const handlePageChange = (newPage: number) => {
-        setFilters((prev) => ({ ...prev, page: newPage }));
-    };
-
-    const handleSort = (column: "date" | "amount" | "created_at") => {
-        if (sort === column && order === "desc") {
-            setOrder("asc");
-            setFilters((prev) => ({ ...prev, sort: column, order: "asc" }));
-        } else if (sort === column && order === "asc") {
-            setSort(undefined);
-            setOrder("desc");
-            const newFilters = { ...filters };
-            delete newFilters.sort;
-            delete newFilters.order;
-            setFilters(newFilters);
-        } else {
-            setSort(column);
-            setOrder("desc");
-            setFilters((prev) => ({ ...prev, sort: column, order: "desc" }));
-        }
+    const handleToggleOrder = () => {
+        const nextOrder = order === "desc" ? "asc" : "desc";
+        setFilters((prev) => ({ ...prev, order: nextOrder }));
     };
 
     const handleDelete = (transaction: TransactionRowDTO) => {
@@ -196,16 +186,6 @@ export function TransactionsPage() {
         );
     };
 
-    useEffect(() => {
-        if (!filters.sort) {
-            setSort(undefined);
-        }
-        if (filters.sort && filters.order) {
-            setSort(filters.sort);
-            setOrder(filters.order);
-        }
-    }, [filters.sort, filters.order]);
-
     return (
         <div
             style={{
@@ -213,6 +193,7 @@ export function TransactionsPage() {
                 display: "flex",
                 flexDirection: "column",
                 gap: spacing[2],
+                height: "100%",
                 animation: "fadeIn 0.2s ease-out",
             }}
         >
@@ -274,14 +255,10 @@ export function TransactionsPage() {
                 <>
                     <TransactionFiltersComponent
                         filters={filters}
-                        onChange={handleFiltersChange}
-                        total={total}
-                        page={filters.page || 1}
-                        limit={filters.limit || 20}
-                        onPageChange={handlePageChange}
+                        onChange={setFilters}
                     />
 
-                    <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+                    <div style={{ flex: 1, minHeight: 0 }}>
                         {isLoading ? (
                             <div
                                 style={{
@@ -306,9 +283,11 @@ export function TransactionsPage() {
                             <>
                             <TransactionList
                                 transactions={transactions}
-                                sort={sort}
                                 order={order}
-                                onSort={handleSort}
+                                onToggleOrder={handleToggleOrder}
+                                fetchNextPage={fetchNextPage}
+                                hasNextPage={hasNextPage}
+                                isFetchingNextPage={isFetchingNextPage}
                                 onDelete={handleDelete}
                                 onCancelInstallments={handleCancelInstallments}
                                 selectedIds={selectedIds}
@@ -405,7 +384,6 @@ export function TransactionsPage() {
                 </>
             ) : (
                 <HistoricalTab
-                    externalLimit={filters.limit}
                     showBulkImport={showBulkImport}
                     onCloseBulkImport={() => setShowBulkImport(false)}
                 />

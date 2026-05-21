@@ -1,16 +1,14 @@
-import { useState, useEffect } from "react";
+import { memo } from "react";
 import type { TransactionRowDTO } from "@/api_client";
 import { Pencil, CreditCard, Trash2, Check } from "lucide-react";
 import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
-import { parseLocalDate, formatDateStr, getDateFormat } from "@/utils/date";
+import { parseLocalDate, formatDateStr } from "@/utils/date";
 import { colors } from "@/styles/colors";
-import { radius, spacing } from "@/styles/theme";
-import { fonts } from "@/styles/fonts";
+import { spacing } from "@/styles/theme";
 import { Button } from "@/components/ui/Button";
 import {
     useUpdateEntryPaid,
-    useUserConfig,
 } from "@/hooks";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { TransactionRowEdit } from "./TransactionRowEdit";
@@ -26,36 +24,25 @@ interface TransactionRowProps {
     index: number;
     isSelected?: boolean;
     onToggleSelect?: (shiftKey: boolean) => void;
+    userDateFormat: import("@/utils/date").DateFormat;
+    textFormat: "default" | "full";
+    onFormatClick: () => void;
 }
 
-const trStyle: React.CSSProperties = {
-    transition: "background-color 0.15s",
-};
+interface TransactionRowCellsProps {
+    transaction: TransactionRowDTO;
+    onDelete?: (transaction: TransactionRowDTO) => void;
+    onCancelInstallments?: (transaction: TransactionRowDTO) => void;
+    onStartEdit?: () => void;
+    isSelected?: boolean;
+    onToggleSelect?: (shiftKey: boolean) => void;
+    userDateFormat: import("@/utils/date").DateFormat;
+    textFormat: "default" | "full";
+    onFormatClick: () => void;
+}
 
-const tdStyle: React.CSSProperties = {
-    padding: `${spacing[1]} ${spacing[3]}`,
-    verticalAlign: "middle",
-    textAlign: "center",
-    borderBottom: `1px solid ${colors.fill}`,
-    borderLeft: `1px solid ${colors.fill}`,
-    height: "48px",
-};
-
-const fixedWidthStyle = (width: string): React.CSSProperties => ({
-    width,
-    minWidth: width,
-    maxWidth: width,
-});
-
-const subStyle: React.CSSProperties = { fontSize: fonts.table.meta, color: colors.fg.dim };
-
-const badgeStyle: React.CSSProperties = {
-    fontSize: fonts.table.badge,
-    padding: `${spacing[1]} ${spacing[2]}`,
-    borderRadius: radius.md,
-    textTransform: "uppercase",
-    fontWeight: 500,
-};
+const SEL_STYLE: React.CSSProperties = { backgroundColor: colors.bg.selected };
+const selBg = (sel: boolean) => sel ? SEL_STYLE : undefined;
 
 type DateTextFormat = "default" | "full";
 
@@ -76,62 +63,21 @@ const formatDateCell = (dateStr: string, textFormat: DateTextFormat, userFormat:
     return `${d} ${m} ${y}`;
 };
 
-const getNextTextFormat = (current: DateTextFormat): DateTextFormat => {
-    if (current === "default") return "full";
-    return "default";
-};
-
-const STORAGE_KEY = "quant-date-text-format";
-
-const getStoredTextFormat = (): DateTextFormat => {
-    try {
-        return (localStorage.getItem(STORAGE_KEY) as DateTextFormat) || "default";
-    } catch {
-        return "default";
-    }
-};
-
-export function TransactionRow({
+export const TransactionRowCells = memo(function TransactionRowCells({
     transaction,
     onDelete,
     onCancelInstallments,
-    isEditing,
     onStartEdit,
-    onFinishEdit,
     isSelected = false,
     onToggleSelect,
-}: TransactionRowProps) {
-    const [textFormat, setTextFormat] = useState<DateTextFormat>(() => getStoredTextFormat());
-    const { data: userConfig } = useUserConfig();
-    const userDateFormat = getDateFormat(userConfig?.date_format);
+    userDateFormat,
+    textFormat,
+    onFormatClick,
+}: TransactionRowCellsProps) {
     const updatePaidMutation = useUpdateEntryPaid();
 
-    const handleFormatClick = () => {
-        const next = getNextTextFormat(textFormat);
-        setTextFormat(next);
-        localStorage.setItem(STORAGE_KEY, next);
-        window.dispatchEvent(new Event("date-text-format-changed"));
-    };
-
-    useEffect(() => {
-        const stored = getStoredTextFormat();
-        if (stored !== textFormat) {
-            setTextFormat(stored);
-        }
-    }, []);
-
-    useEffect(() => {
-        const handleFormatChange = () => {
-            setTextFormat(getStoredTextFormat());
-        };
-        window.addEventListener("date-text-format-changed", handleFormatChange);
-        return () => window.removeEventListener("date-text-format-changed", handleFormatChange);
-    }, []);
-
     const handleDelete = () => onDelete?.(transaction);
-    const handleEdit = () => onStartEdit();
-    const handleCancel = () => onFinishEdit();
-
+    const handleEdit = () => onStartEdit?.();
     const handleTogglePaid = () => {
         updatePaidMutation.mutate(
             { id: transaction.id, isPaid: !transaction.is_paid },
@@ -155,6 +101,202 @@ export function TransactionRow({
             ? amount / transaction.exchange_rate
             : amount * transaction.exchange_rate;
 
+    return (
+        <>
+            <td className="td-checkbox td-center" style={selBg(isSelected)}>
+                <div className="checkbox-center">
+                    <div
+                        onClick={(e) => onToggleSelect?.(e.shiftKey)}
+                        style={{
+                            width: "14px",
+                            height: "14px",
+                            borderRadius: "4px",
+                            border: `1.5px solid ${isSelected ? colors.fg.base : colors.border}`,
+                            backgroundColor: isSelected ? colors.fg.base : "transparent",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            transition: "background-color .12s,border-color .12s",
+                        }}
+                    >
+                        {isSelected && <Check size={10} color={colors.bg.base} strokeWidth={3} />}
+                    </div>
+                </div>
+            </td>
+            <td
+                className="td-fecha td-left"
+                style={selBg(isSelected)}
+                onClick={onFormatClick}
+                title="Cambiar formato"
+            >
+                <span className="selectable">{formatDateCell(transaction.date, textFormat, userDateFormat)}</span>
+            </td>
+            <td className="td-desc td-left" style={selBg(isSelected)}>
+                <Tooltip content={transaction.description || "Sin descripción"}>
+                    <span className="selectable text-trunc" style={{ fontWeight: 500 }}>
+                        {transaction.description || "Sin descripción"}
+                    </span>
+                </Tooltip>
+                {transaction.total_installments && (
+                    <div className="text-sub">
+                        {transaction.installment_number
+                            ? `${transaction.installment_number}/${transaction.total_installments} Cuotas`
+                            : "Cancelación de Cuotas"}
+                    </div>
+                )}
+            </td>
+            <td className="td-tipo" style={selBg(isSelected)}>
+                <span
+                    className="selectable badge"
+                    style={{
+                        backgroundColor: colors.fill,
+                        color: isExpense ? colors.accent.red : colors.accent.green,
+                    }}
+                >
+                    {transaction.type === "expense" ? "Egreso" : "Ingreso"}
+                </span>
+            </td>
+            <td className="td-cat td-left" style={selBg(isSelected)}>
+                <Tooltip content={transaction.category_name || "-"}>
+                    <span className="selectable text-trunc">
+                        {transaction.category_name || "-"}
+                    </span>
+                </Tooltip>
+                {transaction.subcategory_name && (
+                    <Tooltip content={transaction.subcategory_name}>
+                        <div className="selectable text-sub text-trunc">
+                            {transaction.subcategory_name}
+                        </div>
+                    </Tooltip>
+                )}
+            </td>
+            <td className="td-canal td-left" style={selBg(isSelected)}>
+                <Tooltip content={transaction.channel_name}>
+                    <span className="selectable text-trunc">
+                        {transaction.channel_name}
+                    </span>
+                </Tooltip>
+                {transaction.account_name && (
+                    <Tooltip content={transaction.account_name}>
+                        <div className="selectable text-sub text-trunc">
+                            {transaction.account_name}
+                        </div>
+                    </Tooltip>
+                )}
+            </td>
+            <td className="td-monto td-right" style={selBg(isSelected)}>
+                <Tooltip content={`${transaction.currency} ${formatNumber(amount, { dynamic: true })}`}>
+                    <span className="selectable amount text-trunc">
+                        {transaction.currency} {formatNumber(amount, { dynamic: true })}
+                    </span>
+                </Tooltip>
+                <Tooltip
+                    content={`${transaction.currency === "ARS" ? "USD" : "ARS"} ${formatNumber(alternateAmount, { dynamic: true })}`}
+                >
+                    <span className="selectable amount-alt text-trunc">
+                        {transaction.currency === "ARS" ? "USD" : "ARS"}{" "}
+                        {formatNumber(alternateAmount, { dynamic: true })}
+                    </span>
+                </Tooltip>
+            </td>
+            <td className="td-mon" style={selBg(isSelected)}>
+                <span className="selectable badge" style={{
+                    backgroundColor: colors.fill,
+                    color: transaction.currency === "ARS" ? colors.accent.cyan : colors.accent.green,
+                }}>
+                    {transaction.currency}
+                </span>
+            </td>
+            <td className="td-tc" style={selBg(isSelected)}>
+                <Tooltip
+                    content={
+                        transaction.exchange_rate % 1 === 0
+                            ? String(transaction.exchange_rate)
+                            : transaction.exchange_rate.toFixed(2)
+                    }
+                >
+                    <span className="selectable amount-alt text-trunc">
+                        {transaction.exchange_rate % 1 === 0
+                            ? transaction.exchange_rate.toString()
+                            : transaction.exchange_rate.toFixed(2)}
+                    </span>
+                </Tooltip>
+            </td>
+            <td className="td-frec" style={selBg(isSelected)}>
+                {transaction.frequency === "fixed" ? (
+                    <span className="selectable badge" style={{ backgroundColor: colors.fill, color: colors.accent.blue }}>
+                        Fijo
+                    </span>
+                ) : transaction.frequency === "variable" ? (
+                    <span className="selectable badge" style={{ backgroundColor: colors.fill, color: colors.accent.purple }}>
+                        Var
+                    </span>
+                ) : (
+                    <span style={{ color: colors.fg.dim }}>-</span>
+                )}
+            </td>
+            <td className="td-estado" style={selBg(isSelected)}>
+                <span
+                    className="selectable badge"
+                    onClick={handleTogglePaid}
+                    style={{
+                        backgroundColor: colors.fill,
+                        color: transaction.is_paid
+                            ? colors.accent.teal
+                            : colors.accent.orange,
+                        cursor: "pointer",
+                        display: "inline-block",
+                    }}
+                >
+                    {transaction.is_paid ? (transaction.type === "income" ? "Recibido" : "Pagado") : "Pendiente"}
+                </span>
+            </td>
+            <td className="td-opciones" style={selBg(isSelected)}>
+                <span style={{ display: "flex", gap: spacing[2], justifyContent: "center" }}>
+                    <Button
+                        variant="icon"
+                        title="Cancelar cuotas"
+                        onClick={handleCancelInstallments}
+                        disabled={!transaction.installment_group_id || transaction.is_canceled === true}
+                        style={{
+                            opacity: transaction.installment_group_id && !transaction.is_canceled ? 1 : 0.2,
+                        }}
+                    >
+                        <CreditCard size={14} />
+                    </Button>
+                    <Button variant="icon" title="Editar" onClick={handleEdit}>
+                        <Pencil size={14} />
+                    </Button>
+                    <Button variant="icon" title="Eliminar" onClick={handleDelete}>
+                        <Trash2 size={14} />
+                    </Button>
+                </span>
+            </td>
+        </>
+    );
+}, (p, n) =>
+    p.transaction === n.transaction &&
+    p.isSelected === n.isSelected &&
+    p.userDateFormat === n.userDateFormat &&
+    p.textFormat === n.textFormat
+);
+
+export function TransactionRow({
+    transaction,
+    onDelete,
+    onCancelInstallments,
+    isEditing,
+    onStartEdit,
+    onFinishEdit,
+    isSelected = false,
+    onToggleSelect,
+    userDateFormat,
+    textFormat,
+    onFormatClick,
+}: TransactionRowProps) {
+    const handleCancel = () => onFinishEdit();
+
     if (isEditing) {
         return (
             <TransactionRowEdit
@@ -166,294 +308,18 @@ export function TransactionRow({
     }
 
     return (
-        <>
-            <tr
-                style={{ ...trStyle, backgroundColor: isSelected ? colors.bg.selected : "transparent" }}
-                onMouseEnter={(e) => {
-                    if (!isSelected) {
-                        e.currentTarget.style.backgroundColor = colors.bg.hover;
-                    }
-                }}
-                onMouseLeave={(e) => {
-                    if (!isSelected) {
-                        e.currentTarget.style.backgroundColor = "";
-                    }
-                }}
-            >
-                {/* Selección */}
-                <td style={{ ...tdStyle, width: "36px", minWidth: "36px", maxWidth: "36px", position: "relative" }}>
-                    <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", lineHeight: 0 }}>
-                        <div
-                            onClick={(e) => onToggleSelect?.(e.shiftKey)}
-                            style={{
-                                width: "14px",
-                                height: "14px",
-                                borderRadius: "4px",
-                                border: `1.5px solid ${isSelected ? colors.fg.base : colors.border}`,
-                                backgroundColor: isSelected ? colors.fg.base : "transparent",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                cursor: "pointer",
-                                transition: "all 0.12s",
-                            }}
-                        >
-                            {isSelected && <Check size={10} color={colors.bg.base} strokeWidth={3} />}
-                        </div>
-                    </div>
-                </td>
-                {/* Fecha */}
-                <td
-                    style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("9%"), cursor: "pointer" }}
-                    onClick={handleFormatClick}
-                    title="Cambiar formato"
-                >
-                    <span className="selectable">{formatDateCell(transaction.date, textFormat, userDateFormat)}</span>
-                </td>
-                {/* Descripción */}
-                <td style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("18%"), overflow: "hidden" }}>
-                    <Tooltip content={transaction.description || "Sin descripción"}>
-                        <span
-                            className="selectable"
-                            style={{
-                                fontWeight: 500,
-                                display: "block",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                            }}
-                        >
-                            {transaction.description || "Sin descripción"}
-                        </span>
-                    </Tooltip>
-                    {transaction.total_installments && (
-                        <div style={subStyle}>
-                            {transaction.installment_number
-                                ? `${transaction.installment_number}/${transaction.total_installments} Cuotas`
-                                : "Cancelación de Cuotas"}
-                        </div>
-                    )}
-                </td>
-                {/* Tipo */}
-                <td style={{ ...tdStyle, ...fixedWidthStyle("6%") }}>
-                    <span
-                        className="selectable"
-                        style={{
-                            ...badgeStyle,
-                            backgroundColor: colors.fill,
-                            color: isExpense ? colors.accent.red : colors.accent.green,
-                        }}
-                    >
-                        {transaction.type === "expense" ? "Egreso" : "Ingreso"}
-                    </span>
-                </td>
-                {/* Categoría */}
-                <td style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("12%"), overflow: "hidden" }}>
-                    <Tooltip content={transaction.category_name || "-"}>
-                        <span
-                            className="selectable"
-                            style={{
-                                display: "block",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                            }}
-                        >
-                            {transaction.category_name || "-"}
-                        </span>
-                    </Tooltip>
-                    {transaction.subcategory_name && (
-                        <Tooltip content={transaction.subcategory_name}>
-                            <div
-                                className="selectable"
-                                style={{
-                                    ...subStyle,
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                }}
-                            >
-                                {transaction.subcategory_name}
-                            </div>
-                        </Tooltip>
-                    )}
-                </td>
-                {/* Canal */}
-                <td style={{ ...tdStyle, textAlign: "left", ...fixedWidthStyle("12%"), overflow: "hidden" }}>
-                    <Tooltip content={transaction.channel_name}>
-                        <span
-                            className="selectable"
-                            style={{
-                                display: "block",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                            }}
-                        >
-                            {transaction.channel_name}
-                        </span>
-                    </Tooltip>
-                    {transaction.account_name && (
-                        <Tooltip content={transaction.account_name}>
-                            <div
-                                className="selectable"
-                                style={{
-                                    ...subStyle,
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                }}
-                            >
-                                {transaction.account_name}
-                            </div>
-                        </Tooltip>
-                    )}
-                </td>
-                {/* Monto */}
-                <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("12%"), overflow: "hidden" }}>
-                    <Tooltip content={`${transaction.currency} ${formatNumber(amount, { dynamic: true })}`}>
-                        <span
-                            className="selectable"
-                            style={{
-                                fontFamily: fonts.family.display,
-                                fontWeight: 500,
-                                fontSize: fonts.table.amount,
-                                color: colors.fg.base,
-                                display: "block",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                            }}
-                        >
-                            {transaction.currency} {formatNumber(amount, { dynamic: true })}
-                        </span>
-                    </Tooltip>
-                    <Tooltip
-                        content={`${transaction.currency === "ARS" ? "USD" : "ARS"} ${formatNumber(alternateAmount, { dynamic: true })}`}
-                    >
-                        <span
-                            className="selectable"
-                            style={{
-                                fontFamily: fonts.family.display,
-                                fontSize: fonts.table.meta,
-                                color: colors.fg.dim,
-                                display: "block",
-                                opacity: 0.7,
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                            }}
-                        >
-                            {transaction.currency === "ARS" ? "USD" : "ARS"}{" "}
-                            {formatNumber(alternateAmount, { dynamic: true })}
-                        </span>
-                    </Tooltip>
-                </td>
-                {/* Moneda */}
-                <td style={{ ...tdStyle, ...fixedWidthStyle("5%") }}>
-                    <span className="selectable" style={{
-                        ...badgeStyle,
-                        backgroundColor: colors.fill,
-                        color: transaction.currency === "ARS" ? colors.accent.cyan : colors.accent.green,
-                    }}>
-                        {transaction.currency}
-                    </span>
-                </td>
-                {/* TC */}
-                <td style={{ ...tdStyle, ...fixedWidthStyle("6%"), overflow: "hidden" }}>
-                    <Tooltip
-                        content={
-                            transaction.exchange_rate % 1 === 0
-                                ? String(transaction.exchange_rate)
-                                : transaction.exchange_rate.toFixed(2)
-                        }
-                    >
-                        <span
-                            className="selectable"
-                            style={{
-                                fontFamily: fonts.family.display,
-                                fontSize: fonts.table.meta,
-                                color: colors.fg.dim,
-                                opacity: 0.7,
-                                display: "block",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                            }}
-                        >
-                            {transaction.exchange_rate % 1 === 0
-                                ? transaction.exchange_rate.toString()
-                                : transaction.exchange_rate.toFixed(2)}
-                        </span>
-                    </Tooltip>
-                </td>
-                {/* Frecuencia */}
-                <td style={{ ...tdStyle, ...fixedWidthStyle("5%") }}>
-                    {transaction.frequency === "fixed" ? (
-                        <span className="selectable"
-                            style={{
-                                ...badgeStyle,
-                                backgroundColor: colors.fill,
-                                color: colors.accent.blue,
-                            }}
-                        >
-                            Fijo
-                        </span>
-                    ) : transaction.frequency === "variable" ? (
-                        <span className="selectable"
-                            style={{
-                                ...badgeStyle,
-                                backgroundColor: colors.fill,
-                                color: colors.accent.purple,
-                            }}
-                        >
-                            Var
-                        </span>
-                    ) : (
-                        <span style={{ color: colors.fg.dim }}>-</span>
-                    )}
-                </td>
-                {/* Estado */}
-                <td style={{ ...tdStyle, ...fixedWidthStyle("7%") }}>
-                    <span
-                        className="selectable"
-                        onClick={handleTogglePaid}
-                        style={{
-                            ...badgeStyle,
-                            backgroundColor: colors.fill,
-                            color: transaction.is_paid
-                                ? colors.accent.teal
-                                : colors.accent.orange,
-                            cursor: "pointer",
-                            display: "inline-block",
-                        }}
-                    >
-                        {transaction.is_paid ? (transaction.type === "income" ? "Recibido" : "Pagado") : "Pendiente"}
-                    </span>
-                </td>
-                {/* Acciones */}
-                <td style={{ ...tdStyle, ...fixedWidthStyle("8%") }}>
-                    <span style={{ display: "flex", gap: spacing[2], justifyContent: "center" }}>
-                        <Button
-                            variant="icon"
-                            title="Cancelar cuotas"
-                            onClick={handleCancelInstallments}
-                            disabled={!transaction.installment_group_id || transaction.is_canceled === true}
-                            style={{
-                                opacity: transaction.installment_group_id && !transaction.is_canceled ? 1 : 0.2,
-                            }}
-                        >
-                            <CreditCard size={14} />
-                        </Button>
-                        <Button variant="icon" title="Editar" onClick={handleEdit}>
-                            <Pencil size={14} />
-                        </Button>
-                        <Button variant="icon" title="Eliminar" onClick={handleDelete}>
-                            <Trash2 size={14} />
-                        </Button>
-                    </span>
-                </td>
-            </tr>
-        </>
+        <tr style={{ backgroundColor: isSelected ? colors.bg.selected : undefined }}>
+            <TransactionRowCells
+                transaction={transaction}
+                onDelete={onDelete}
+                onCancelInstallments={onCancelInstallments}
+                onStartEdit={onStartEdit}
+                isSelected={isSelected}
+                onToggleSelect={onToggleSelect}
+                userDateFormat={userDateFormat}
+                textFormat={textFormat}
+                onFormatClick={onFormatClick}
+            />
+        </tr>
     );
 }

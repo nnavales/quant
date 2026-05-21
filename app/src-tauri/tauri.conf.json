@@ -19,7 +19,8 @@
                 "decorations": false,
                 "resizable": true,
                 "fullscreen": false,
-                "backgroundColor": "#181A1C"
+                "backgroundColor": "#181A1C",
+                "useHttpsScheme": false
             }
         ],
         "security": {
@@ -32,12 +33,8 @@
         }
     },
     "bundle": {
-        "active": true,
-        "targets": "all",
-        "externalBin": [
-            "binaries/quant-api",
-            "binaries/quant-cli"
-        ],
+        "targets": ["deb", "rpm", "dmg", "nsis", "msi"],
+        "externalBin": ["binaries/quant-api", "binaries/quant-cli"],
         "icon": [
             "icons/32x32.png",
             "icons/128x128.png",

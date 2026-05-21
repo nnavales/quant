@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient, QueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useInfiniteQuery, useQueryClient, QueryClient } from "@tanstack/react-query";
 import {
     transactionAggregates,
     channels,
@@ -44,6 +44,21 @@ export function useTransactionAggregates(filters: TransactionFilters) {
     return useQuery({
         queryKey: ["transaction-aggregates", filters],
         queryFn: () => transactionAggregates.list(filters),
+    });
+}
+
+export function useInfiniteTransactions(filters: TransactionFilters) {
+    const { page: _, ...stableFilters } = filters;
+    return useInfiniteQuery({
+        queryKey: ["transaction-aggregates", "infinite", stableFilters],
+        queryFn: ({ pageParam = 1 }) =>
+            transactionAggregates.list({ ...stableFilters, page: pageParam }),
+        getNextPageParam: (lastPage) => {
+            if (lastPage.page * lastPage.limit < lastPage.total)
+                return lastPage.page + 1;
+            return undefined;
+        },
+        initialPageParam: 1,
     });
 }
 
@@ -518,6 +533,21 @@ export function useHistoricalEntries(filters?: HistoricalFilters) {
     return useQuery({
         queryKey: ["historical", filters],
         queryFn: () => historical.list(filters),
+    });
+}
+
+export function useHistoricalEntriesInfinite(filters?: HistoricalFilters) {
+    const { page: _, ...stableFilters } = filters ?? {};
+    return useInfiniteQuery({
+        queryKey: ["historical", "infinite", stableFilters],
+        queryFn: ({ pageParam = 1 }) =>
+            historical.list({ ...stableFilters, page: pageParam }),
+        getNextPageParam: (lastPage) => {
+            if (lastPage.page * lastPage.limit < lastPage.total)
+                return lastPage.page + 1;
+            return undefined;
+        },
+        initialPageParam: 1,
     });
 }
 

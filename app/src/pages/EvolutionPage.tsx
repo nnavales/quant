@@ -4,7 +4,7 @@ import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { useDashboard, useDashboardMetrics, useDimensionSeries } from "@/hooks";
 import { Dropdown } from "@/components/ui/Dropdown";
-import { ChevronLeft, ChevronRight, Maximize2, X } from "lucide-react";
+import { Maximize2, X } from "lucide-react";
 import ReactECharts from "echarts-for-react";
 import type { MetricCell, MonthlyData } from "@/api_client/types";
 
@@ -103,39 +103,33 @@ function EvoChart({ xData, series, tooltipFormatter, yFormatter, yMax, gridTop, 
 
 const groups = [
     {
-        id: "cashflow-annual",
-        label: "Cash Flow & Anual",
+        id: "cashflow-capital",
+        label: "Cash Flow & Capital",
         charts: [
-            { id: "cashflow", title: "Cash Flow Mensual", desc: "Ingresos vs gastos por mes.", legend: [{ label: "Ingresos", color: colors.accent.green }, { label: "Gastos", color: colors.accent.red }] },
-            { id: "savings-rate", title: "Savings Rate", desc: "Porcentaje ahorrado cada mes.", legend: [{ label: "50%", color: colors.fg.dim, style: "line" as const }] },
-            { id: "annual-area", title: "Acumulado Anual", desc: "Tendencia acumulada del año.", legend: [{ label: "Ingresos", color: colors.accent.green }, { label: "Gastos", color: colors.accent.red }, { label: "Ahorro", color: colors.accent.cyan }] },
-        ],
-    },
-    {
-        id: "capital-composition",
-        label: "Capital & Composición",
-        charts: [
-            { id: "capital-growth", title: "Evolución del Capital", desc: "Patrimonio neto acumulado." },
-            { id: "expense-fixed-vs-variable", title: "Gasto Fijo vs Variable", desc: "Composición del gasto mensual.", legend: [{ label: "Fijo", color: `${colors.accent.orange}B3` }, { label: "Variable", color: `${colors.accent.yellow}B3` }] },
-            { id: "income-fixed-vs-variable", title: "Ingreso Fijo vs Variable", desc: "Composición del ingreso mensual.", legend: [{ label: "Fijo", color: `${colors.accent.green}B3` }, { label: "Variable", color: `${colors.accent.green}50` }] },
+            { id: "cashflow", title: "CASH FLOW MENSUAL", desc: "Ingresos vs gastos por mes.", legend: [{ label: "Ingresos", color: colors.accent.green }, { label: "Gastos", color: colors.accent.red }] },
+            { id: "savings-rate", title: "SAVINGS RATE", desc: "Porcentaje ahorrado cada mes.", legend: [{ label: "50%", color: colors.fg.dim, style: "line" as const }] },
+            { id: "annual-area", title: "ACUMULADO ANUAL", desc: "Tendencia acumulada del año.", legend: [{ label: "Ingresos", color: colors.accent.green }, { label: "Gastos", color: colors.accent.red }, { label: "Ahorro", color: colors.accent.cyan }] },
+            { id: "capital-growth", title: "EVOLUCIÓN DEL CAPITAL", desc: "Patrimonio neto acumulado." },
         ],
     },
     {
         id: "real-vs-plan",
-        label: "Real vs Plan",
+        label: "Real vs Planning vs LY",
         charts: [
-            { id: "real-vs-plan-capital", title: "Capital — Real vs Plan", desc: "Real, plan, forecast y año anterior.", legend: [{ label: "Real", color: colors.accent.blue }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
-            { id: "real-vs-plan-savings", title: "Ahorro — Real vs Plan", desc: "Real, plan, forecast y año anterior.", legend: [{ label: "Real", color: colors.accent.cyan }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
-            { id: "real-vs-plan-income", title: "Ingresos — Real vs Plan", desc: "Real, plan, forecast y año anterior.", legend: [{ label: "Real", color: colors.accent.green }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
-            { id: "real-vs-plan-expense", title: "Gastos — Real vs Plan", desc: "Real, plan, forecast y año anterior.", legend: [{ label: "Real", color: colors.accent.red }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
+            { id: "real-vs-plan-capital", title: "CAPITAL", desc: "Real, plan, forecast y año anterior.", legend: [{ label: "Real", color: colors.accent.blue }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
+            { id: "real-vs-plan-savings", title: "AHORRO", desc: "Real, plan, forecast y año anterior.", legend: [{ label: "Real", color: colors.accent.cyan }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
+            { id: "real-vs-plan-income", title: "INGRESOS", desc: "Real, plan, forecast y año anterior.", legend: [{ label: "Real", color: colors.accent.green }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
+            { id: "real-vs-plan-expense", title: "GASTOS", desc: "Real, plan, forecast y año anterior.", legend: [{ label: "Real", color: colors.accent.red }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
         ],
     },
     {
-        id: "expense-breakdown",
-        label: "Gastos",
+        id: "composition-detail",
+        label: "Composición & Detalle",
         charts: [
-            { id: "expense-by-category", title: "Distribución por Categoría", desc: "Gastos del último mes agrupados por categoría y subcategoría." },
-            { id: "expense-by-channel", title: "Distribución por Canal", desc: "Gastos del último mes agrupados por canal y cuenta." },
+            { id: "expense-fixed-vs-variable", title: "GASTO FIJO VS VARIABLE", desc: "Composición del gasto mensual.", legend: [{ label: "Fijo", color: `${colors.accent.orange}B3` }, { label: "Variable", color: `${colors.accent.yellow}B3` }] },
+            { id: "income-fixed-vs-variable", title: "INGRESO FIJO VS VARIABLE", desc: "Composición del ingreso mensual.", legend: [{ label: "Fijo", color: `${colors.accent.green}B3` }, { label: "Variable", color: `${colors.accent.green}50` }] },
+            { id: "expense-by-category", title: "DISTRIBUCIÓN POR CATEGORÍA", desc: "Gastos del último mes agrupados por categoría y subcategoría." },
+            { id: "expense-by-channel", title: "DISTRIBUCIÓN POR CANAL", desc: "Gastos del último mes agrupados por canal y cuenta." },
         ],
     },
 ];
@@ -148,10 +142,10 @@ export function EvolutionPage() {
     const { data: expenseByCategory } = useDimensionSeries("category", dimParams);
     const { data: expenseByChannel } = useDimensionSeries("channel", dimParams);
     const [groupIdx, setGroupIdx] = useState(0);
-    const [viewMode, setViewMode] = useState<ViewMode>("current_year");
     const [hiddenSeries, setHiddenSeries] = useState<Record<string, string[]>>({});
-    const [expenseYear, setExpenseYear] = useState(String(new Date().getFullYear()));
-    const [expenseMonth, setExpenseMonth] = useState("all");
+    const [modalViewMode, setModalViewMode] = useState<ViewMode>("current_year");
+    const [modalExpenseYear, setModalExpenseYear] = useState(String(new Date().getFullYear()));
+    const [modalExpenseMonth, setModalExpenseMonth] = useState("all");
     const [modalChartId, setModalChartId] = useState<string | null>(null);
     useEffect(() => {
         if (!modalChartId) return;
@@ -190,64 +184,70 @@ export function EvolutionPage() {
         };
     }, [monthlySeries]);
 
-    const filteredSeries = useMemo(() => {
-        if (viewMode === "current_year") {
-            return monthlySeries.filter((m) => m.month.startsWith(String(currentYear)));
-        }
-        if (viewMode === "monthly") return monthlySeries;
-        return [];
-    }, [monthlySeries, currentYear, viewMode]);
+    function computeChartData(vm: ViewMode) {
+        const isMonth = vm !== "ytd";
+        const filSeries = vm === "current_year"
+            ? monthlySeries.filter((m) => m.month.startsWith(String(currentYear)))
+            : vm === "monthly" ? monthlySeries : [];
 
-    const isMonthly = viewMode !== "ytd";
-
-    const dataStart = useMemo(() => {
-        const base = isMonthly ? filteredSeries : yearAgg.months.map((y, i) => ({
+        const dStart = (isMonth ? filSeries : yearAgg.months.map((y, i) => ({
             month: y, income: yearAgg.income[i], expense: yearAgg.expense[i],
             capital: yearAgg.capital[i], savings: yearAgg.savings[i],
-        }));
-        const idx = base.findIndex(
-            (m) => m.income !== 0 || m.expense !== 0 || m.capital !== 0 || m.savings !== 0,
+        }))).findIndex(
+            (m: any) => m.income !== 0 || m.expense !== 0 || m.capital !== 0 || m.savings !== 0,
         );
-        return idx >= 0 ? idx : 0;
-    }, [isMonthly, filteredSeries, yearAgg]);
+        const startIdx = dStart >= 0 ? dStart : 0;
 
-    const months = useMemo(() => {
-        if (!isMonthly) return yearAgg.months.slice(dataStart);
-        return filteredSeries.slice(dataStart).map((m) => m.month);
-    }, [isMonthly, filteredSeries, dataStart, yearAgg.months]);
-    const income = useMemo(() => {
-        if (!isMonthly) return yearAgg.income.slice(dataStart);
-        return filteredSeries.slice(dataStart).map((m) => m.income);
-    }, [isMonthly, filteredSeries, dataStart, yearAgg.income]);
-    const expense = useMemo(() => {
-        if (!isMonthly) return yearAgg.expense.slice(dataStart);
-        return filteredSeries.slice(dataStart).map((m) => m.expense);
-    }, [isMonthly, filteredSeries, dataStart, yearAgg.expense]);
-    const capital = useMemo(() => {
-        if (!isMonthly) return yearAgg.capital.slice(dataStart);
-        return filteredSeries.slice(dataStart).map((m) => m.capital);
-    }, [isMonthly, filteredSeries, dataStart, yearAgg.capital]);
-    const savings = useMemo(() => {
-        if (!isMonthly) return yearAgg.savings.slice(dataStart);
-        return filteredSeries.slice(dataStart).map((m) => m.savings);
-    }, [isMonthly, filteredSeries, dataStart, yearAgg.savings]);
-    const expenseFixed = useMemo(() => {
-        if (!isMonthly) return yearAgg.expenseFixed.slice(dataStart);
-        return filteredSeries.slice(dataStart).map((m) => m.expenseFixed);
-    }, [isMonthly, filteredSeries, dataStart, yearAgg.expenseFixed]);
-    const expenseVariable = useMemo(() => {
-        if (!isMonthly) return yearAgg.expenseVariable.slice(dataStart);
-        return filteredSeries.slice(dataStart).map((m) => m.expenseVariable);
-    }, [isMonthly, filteredSeries, dataStart, yearAgg.expenseVariable]);
-    const incomeFixed = useMemo(() => {
-        if (!isMonthly) return yearAgg.incomeFixed.slice(dataStart);
-        return filteredSeries.slice(dataStart).map((m) => m.incomeFixed);
-    }, [isMonthly, filteredSeries, dataStart, yearAgg.incomeFixed]);
-    const incomeVariable = useMemo(() => {
-        if (!isMonthly) return yearAgg.incomeVariable.slice(dataStart);
-        return filteredSeries.slice(dataStart).map((m) => m.incomeVariable);
-    }, [isMonthly, filteredSeries, dataStart, yearAgg.incomeVariable]);
-    const savingsRate = useMemo(() => income.map((v, i) => (v > 0 ? (savings[i] / v) * 100 : 0)), [income, savings]);
+        const mons: string[] = isMonth
+            ? filSeries.slice(startIdx).map((m: any) => m.month)
+            : yearAgg.months.slice(startIdx);
+
+        const inc: number[] = isMonth
+            ? filSeries.slice(startIdx).map((m: any) => m.income)
+            : yearAgg.income.slice(startIdx);
+
+        const exp: number[] = isMonth
+            ? filSeries.slice(startIdx).map((m: any) => m.expense)
+            : yearAgg.expense.slice(startIdx);
+
+        const cap: number[] = isMonth
+            ? filSeries.slice(startIdx).map((m: any) => m.capital)
+            : yearAgg.capital.slice(startIdx);
+
+        const svgs: number[] = isMonth
+            ? filSeries.slice(startIdx).map((m: any) => m.savings)
+            : yearAgg.savings.slice(startIdx);
+
+        const expFix: number[] = isMonth
+            ? filSeries.slice(startIdx).map((m: any) => m.expenseFixed)
+            : yearAgg.expenseFixed.slice(startIdx);
+
+        const expVar: number[] = isMonth
+            ? filSeries.slice(startIdx).map((m: any) => m.expenseVariable)
+            : yearAgg.expenseVariable.slice(startIdx);
+
+        const incFix: number[] = isMonth
+            ? filSeries.slice(startIdx).map((m: any) => m.incomeFixed)
+            : yearAgg.incomeFixed.slice(startIdx);
+
+        const incVar: number[] = isMonth
+            ? filSeries.slice(startIdx).map((m: any) => m.incomeVariable)
+            : yearAgg.incomeVariable.slice(startIdx);
+
+        const MIN_INCOME = 100;
+        const svgsRate = inc.map((v, i) => (v >= MIN_INCOME ? (svgs[i] / v) * 100 : null));
+
+        const cumInc = (() => { let s = 0; return inc.map((v: number) => { s += v; return s; }); })();
+        const cumExp = (() => { let s = 0; return exp.map((v: number) => { s += v; return s; }); })();
+        const cumSvgs = (() => { let s = 0; return svgs.map((v: number) => { s += v; return s; }); })();
+
+        return { months: mons, income: inc, expense: exp, capital: cap, savings: svgs, expenseFixed: expFix, expenseVariable: expVar, incomeFixed: incFix, incomeVariable: incVar, savingsRate: svgsRate, cumulativeIncome: cumInc, cumulativeExpense: cumExp, cumulativeSavings: cumSvgs, isMonthly: isMonth };
+    }
+
+    const pageData = useMemo(() => computeChartData("current_year"), [monthlySeries, currentYear, yearAgg]);
+    const modalData = useMemo(() => computeChartData(modalViewMode), [monthlySeries, currentYear, modalViewMode, yearAgg]);
+
+    const { months, income, expense, capital, expenseFixed, expenseVariable, incomeFixed, incomeVariable, savingsRate, cumulativeIncome, cumulativeExpense, cumulativeSavings } = pageData;
 
     const seriesColors: Record<string, string> = {
         Real: colors.accent.blue,
@@ -270,16 +270,6 @@ export function EvolutionPage() {
             color: name === "Real" ? realColor : seriesColors[name],
         }));
 
-    const cumulativeIncome = useMemo(() => {
-        let sum = 0; return income.map((v) => { sum += v; return sum; });
-    }, [income]);
-    const cumulativeExpense = useMemo(() => {
-        let sum = 0; return expense.map((v) => { sum += v; return sum; });
-    }, [expense]);
-    const cumulativeSavings = useMemo(() => {
-        let sum = 0; return savings.map((v) => { sum += v; return sum; });
-    }, [savings]);
-
     if (dashLoading) {
         return <div style={{ padding: spacing[4], color: colors.fg.dim }}>Cargando evolución...</div>;
     }
@@ -301,18 +291,49 @@ export function EvolutionPage() {
         flexShrink: 0,
     };
 
-    const paginate = (dir: number) => {
-        setGroupIdx((prev) => (prev + dir + groups.length) % groups.length);
-    };
+    function renderChart(chartId: string, hidden: string[] = [], chartOpts?: {
+        viewMode?: ViewMode;
+        expenseYear?: string;
+        expenseMonth?: string;
+        months?: string[];
+        income?: number[];
+        expense?: number[];
+        capital?: number[];
+        savings?: number[];
+        expenseFixed?: number[];
+        expenseVariable?: number[];
+        incomeFixed?: number[];
+        incomeVariable?: number[];
+        savingsRate?: (number | null)[];
+        cumulativeIncome?: number[];
+        cumulativeExpense?: number[];
+        cumulativeSavings?: number[];
+        isMonthly?: boolean;
+    }) {
+        const effMonths = chartOpts?.months ?? months;
+        const effIncome = chartOpts?.income ?? income;
+        const effExpense = chartOpts?.expense ?? expense;
+        const effCapital = chartOpts?.capital ?? capital;
+        const effExpenseFixed = chartOpts?.expenseFixed ?? expenseFixed;
+        const effExpenseVariable = chartOpts?.expenseVariable ?? expenseVariable;
+        const effIncomeFixed = chartOpts?.incomeFixed ?? incomeFixed;
+        const effIncomeVariable = chartOpts?.incomeVariable ?? incomeVariable;
+        const effSavingsRate = chartOpts?.savingsRate ?? savingsRate;
+        const effCumulativeIncome = chartOpts?.cumulativeIncome ?? cumulativeIncome;
+        const effCumulativeExpense = chartOpts?.cumulativeExpense ?? cumulativeExpense;
+        const effCumulativeSavings = chartOpts?.cumulativeSavings ?? cumulativeSavings;
+        const effViewMode = chartOpts?.viewMode ?? "current_year";
+        const effExpenseYear = chartOpts?.expenseYear ?? String(currentYear);
+        const effExpenseMonth = chartOpts?.expenseMonth ?? "all";
+        const effIsMonthly = chartOpts?.isMonthly ?? true;
 
-    function renderChart(chartId: string, hidden: string[] = []) {
         const emptyMsg = (msg: string) => (
             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: spacing[4] }}>
                 <span style={{ fontSize: fonts.size.sm, color: colors.fg.dim, textAlign: "center" }}>{msg}</span>
             </div>
         );
 
-        if (months.length < 2 && isMonthly && !["expense-by-category", "expense-by-channel"].includes(chartId)) {
+        if (effMonths.length < 2 && effIsMonthly && !["expense-by-category", "expense-by-channel"].includes(chartId)) {
             return emptyMsg("Se necesitan al menos 2 meses de datos");
         }
 
@@ -320,10 +341,10 @@ export function EvolutionPage() {
             case "cashflow": {
                 return (
                     <EvoChart
-                        xData={months}
+                        xData={effMonths}
                         series={[
-                            { type: "bar", data: income, name: "Ingresos", stack: "a", itemStyle: { color: `${colors.accent.green}B3`, borderRadius: [4, 4, 0, 0] }, barMaxWidth: 16, barGap: "30%", animationDuration: 600, animationEasing: "cubicOut" },
-                            { type: "bar", data: expense.map((v) => -v), name: "Gastos", stack: "a", itemStyle: { color: `${colors.accent.red}B3`, borderRadius: [0, 0, 4, 4] }, barMaxWidth: 16, barGap: "30%", animationDuration: 600, animationEasing: "cubicOut" },
+                            { type: "bar", data: effIncome, name: "Ingresos", stack: "a", itemStyle: { color: `${colors.accent.green}B3`, borderRadius: [4, 4, 0, 0] }, barMaxWidth: 16, barGap: "30%", animationDuration: 600, animationEasing: "cubicOut" },
+                            { type: "bar", data: effExpense.map((v) => -v), name: "Gastos", stack: "a", itemStyle: { color: `${colors.accent.red}B3`, borderRadius: [0, 0, 4, 4] }, barMaxWidth: 16, barGap: "30%", animationDuration: 600, animationEasing: "cubicOut" },
                         ]}
                         tooltipFormatter={(params) => {
                             const inc = params.find((p) => p.seriesName === "Ingresos")?.value ?? 0;
@@ -331,7 +352,7 @@ export function EvolutionPage() {
                             const net = inc - exp;
                             const ahorro = inc + exp;
                             return `
-                                <div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0]?.name ?? "", viewMode)}</div>
+                                <div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0]?.name ?? "", effViewMode)}</div>
                                 <div style="display:flex;align-items:center;gap:4px;margin-top:2px;font-size:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${colors.accent.green}"></span>Ingresos: <b>${formatCompact(inc)}</b></div>
                                 <div style="display:flex;align-items:center;gap:4px;margin-top:2px;font-size:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${colors.accent.red}"></span>Gastos: <b>${formatCompact(exp)}</b></div>
                                 <div style="display:flex;align-items:center;gap:4px;margin-top:2px;font-size:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${colors.accent.purple}"></span>Neto: <b>${formatCompact(net)}</b></div>
@@ -339,7 +360,7 @@ export function EvolutionPage() {
                             `;
                         }}
                         hiddenSeries={hidden}
-                        viewMode={viewMode}
+                        viewMode={effViewMode}
                         chartKey={`${chartId}-${hidden.join(",")}`}
                     />
                 );
@@ -348,15 +369,14 @@ export function EvolutionPage() {
             case "savings-rate":
                 return (
                     <EvoChart
-                        xData={months}
+                        xData={effMonths}
                         series={[{
-                            type: "line", data: savingsRate,
+                            type: "line", data: effSavingsRate,
                             smooth: true, symbol: "circle", symbolSize: 4,
                             showSymbol: false, emphasis: { showSymbol: true, scale: 1.5 },
                             animationDuration: 600, animationEasing: "cubicOut",
                             lineStyle: { color: colors.accent.cyan, width: 2.5 },
                             itemStyle: { color: colors.accent.cyan },
-                            areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: `${colors.accent.cyan}30` }, { offset: 1, color: `${colors.accent.cyan}00` }] } },
                             markLine: {
                                 silent: true,
                                 data: [{ yAxis: 50, label: { show: false }, lineStyle: { color: colors.fg.dim, type: "dashed" } }],
@@ -365,11 +385,12 @@ export function EvolutionPage() {
                         }]}
                         yFormatter={(v) => `${formatValue(v)}%`}
                         yMax={100}
-                        tooltipFormatter={(params) =>
-                            `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0]?.name ?? "", viewMode)}</div><span style="font-size:12px"><b>${formatValue(params[0]?.value)}%</b> de ahorro</span>`
-                        }
+                        tooltipFormatter={(params) => {
+                            const v = params[0]?.value;
+                            return `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0]?.name ?? "", effViewMode)}</div><span style="font-size:12px"><b>${v != null ? `${formatValue(v)}%` : "Sin datos"}</b> de ahorro</span>`;
+                        }}
                         hiddenSeries={hidden}
-                        viewMode={viewMode}
+                        viewMode={effViewMode}
                         chartKey={`${chartId}-${hidden.join(",")}`}
                     />
                 );
@@ -377,9 +398,9 @@ export function EvolutionPage() {
             case "capital-growth":
                 return (
                     <EvoChart
-                        xData={months}
+                        xData={effMonths}
                         series={[{
-                            type: "line", data: capital,
+                            type: "line", data: effCapital,
                             smooth: true, symbol: "circle", symbolSize: 4,
                             showSymbol: false, emphasis: { showSymbol: true, scale: 1.5 },
                             animationDuration: 600, animationEasing: "cubicOut",
@@ -388,15 +409,15 @@ export function EvolutionPage() {
                             areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: `${colors.accent.blue}30` }, { offset: 1, color: `${colors.accent.blue}00` }] } },
                         }]}
                         tooltipFormatter={(params) =>
-                            `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0]?.name ?? "", viewMode)}</div><span style="font-size:12px"><b>${formatCompact(params[0]?.value ?? 0)}</b></span>`
+                            `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0]?.name ?? "", effViewMode)}</div><span style="font-size:12px"><b>${formatCompact(params[0]?.value ?? 0)}</b></span>`
                         }
                         hiddenSeries={hidden}
-                        viewMode={viewMode}
+                        viewMode={effViewMode}
                         chartKey={`${chartId}-${hidden.join(",")}`}
                     />
                 );
             case "expense-fixed-vs-variable": {
-                const { months: expMonths, data: [expFix, expVar] } = trimData(months, expenseFixed, expenseVariable);
+                const { months: expMonths, data: [expFix, expVar] } = trimData(effMonths, effExpenseFixed, effExpenseVariable);
                 return (
                     <EvoChart
                         xData={expMonths}
@@ -405,21 +426,21 @@ export function EvolutionPage() {
                             { type: "bar", data: expVar, name: "Variable", stack: "exp", itemStyle: { color: `${colors.accent.yellow}B3` }, barMaxWidth: 16, barGap: "30%", animationDuration: 600, animationEasing: "cubicOut" },
                         ]}
                         tooltipFormatter={(params) => {
-                            let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0]?.name ?? "", viewMode)}</div>`;
+                            let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0]?.name ?? "", effViewMode)}</div>`;
                             params.forEach((p) => {
                                 html += `<div style="display:flex;align-items:center;gap:4px;margin-top:2px;font-size:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span>${p.seriesName}: <b>${formatCompact(p.value)}</b></div>`;
                             });
                             return html;
                         }}
                         hiddenSeries={hidden}
-                        viewMode={viewMode}
+                        viewMode={effViewMode}
                         chartKey={`${chartId}-${hidden.join(",")}`}
                     />
                 );
             }
 
             case "income-fixed-vs-variable": {
-                const { months: incMonths, data: [incFix, incVar] } = trimData(months, incomeFixed, incomeVariable);
+                const { months: incMonths, data: [incFix, incVar] } = trimData(effMonths, effIncomeFixed, effIncomeVariable);
                 return (
                     <EvoChart
                         xData={incMonths}
@@ -428,14 +449,14 @@ export function EvolutionPage() {
                             { type: "bar", data: incVar, name: "Variable", stack: "inc", itemStyle: { color: `${colors.accent.green}50` }, barMaxWidth: 16, barGap: "30%", animationDuration: 600, animationEasing: "cubicOut" },
                         ]}
                         tooltipFormatter={(params) => {
-                            let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0]?.name ?? "", viewMode)}</div>`;
+                            let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0]?.name ?? "", effViewMode)}</div>`;
                             params.forEach((p) => {
                                 html += `<div style="display:flex;align-items:center;gap:4px;margin-top:2px;font-size:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span>${p.seriesName}: <b>${formatCompact(p.value)}</b></div>`;
                             });
                             return html;
                         }}
                         hiddenSeries={hidden}
-                        viewMode={viewMode}
+                        viewMode={effViewMode}
                         chartKey={`${chartId}-${hidden.join(",")}`}
                     />
                 );
@@ -459,7 +480,7 @@ export function EvolutionPage() {
                             areaStyle: s.name === "Real" ? { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: `${s.color}30` }, { offset: 1, color: `${s.color}00` }] } } : undefined,
                         }))}
                         tooltipFormatter={(params) => {
-                            let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0].name, viewMode)}</div>`;
+                            let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0].name, effViewMode)}</div>`;
                             params.forEach((p) => {
                                 if (p.value === null || p.value === undefined) return;
                                 html += `<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-size:12px;font-weight:600">${p.seriesName}: ${Math.round(p.value).toLocaleString("es-AR")}</span></div>`;
@@ -467,7 +488,7 @@ export function EvolutionPage() {
                             return html;
                         }}
                         hiddenSeries={hidden}
-                        viewMode={viewMode}
+                        viewMode={effViewMode}
                         chartKey={`${chartId}-${hidden.join(",")}`}
                     />
                 );
@@ -491,7 +512,7 @@ export function EvolutionPage() {
                             areaStyle: s.name === "Real" ? { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: `${s.color}30` }, { offset: 1, color: `${s.color}00` }] } } : undefined,
                         }))}
                         tooltipFormatter={(params) => {
-                            let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0].name, viewMode)}</div>`;
+                            let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0].name, effViewMode)}</div>`;
                             params.forEach((p) => {
                                 if (p.value === null || p.value === undefined) return;
                                 html += `<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-size:12px;font-weight:600">${p.seriesName}: ${Math.round(p.value).toLocaleString("es-AR")}</span></div>`;
@@ -499,7 +520,7 @@ export function EvolutionPage() {
                             return html;
                         }}
                         hiddenSeries={hidden}
-                        viewMode={viewMode}
+                        viewMode={effViewMode}
                         chartKey={`${chartId}-${hidden.join(",")}`}
                     />
                 );
@@ -523,7 +544,7 @@ export function EvolutionPage() {
                             areaStyle: s.name === "Real" ? { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: `${s.color}30` }, { offset: 1, color: `${s.color}00` }] } } : undefined,
                         }))}
                         tooltipFormatter={(params) => {
-                            let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0].name, viewMode)}</div>`;
+                            let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0].name, effViewMode)}</div>`;
                             params.forEach((p) => {
                                 if (p.value === null || p.value === undefined) return;
                                 html += `<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-size:12px;font-weight:600">${p.seriesName}: ${Math.round(p.value).toLocaleString("es-AR")}</span></div>`;
@@ -531,7 +552,7 @@ export function EvolutionPage() {
                             return html;
                         }}
                         hiddenSeries={hidden}
-                        viewMode={viewMode}
+                        viewMode={effViewMode}
                         chartKey={`${chartId}-${hidden.join(",")}`}
                     />
                 );
@@ -555,7 +576,7 @@ export function EvolutionPage() {
                             areaStyle: s.name === "Real" ? { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: `${s.color}30` }, { offset: 1, color: `${s.color}00` }] } } : undefined,
                         }))}
                         tooltipFormatter={(params) => {
-                            let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0].name, viewMode)}</div>`;
+                            let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0].name, effViewMode)}</div>`;
                             params.forEach((p) => {
                                 if (p.value === null || p.value === undefined) return;
                                 html += `<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-size:12px;font-weight:600">${p.seriesName}: ${Math.round(p.value).toLocaleString("es-AR")}</span></div>`;
@@ -563,7 +584,7 @@ export function EvolutionPage() {
                             return html;
                         }}
                         hiddenSeries={hidden}
-                        viewMode={viewMode}
+                        viewMode={effViewMode}
                         chartKey={`${chartId}-${hidden.join(",")}`}
                     />
                 );
@@ -572,21 +593,21 @@ export function EvolutionPage() {
             case "annual-area": {
                 return (
                     <EvoChart
-                        xData={months}
+                        xData={effMonths}
                         series={[
-                            { type: "line", data: cumulativeIncome, name: "Ingresos", smooth: true, symbol: "circle", symbolSize: 4, showSymbol: false, emphasis: { showSymbol: true, scale: 1.5 }, animationDuration: 600, animationEasing: "cubicOut", lineStyle: { color: colors.accent.green, width: 2 }, itemStyle: { color: colors.accent.green }, areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: `${colors.accent.green}30` }, { offset: 1, color: `${colors.accent.green}00` }] } } },
-                            { type: "line", data: cumulativeExpense, name: "Gastos", smooth: true, symbol: "circle", symbolSize: 4, showSymbol: false, emphasis: { showSymbol: true, scale: 1.5 }, animationDuration: 600, animationEasing: "cubicOut", lineStyle: { color: colors.accent.red, width: 2 }, itemStyle: { color: colors.accent.red }, areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: `${colors.accent.red}30` }, { offset: 1, color: `${colors.accent.red}00` }] } } },
-                            { type: "line", data: cumulativeSavings, name: "Ahorro", smooth: true, symbol: "circle", symbolSize: 4, showSymbol: false, emphasis: { showSymbol: true, scale: 1.5 }, animationDuration: 600, animationEasing: "cubicOut", lineStyle: { color: colors.accent.cyan, width: 2 }, itemStyle: { color: colors.accent.cyan }, areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: `${colors.accent.cyan}30` }, { offset: 1, color: `${colors.accent.cyan}00` }] } } },
+                            { type: "line", data: effCumulativeIncome, name: "Ingresos", smooth: true, symbol: "circle", symbolSize: 4, showSymbol: false, emphasis: { showSymbol: true, scale: 1.5 }, animationDuration: 600, animationEasing: "cubicOut", lineStyle: { color: colors.accent.green, width: 2 }, itemStyle: { color: colors.accent.green }, areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: `${colors.accent.green}30` }, { offset: 1, color: `${colors.accent.green}00` }] } } },
+                            { type: "line", data: effCumulativeExpense, name: "Gastos", smooth: true, symbol: "circle", symbolSize: 4, showSymbol: false, emphasis: { showSymbol: true, scale: 1.5 }, animationDuration: 600, animationEasing: "cubicOut", lineStyle: { color: colors.accent.red, width: 2 }, itemStyle: { color: colors.accent.red }, areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: `${colors.accent.red}30` }, { offset: 1, color: `${colors.accent.red}00` }] } } },
+                            { type: "line", data: effCumulativeSavings, name: "Ahorro", smooth: true, symbol: "circle", symbolSize: 4, showSymbol: false, emphasis: { showSymbol: true, scale: 1.5 }, animationDuration: 600, animationEasing: "cubicOut", lineStyle: { color: colors.accent.cyan, width: 2 }, itemStyle: { color: colors.accent.cyan }, areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: `${colors.accent.cyan}30` }, { offset: 1, color: `${colors.accent.cyan}00` }] } } },
                         ]}
                         tooltipFormatter={(params) => {
-                            let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0]?.name ?? "", viewMode)}</div>`;
+                            let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0]?.name ?? "", effViewMode)}</div>`;
                             params.forEach((p) => {
                                 html += `<div style="display:flex;align-items:center;gap:4px;margin-top:2px;font-size:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span>${p.seriesName}: <b>${formatCompact(p.value)}</b></div>`;
                             });
                             return html;
                         }}
                         hiddenSeries={hidden}
-                        viewMode={viewMode}
+                        viewMode={effViewMode}
                         chartKey={`${chartId}-${hidden.join(",")}`}
                     />
                 );
@@ -597,9 +618,9 @@ export function EvolutionPage() {
                 const dimData = chartId === "expense-by-category" ? expenseByCategory : expenseByChannel;
                 if (!dimData || !dimData.data.length) return emptyMsg("Sin datos");
                 const allDataMonths = [...new Set(dimData.data.flatMap((s) => s.data.map((d) => d.month)))].sort();
-                const targetMonths = expenseMonth === "all"
-                    ? allDataMonths.filter((m) => m.startsWith(expenseYear))
-                    : allDataMonths.filter((m) => m === `${expenseYear}-${expenseMonth}`);
+                const targetMonths = effExpenseMonth === "all"
+                    ? allDataMonths.filter((m) => m.startsWith(effExpenseYear))
+                    : allDataMonths.filter((m) => m === `${effExpenseYear}-${effExpenseMonth}`);
                 const items = dimData.data
                     .map((g) => {
                         const pts = g.data.filter((d) => targetMonths.includes(d.month));
@@ -675,7 +696,7 @@ export function EvolutionPage() {
                         }}
                         style={{ height: "100%", width: "100%" }}
                         opts={{ renderer: "svg" }}
-                        key={`${chartId}-${expenseYear}-${expenseMonth}`}
+                        key={`${chartId}-${effExpenseYear}-${effExpenseMonth}`}
                     />
                 );
             }
@@ -698,214 +719,71 @@ export function EvolutionPage() {
                 animation: "fadeIn 0.2s ease-out",
             }}
         >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div>
-                    <h1
-                        style={{
-                            fontFamily: fonts.family.display,
-                            fontSize: fonts.size.xl,
-                            fontWeight: fonts.weight.semibold,
-                            color: colors.fg.base,
-                            margin: 0,
-                            marginBottom: spacing[1],
-                        }}
-                    >
-                        Evolución
-                    </h1>
-                    <p
-                        style={{
-                            fontFamily: fonts.family.text,
-                            fontSize: fonts.size.sm,
-                            color: colors.fg.dim,
-                            margin: 0,
-                        }}
-                    >
-                        {groups[groupIdx].label}
-                    </p>
-                </div>
-                {groups[groupIdx].id !== "real-vs-plan" && (
-                <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: spacing[1],
-                    position: "relative",
-                    borderRadius: "8px",
-                    background: colors.fill,
-                    overflow: "hidden",
-                    cursor: "pointer",
-                    userSelect: "none",
-                }}>
-                    <div style={{
-                        position: "absolute",
-                        top: 0,
-                        left: `calc(${["current_year", "ytd", "monthly"].indexOf(viewMode)} * (100% / 3))`,
-                        width: "calc(100% / 3)",
-                        height: "100%",
-                        borderRadius: "7px",
-                        background: colors.bg.surface,
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)",
-                        transition: "left 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                        pointerEvents: "none",
-                    }} />
-                    {[
-                        { key: "current_year" as ViewMode, label: "YTD" },
-                        { key: "ytd" as ViewMode, label: "YoY" },
-                        { key: "monthly" as ViewMode, label: "MoM" },
-                    ].map((m) => (
-                        <div
-                            key={m.key}
-                            onClick={() => setViewMode(m.key)}
+            <div style={{ display: "flex", flexDirection: "column", gap: spacing[3], flexShrink: 0 }}>
+                <h1
+                    style={{
+                        fontFamily: fonts.family.display,
+                        fontSize: fonts.size.xl,
+                        fontWeight: fonts.weight.semibold,
+                        color: colors.fg.base,
+                        margin: 0,
+                    }}
+                >
+                    Evolución
+                </h1>
+                <div style={{ display: "flex", alignItems: "center", gap: spacing[1], background: colors.fill, borderRadius: radius.lg, padding: spacing[1], flexShrink: 0, alignSelf: "flex-start" }}>
+                    {groups.map((g, i) => (
+                        <button
+                            key={g.id}
+                            onClick={() => setGroupIdx(i)}
                             style={{
-                                position: "relative",
-                                zIndex: 1,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                flex: 1,
-                                padding: "3px 10px",
-                                whiteSpace: "nowrap",
-                                fontSize: fonts.size.xs,
-                                fontWeight: 500,
-                                color: viewMode === m.key ? colors.fg.base : colors.fg.dim,
-                                transition: "color 0.2s",
-                                lineHeight: "18px",
+                                background: groupIdx === i ? colors.bg.surface : "transparent",
+                                border: "none",
+                                borderRadius: radius.md,
+                                padding: `${spacing[1]} ${spacing[3]}`,
+                                fontSize: fonts.size.sm,
+                                fontWeight: groupIdx === i ? 600 : 400,
+                                color: groupIdx === i ? colors.fg.base : colors.fg.dim,
+                                cursor: "pointer",
+                                transition: "all 0.15s",
+                                boxShadow: groupIdx === i ? "0 1px 3px rgba(0,0,0,0.12)" : "none",
                             }}
                         >
-                            {m.label}
-                        </div>
+                            {g.label}
+                        </button>
                     ))}
                 </div>
-                )}
             </div>
-
-            {data && (
-                <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap", flexShrink: 0 }}>
-                    {([
-                        { label: "Margen Ahorro", value: `${formatValue(data.currentYtd.SavingsMargin * 100)}%`, color: data.currentYtd.SavingsMargin >= 0 ? colors.accent.green : colors.accent.red },
-                        { label: "Gasto Core", value: formatCompact(data.currentYtd.CoreBurnRate), color: colors.fg.base },
-                        { label: "Cobertura", value: `${formatValue(data.currentYtd.ExpenseCoverageMonths)}m`, color: colors.accent.cyan },
-                        { label: "Crecimiento YTD", value: `${formatValue(data.currentYtd.CapitalGrowthRateYTD * 100)}%`, color: data.currentYtd.CapitalGrowthRateYTD >= 0 ? colors.accent.green : colors.accent.red },
-                        { label: "Ahorro Promedio", value: formatCompact(data.currentYtd.AvgMonthlySavings), color: colors.accent.cyan },
-                        { label: "Flexibilidad", value: `${formatValue(data.currentYtd.FinancialFlexibility * 100)}%`, color: colors.accent.cyan },
-                        { label: "Ratio Costos Fijos", value: `${formatValue(data.currentYtd.FixedCostRatio * 100)}%`, color: colors.accent.orange },
-                        { label: "Cobertura Ingreso", value: `${formatValue(data.currentYtd.StableIncomeCoverage)}x`, color: data.currentYtd.StableIncomeCoverage >= 1 ? colors.accent.green : colors.accent.red },
-                    ] as const).map((kpi) => (
-                        <div key={kpi.label} style={{ display: "flex", alignItems: "center", gap: spacing[1], backgroundColor: colors.fill, borderRadius: radius.md, padding: `${spacing[1]} ${spacing[2]}`, flexShrink: 0 }}>
-                            <span style={{ fontSize: fonts.size.xs, color: colors.fg.dim, whiteSpace: "nowrap" }}>{kpi.label}</span>
-                            <span style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: kpi.color, fontWeight: 700, whiteSpace: "nowrap" }}>{kpi.value}</span>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: spacing[3], flexShrink: 0 }}>
-                <button
-                    onClick={() => paginate(-1)}
-                    style={{
-                        background: "none",
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: radius.md,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: 32,
-                        height: 32,
-                        color: colors.fg.dim,
-                        transition: "all 0.15s",
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.fill; e.currentTarget.style.color = colors.fg.base; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = colors.fg.dim; }}
-                >
-                    <ChevronLeft size={18} />
-                </button>
-
-                {groups.map((g, i) => (
-                    <button
-                        key={g.id}
-                        onClick={() => setGroupIdx(i)}
-                        style={{
-                            background: groupIdx === i ? colors.fill : "transparent",
-                            border: "none",
-                            borderRadius: radius.md,
-                            padding: `${spacing[1]} ${spacing[2]}`,
-                            fontSize: fonts.size.sm,
-                            fontWeight: groupIdx === i ? 600 : 400,
-                            color: groupIdx === i ? colors.fg.base : colors.fg.dim,
-                            cursor: "pointer",
-                            transition: "all 0.15s",
-                        }}
-                    >
-                        {g.label}
-                    </button>
-                ))}
-
-                <button
-                    onClick={() => paginate(1)}
-                    style={{
-                        background: "none",
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: radius.md,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: 32,
-                        height: 32,
-                        color: colors.fg.dim,
-                        transition: "all 0.15s",
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.fill; e.currentTarget.style.color = colors.fg.base; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = colors.fg.dim; }}
-                >
-                    <ChevronRight size={18} />
-                </button>
-            </div>
-
-            {groups[groupIdx].id === "expense-breakdown" && (
-                <div style={{ display: "flex", gap: spacing[2], alignItems: "center", flexShrink: 0 }}>
-                    <Dropdown
-                        value={expenseYear}
-                        onChange={setExpenseYear}
-                        options={expenseByCategory ? [...new Set(expenseByCategory.data.flatMap((s) => s.data.map((d) => d.month.split("-")[0])))].sort().reverse().map((y) => ({ id: y, label: y })) : []}
-                        triggerStyle={{ height: "32px", width: "80px", fontSize: fonts.size.sm } as React.CSSProperties}
-                    />
-                    <Dropdown
-                        value={expenseMonth}
-                        onChange={setExpenseMonth}
-                        options={[{ id: "all", label: "Todo el año" }, ...["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"].map((name, i) => ({ id: String(i + 1).padStart(2, "0"), label: name }))]}
-                        triggerStyle={{ height: "32px", width: "140px", fontSize: fonts.size.sm } as React.CSSProperties}
-                    />
-                </div>
-            )}
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: spacing[3], flex: 1, minHeight: 0 }}>
                 {groups[groupIdx].charts.map((ch: { id: string; title: string; desc?: string; legend?: { label: string; color: string }[] }) => (
                     <div key={ch.id} style={card}>
                         <div style={{ ...chartHeader, display: "flex", flexDirection: "column", gap: 2 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: spacing[2] }}>
-                                <span>{ch.title}</span>
-                                <div style={{ display: "flex", alignItems: "center", gap: spacing[1] }}>
-                                    <button
-                                        onClick={() => setModalChartId(ch.id)}
-                                        title="Expandir"
-                                        style={{
-                                            background: "none",
-                                            border: "none",
-                                            cursor: "pointer",
-                                            padding: 2,
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            color: colors.fg.dim,
-                                            borderRadius: radius.sm,
-                                            transition: "all 0.15s",
-                                        }}
-                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.fill; e.currentTarget.style.color = colors.fg.base; }}
-                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = colors.fg.dim; }}
-                                    >
-                                        <Maximize2 size={14} />
-                                    </button>
+                                <span style={{ letterSpacing: "0.5px" }}>{ch.title}</span>
+                                <button
+                                    onClick={() => setModalChartId(ch.id)}
+                                    title="Expandir"
+                                    style={{
+                                        background: "none",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        padding: 2,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        color: colors.fg.dim,
+                                        borderRadius: radius.sm,
+                                        transition: "all 0.15s",
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.fill; e.currentTarget.style.color = colors.fg.base; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = colors.fg.dim; }}
+                                >
+                                        <Maximize2 size={12} />
+                                </button>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing[2], flexWrap: "wrap" }}>
+                                {ch.desc && <span style={{ fontSize: fonts.size.xs, fontWeight: 400, color: colors.fg.dim }}>{ch.desc}</span>}
                                 {ch.legend && (
                                     <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap", justifyContent: "flex-end" }}>
                                         {ch.legend.map((l: { label: string; color: string; style?: "line" }) => {
@@ -913,7 +791,7 @@ export function EvolutionPage() {
                                             return (
                                                 <div key={l.label} onClick={l.style === "line" ? undefined : () => toggleSeries(ch.id, l.label)} style={{ display: "flex", alignItems: "center", gap: 3, fontSize: fonts.size.xs, color: isHidden ? colors.fg.dim : undefined, cursor: l.style === "line" ? "default" : "pointer", opacity: isHidden ? 0.45 : 1, transition: "opacity 0.15s" }}>
                                                     {l.style === "line" ? (
-                                                        <span style={{ display: "inline-block", width: 14, height: 0, borderTop: `1.5px dashed ${l.color}`, flexShrink: 0 }} />
+                                                        <span style={{ display: "inline-block", width: 18, height: 3, borderRadius: 2, background: l.color, flexShrink: 0 }} />
                                                     ) : (
                                                         <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: l.color, flexShrink: 0 }} />
                                                     )}
@@ -923,9 +801,7 @@ export function EvolutionPage() {
                                         })}
                                     </div>
                                 )}
-                                </div>
                             </div>
-                            {ch.desc && <span style={{ fontSize: fonts.size.xs, fontWeight: 400, color: colors.fg.dim }}>{ch.desc}</span>}
                         </div>
                         <div style={{ height: "312px", flexShrink: 0 }}>
                             {renderChart(ch.id, hiddenSeries[ch.id] ?? [])}
@@ -972,7 +848,7 @@ export function EvolutionPage() {
                         }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                 <div>
-                                    <span>{chart.title}</span>
+                                    <span style={{ letterSpacing: "0.5px" }}>{chart.title}</span>
                                     {chart.desc && <span style={{ fontSize: fonts.size.xs, fontWeight: 400, color: colors.fg.dim, marginLeft: spacing[2] }}>{chart.desc}</span>}
                                 </div>
                                 <button
@@ -1001,19 +877,19 @@ export function EvolutionPage() {
                                 {["expense-by-category", "expense-by-channel"].includes(modalChartId) ? (
                                     <>
                                     <Dropdown
-                                        value={expenseYear}
-                                        onChange={setExpenseYear}
+                                        value={modalExpenseYear}
+                                        onChange={setModalExpenseYear}
                                         options={expenseByCategory ? [...new Set(expenseByCategory.data.flatMap((s) => s.data.map((d) => d.month.split("-")[0])))].sort().reverse().map((y) => ({ id: y, label: y })) : []}
                                         triggerStyle={{ height: "28px", width: "80px", fontSize: fonts.size.xs } as React.CSSProperties}
                                     />
                                     <Dropdown
-                                        value={expenseMonth}
-                                        onChange={setExpenseMonth}
+                                        value={modalExpenseMonth}
+                                        onChange={setModalExpenseMonth}
                                         options={[{ id: "all", label: "Todo el año" }, ...["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"].map((name, i) => ({ id: String(i + 1).padStart(2, "0"), label: name }))]}
                                         triggerStyle={{ height: "28px", width: "130px", fontSize: fonts.size.xs } as React.CSSProperties}
                                     />
                                     </>
-                                ) : (
+                                ) : modalChartId.startsWith("real-vs-plan") ? null : (
                                     <div style={{
                                         display: "flex",
                                         alignItems: "center",
@@ -1030,13 +906,13 @@ export function EvolutionPage() {
                                         ].map((m) => (
                                             <div
                                                 key={m.key}
-                                                onClick={() => setViewMode(m.key)}
+                                                onClick={() => setModalViewMode(m.key)}
                                                 style={{
                                                     padding: "2px 8px",
                                                     fontSize: fonts.size.xs,
                                                     fontWeight: 500,
-                                                    color: viewMode === m.key ? colors.fg.base : colors.fg.dim,
-                                                    background: viewMode === m.key ? colors.bg.surface : "transparent",
+                                                    color: modalViewMode === m.key ? colors.fg.base : colors.fg.dim,
+                                                    background: modalViewMode === m.key ? colors.bg.surface : "transparent",
                                                     borderRadius: "5px",
                                                     cursor: "pointer",
                                                     transition: "all 0.15s",
@@ -1069,7 +945,7 @@ export function EvolutionPage() {
                                                     }}
                                                 >
                                                     {l.style === "line" ? (
-                                                        <span style={{ display: "inline-block", width: 14, height: 0, borderTop: `1.5px dashed ${l.color}`, flexShrink: 0 }} />
+                                                        <span style={{ display: "inline-block", width: 18, height: 3, borderRadius: 2, background: l.color, flexShrink: 0 }} />
                                                     ) : (
                                                         <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: l.color, flexShrink: 0 }} />
                                                     )}
@@ -1082,7 +958,25 @@ export function EvolutionPage() {
                             </div>
                         </div>
                         <div style={{ flex: 1, minHeight: 0 }}>
-                            {renderChart(modalChartId, hiddenSeries[modalChartId] ?? [])}
+                            {renderChart(modalChartId, hiddenSeries[modalChartId] ?? [], {
+                                viewMode: modalViewMode,
+                                expenseYear: modalExpenseYear,
+                                expenseMonth: modalExpenseMonth,
+                                months: modalData.months,
+                                income: modalData.income,
+                                expense: modalData.expense,
+                                capital: modalData.capital,
+                                savings: modalData.savings,
+                                expenseFixed: modalData.expenseFixed,
+                                expenseVariable: modalData.expenseVariable,
+                                incomeFixed: modalData.incomeFixed,
+                                incomeVariable: modalData.incomeVariable,
+                                savingsRate: modalData.savingsRate,
+                                cumulativeIncome: modalData.cumulativeIncome,
+                                cumulativeExpense: modalData.cumulativeExpense,
+                                cumulativeSavings: modalData.cumulativeSavings,
+                                isMonthly: modalData.isMonthly,
+                            })}
                         </div>
                     </div>
                 </div>

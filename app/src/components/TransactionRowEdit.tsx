@@ -31,7 +31,8 @@ const tdStyle: React.CSSProperties = {
     padding: `${spacing[1]} ${spacing[3]}`,
     verticalAlign: "middle",
     textAlign: "center",
-    border: `1px solid ${colors.fill}`,
+    borderBottom: `1px solid ${colors.fill}`,
+    borderLeft: `1px solid ${colors.fill}`,
     height: "48px",
 };
 
@@ -40,14 +41,6 @@ const fixedWidthStyle = (width: string): React.CSSProperties => ({
     minWidth: width,
     maxWidth: width,
 });
-
-const badgeStyle: React.CSSProperties = {
-    fontSize: fonts.table.badge,
-    padding: `${spacing[1]} ${spacing[2]}`,
-    borderRadius: radius.md,
-    textTransform: "uppercase",
-    fontWeight: 500,
-};
 
 const EDIT_ROW_FONT_SIZE = fonts.size.sm;
 
@@ -73,7 +66,13 @@ interface TransactionRowEditProps {
     onCancel?: () => void;
 }
 
-export function TransactionRowEdit({ transaction, onSave, onCancel }: TransactionRowEditProps) {
+interface TransactionRowEditCellsProps {
+    transaction: TransactionRowDTO;
+    onSave?: () => void;
+    onCancel?: () => void;
+}
+
+export function TransactionRowEditCells({ transaction, onSave, onCancel }: TransactionRowEditCellsProps) {
     const [installmentInput, setInstallmentInput] = useState<string>(String(transaction.total_installments ?? 1));
     const { data: userConfig } = useUserConfig();
     const updateMutation = useUpdateTransaction();
@@ -184,7 +183,7 @@ export function TransactionRowEdit({ transaction, onSave, onCancel }: Transactio
     };
 
     return (
-        <tr style={{ ...trStyle, backgroundColor: colors.bg.surface }}>
+        <>
             {/* Checkbox placeholder */}
             <td style={{ ...tdStyle, width: "36px", minWidth: "36px", maxWidth: "36px", borderLeft: `3px solid ${colors.accent.cyan}` }} />
             {/* Fecha */}
@@ -243,12 +242,11 @@ export function TransactionRowEdit({ transaction, onSave, onCancel }: Transactio
             </td>
             {/* Tipo */}
             <td style={{ ...tdStyle, ...fixedWidthStyle("6%") }}>
-                <span
+                <span className="badge"
                     onClick={() => setFormData({ ...formData, type: formData.type === "expense" ? "income" : "expense" })}
                     onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.bg.hover; }}
                     onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
                     style={{
-                        ...badgeStyle,
                         backgroundColor: colors.fill,
                         color: colors.fg.base,
                         cursor: "pointer",
@@ -296,12 +294,11 @@ export function TransactionRowEdit({ transaction, onSave, onCancel }: Transactio
             </td>
             {/* Moneda */}
             <td style={{ ...tdStyle, ...fixedWidthStyle("5%") }}>
-                <span
+                <span className="badge"
                     onClick={() => setFormData({ ...formData, currency: formData.currency === "ARS" ? "USD" : "ARS" })}
                     onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.bg.hover; }}
                     onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
                     style={{
-                        ...badgeStyle,
                         backgroundColor: colors.fill,
                         color: colors.fg.base,
                         cursor: "pointer",
@@ -371,12 +368,11 @@ export function TransactionRowEdit({ transaction, onSave, onCancel }: Transactio
             </td>
             {/* Frecuencia */}
             <td style={{ ...tdStyle, ...fixedWidthStyle("5%") }}>
-                <span
+                <span className="badge"
                     onClick={() => setFormData({ ...formData, frequency: formData.frequency === "fixed" ? "variable" : "fixed" })}
                     onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.bg.hover; }}
                     onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
                     style={{
-                        ...badgeStyle,
                         backgroundColor: colors.fill,
                         color: colors.fg.base,
                         cursor: "pointer",
@@ -389,12 +385,11 @@ export function TransactionRowEdit({ transaction, onSave, onCancel }: Transactio
             </td>
             {/* Estado */}
             <td style={{ ...tdStyle, ...fixedWidthStyle("7%"), overflow: "hidden" }}>
-                <span
+                <span className="badge"
                     onClick={() => handleTogglePaid(!transaction.is_paid)}
                     onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.bg.hover; }}
                     onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
                     style={{
-                        ...badgeStyle,
                         backgroundColor: colors.fill,
                         color: colors.fg.base,
                         cursor: "pointer",
@@ -416,6 +411,14 @@ export function TransactionRowEdit({ transaction, onSave, onCancel }: Transactio
                     </Button>
                 </span>
             </td>
+        </>
+    );
+}
+
+export function TransactionRowEdit({ transaction, onSave, onCancel }: TransactionRowEditProps) {
+    return (
+        <tr style={{ ...trStyle, backgroundColor: colors.bg.surface }}>
+            <TransactionRowEditCells transaction={transaction} onSave={onSave} onCancel={onCancel} />
         </tr>
     );
 }

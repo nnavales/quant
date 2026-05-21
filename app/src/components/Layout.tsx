@@ -20,7 +20,8 @@ export function Layout({ children, activeTab, onTabChange, showSettings, onOpenS
         <div
             style={{
                 display: "flex",
-                minHeight: "100vh",
+                height: "100dvh",
+                overflow: "hidden",
                 backgroundColor: colors.bg.base,
                 color: colors.fg.base,
                 fontFamily: fonts.family.text,

@@ -27,6 +27,11 @@ dev:
 	@bash -c "$(DISPLAY_FLAGS) APP_ENV=dev air & \
 		cd app && $(DISPLAY_FLAGS) APP_ENV=dev bun run tauri dev"
 
+prod-test:
+	@cd app && bun run build
+	@cd app/src-tauri && cargo build
+	@$(DISPLAY_FLAGS) WEBKIT_DISABLE_COMPOSITING_MODE=0 ./app/src-tauri/target/debug/app
+
 sidecar-dev:
 	@mkdir -p $(SIDECAR_DIR)
 	@if [ -z "$(CURRENT_TARGET)" ]; then \
@@ -50,7 +55,6 @@ client-dev:
 api:
 	@mkdir -p $(BIN_DIR)
 	@go build -o $(BIN_DIR)/quant $(API_MAIN)
-	@APP_ENV=dev ./$(BIN_DIR)/quant
 
 version:
 	@if [ -z "$(VERSION)" ]; then \

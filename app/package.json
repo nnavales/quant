@@ -11,12 +11,13 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.96.0",
+    "@tanstack/react-virtual": "^3.13.25",
     "@tauri-apps/api": "^2",
+    "@tauri-apps/cli": "^2",
     "@tauri-apps/plugin-dialog": "^2",
     "@tauri-apps/plugin-fs": "^2",
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-shell": "^2",
-    "@tauri-apps/cli": "^2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
@@ -26,6 +27,7 @@
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-virtuoso": "^4.18.7",
     "typescript": "~5.8.3",
     "vite": "^7.0.4"
   }

@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import type { HistoricalEntry, HistoricalFinanceReq } from "@/api_client";
 import { type HistoricalFilters } from "@/api_client/endpoints";
-import { useHistoricalEntries, useUpdateHistoricalEntry, useDeleteHistoricalEntry, useImportBackup } from "@/hooks";
+import { useHistoricalEntriesInfinite, useUpdateHistoricalEntry, useDeleteHistoricalEntry, useImportBackup } from "@/hooks";
 import { spacing, colors, radius, fonts } from "@/styles";
 import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
@@ -13,14 +13,13 @@ import { HistoricalFiltersComponent } from "./HistoricalFilters";
 import { FileUp, FileText, XCircle, Upload, Pencil, X, AlertCircle } from "lucide-react";
 
 interface HistoricalTabProps {
-    externalLimit?: number;
     showBulkImport?: boolean;
     onCloseBulkImport?: () => void;
 }
 
-export function HistoricalTab({ externalLimit, showBulkImport: externalShowBulkImport, onCloseBulkImport }: HistoricalTabProps) {
-    const [filters, setFilters] = useState<HistoricalFilters>({ page: 1, limit: externalLimit ?? 20 });
-    const [sort, setSort] = useState<"month" | "income" | "expense" | undefined>(undefined);
+export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseBulkImport }: HistoricalTabProps) {
+    const [filters, setFilters] = useState<HistoricalFilters>({ sort: "month", order: "desc" });
+    const [sort, setSort] = useState<"month" | "income" | "expense">("month");
     const [order, setOrder] = useState<"asc" | "desc">("desc");
     const [editingMonth, setEditingMonth] = useState<string | null>(null);
     const [editForm, setEditForm] = useState<Partial<HistoricalFinanceReq>>({});
@@ -31,39 +30,21 @@ export function HistoricalTab({ externalLimit, showBulkImport: externalShowBulkI
     const showBulkImport = externalShowBulkImport ?? false;
     const closeBulkImport = onCloseBulkImport ?? (() => {});
 
-    const { data, isLoading, isError, error } = useHistoricalEntries(filters);
+    const { data, isLoading, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useHistoricalEntriesInfinite(filters);
     const updateMutation = useUpdateHistoricalEntry();
     const importMutation = useImportBackup();
     const deleteMutation = useDeleteHistoricalEntry();
 
-    const entries = data?.data ?? [];
-    const total = data?.total ?? 0;
-    const page = filters.page || 1;
-    const limit = externalLimit ?? filters.limit ?? 20;
-
-    useEffect(() => {
-        if (externalLimit && externalLimit !== filters.limit) {
-            setFilters(prev => ({ ...prev, limit: externalLimit }));
-        }
-    }, [externalLimit]);
+    const entries = data?.pages.flatMap(p => p.data) ?? [];
 
     const handleFiltersChange = (newFilters: HistoricalFilters) => {
         setFilters(newFilters);
-    };
-
-    const handlePageChange = (newPage: number) => {
-        setFilters((prev) => ({ ...prev, page: newPage }));
     };
 
     const handleSort = (column: "month" | "income" | "expense") => {
         if (sort === column && order === "desc") {
             setOrder("asc");
             setFilters({ ...filters, sort: column, order: "asc" });
-        } else if (sort === column && order === "asc") {
-            setSort(undefined);
-            setOrder("desc");
-            const { sort: _, order: __, ...rest } = filters;
-            setFilters(rest);
         } else {
             setSort(column);
             setOrder("desc");
@@ -192,10 +173,6 @@ export function HistoricalTab({ externalLimit, showBulkImport: externalShowBulkI
             <HistoricalFiltersComponent
                 filters={filters}
                 onChange={handleFiltersChange}
-                total={total}
-                page={page}
-                limit={limit}
-                onPageChange={handlePageChange}
             />
 
             <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
@@ -215,6 +192,9 @@ export function HistoricalTab({ externalLimit, showBulkImport: externalShowBulkI
                         onSort={handleSort}
                         onEdit={handleEdit}
                         onDelete={handleDelete}
+                        onLoadMore={() => fetchNextPage()}
+                        hasMore={hasNextPage}
+                        isLoadingMore={isFetchingNextPage}
                     />
                 )}
             </div>

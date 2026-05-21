@@ -251,7 +251,7 @@ function App() {
                     <div style={{ display: activeTab === "analysis" ? "" : "none", height: "100%", boxSizing: "border-box" }}>
                         <AnalysisPage />
                     </div>
-                    <div style={{ display: activeTab === "transactions" ? "" : "none", height: "100%", boxSizing: "border-box" }}>
+                    <div style={{ display: activeTab === "transactions" ? undefined : "none", height: "100%", boxSizing: "border-box" }}>
                         <TransactionsPage />
                     </div>
                     <div style={{ display: activeTab === "economic" ? "" : "none", height: "100%", boxSizing: "border-box" }}>

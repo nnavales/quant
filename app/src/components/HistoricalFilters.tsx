@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { RotateCcw } from "lucide-react";
 import type { HistoricalFilters } from "@/api_client/endpoints";
 import { colors } from "@/styles/colors";
-import { spacing, radius } from "@/styles/theme";
-import { filterContainerStyle, filterWrapperStyle, dropdownItemStyle, clearButtonStyle, paginationButtonStyle, chipTriggerStyle } from "@/styles/filters";
+import { spacing } from "@/styles/theme";
+import { filterContainerStyle, filterWrapperStyle, dropdownItemStyle, clearButtonStyle, chipTriggerStyle } from "@/styles/filters";
 import { useClickOutside, useUserConfig } from "@/hooks";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { DateDropdown } from "@/components/ui/DateDropdown";
@@ -13,17 +13,12 @@ import { getHistoricalDatePresets, formatShortDate } from "@/utils/date";
 interface HistoricalFiltersProps {
     filters: HistoricalFilters;
     onChange: (filters: HistoricalFilters) => void;
-    total: number;
-    page: number;
-    limit: number;
-    onPageChange: (page: number) => void;
 }
 
-export function HistoricalFiltersComponent({ filters, onChange, total, page, limit, onPageChange }: HistoricalFiltersProps) {
+export function HistoricalFiltersComponent({ filters, onChange }: HistoricalFiltersProps) {
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const [dateFrom, setDateFrom] = useState("");
     const [dateTo, setDateTo] = useState("");
-    const [goToPage, setGoToPage] = useState("");
     const dropdownRef = useRef<HTMLDivElement>(null);
     const { data: userConfig } = useUserConfig();
 
@@ -54,12 +49,10 @@ export function HistoricalFiltersComponent({ filters, onChange, total, page, lim
         setDateTo(filters.date_to || "");
     }, [filters.date_from, filters.date_to]);
 
-    const totalPages = Math.ceil(total / limit) || 1;
-
     const clearAllFilters = () => {
         setDateFrom("");
         setDateTo("");
-        onChange({ page: 1, limit });
+        onChange({});
     };
 
     const sourceOptions: { id: "historical" | "transactions"; label: string }[] = [
@@ -196,52 +189,6 @@ export function HistoricalFiltersComponent({ filters, onChange, total, page, lim
                         <RotateCcw size={14} />
                     </button>
                 )}
-
-                <div style={{ flex: 1 }} />
-
-                <div style={{ display: "flex", alignItems: "center", gap: spacing[2], color: colors.fg.dim, fontSize: "12px", flexShrink: 0 }}>
-                    <button disabled={page <= 1} onClick={() => onPageChange(page - 1)} style={{ ...paginationButtonStyle(page <= 1), border: `1px solid ${page <= 1 ? colors.overlay.white06 : colors.border}` }}>
-                        ‹
-                    </button>
-                    <span style={{ color: colors.fg.dim, fontSize: "12px" }}>
-                        {page} / {totalPages}
-                    </span>
-                    <button disabled={page >= totalPages} onClick={() => onPageChange(page + 1)} style={{ ...paginationButtonStyle(page >= totalPages), border: `1px solid ${page >= totalPages ? colors.overlay.white06 : colors.border}` }}>
-                        ›
-                    </button>
-                    <input
-                        type="number"
-                        min={1}
-                        max={totalPages}
-                        value={goToPage}
-                        onChange={(e) => setGoToPage(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                const newPage = parseInt(goToPage, 10);
-                                if (newPage >= 1 && newPage <= totalPages) {
-                                    onPageChange(newPage);
-                                    setGoToPage("");
-                                }
-                            }
-                        }}
-                        placeholder="ir a..."
-                        style={{
-                            width: "52px",
-                            height: "28px",
-                            marginLeft: spacing[1],
-                            padding: "0 6px",
-                            backgroundColor: "transparent",
-                            border: `1px solid ${colors.overlay.white08}`,
-                            borderRadius: radius.md,
-                            color: colors.fg.base,
-                            fontSize: "12px",
-                            textAlign: "center",
-                            outline: "none",
-                            transition: "border-color 0.15s",
-                            boxSizing: "border-box",
-                        }}
-                    />
-                </div>
             </div>
         </div>
     );

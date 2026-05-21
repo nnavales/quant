@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
@@ -17,6 +17,9 @@ interface HistoricalListProps {
     onSort?: (sort: "month" | "income" | "expense") => void;
     onEdit?: (entry: HistoricalEntry) => void;
     onDelete?: (entry: HistoricalEntry) => void;
+    onLoadMore?: () => void;
+    hasMore?: boolean;
+    isLoadingMore?: boolean;
 }
 
 const formatMonth = (monthStr: string, useFullFormat: boolean, dateFormat: import("@/utils/date").DateFormat): string => {
@@ -49,10 +52,11 @@ const getStoredFormat = (): boolean => {
     }
 };
 
-export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete }: HistoricalListProps) {
+export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete, onLoadMore, hasMore, isLoadingMore }: HistoricalListProps) {
     const [useFullMonthFormat, setUseFullMonthFormat] = useState<boolean>(getStoredFormat);
     const { data: userConfig } = useUserConfig();
     const userDateFormat = getDateFormat(userConfig?.date_format);
+    const scrollRef = useRef<HTMLDivElement>(null);
 
     const handleSortClick = (column: "month" | "income" | "expense") => {
         if (onSort) onSort(column);
@@ -65,6 +69,21 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
             localStorage.setItem(STORAGE_KEY, newValue ? "full" : "default");
         } catch {}
     };
+
+    const handleScroll = useCallback(() => {
+        const el = scrollRef.current;
+        if (!el || !onLoadMore || !hasMore || isLoadingMore) return;
+        if (el.scrollHeight - el.scrollTop - el.clientHeight < 150) {
+            onLoadMore();
+        }
+    }, [onLoadMore, hasMore, isLoadingMore]);
+
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        el.addEventListener("scroll", handleScroll, { passive: true });
+        return () => el.removeEventListener("scroll", handleScroll);
+    }, [handleScroll]);
 
     if (entries.length === 0) {
         return (
@@ -130,14 +149,22 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
 
 
     return (
-        <div style={{
+        <div style={{ height: "100%", maxHeight: 755, display: "flex", flexDirection: "column" }}>
+        <div ref={scrollRef} style={{
             borderRadius: radius.lg,
-            overflow: "hidden",
+            overflow: "auto",
             backgroundColor: colors.bg.surface,
-            borderTop: `1px solid ${colors.fill}`,
-            borderRight: `1px solid ${colors.fill}`,
+            border: `1px solid ${colors.fill}`,
+            flex: 1,
         }}>
-            <table style={tableStyle}>
+            <style>{`
+                .historical-table thead { position: sticky; top: 0; z-index: 1; }
+                .historical-table thead th { background-color: ${colors.bg.header}; }
+                .historical-table::-webkit-scrollbar { width: 8px; }
+                .historical-table::-webkit-scrollbar-track { background: transparent; }
+                .historical-table::-webkit-scrollbar-thumb { background: ${colors.fill}; border-radius: 4px; }
+            `}</style>
+            <table className="historical-table" style={tableStyle}>
             <thead style={theadStyle}>
                 <tr>
                     <th style={{ ...thStyle(!!onSort, sort === "month", "left"), width: "10%" }} onClick={() => onSort && onSort("month")}>
@@ -153,8 +180,8 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
                     </th>
                     <th style={{ ...thStyle(false, false, "right"), width: "9%" }}>Gas. Fijo</th>
                     <th style={{ ...thStyle(false, false, "right"), width: "9%" }}>Gas. Variable</th>
-                    <th style={{ ...thStyle(false, false, "right"), width: "8%" }}>Ahorro</th>
-                    <th style={{ ...thStyle(false, false), width: "7%" }}>T.C.</th>
+                    <th style={{ ...thStyle(false, false, "right"), width: "10%" }}>Ahorro</th>
+                    <th style={{ ...thStyle(false, false), width: "5%" }}>T.C.</th>
                     <th style={{ ...thStyle(false, false), width: "10%" }}>Fuente</th>
                     <th style={{ ...thStyle(false, false), width: "9%" }}>Opciones</th>
                 </tr>
@@ -201,12 +228,12 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
                                 <span className="selectable" style={moneyAltStyle}>{formatAmount(entry.expense_variable)}</span>
                             </Tooltip>
                         </td>
-                        <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("8%") }}>
+                        <td style={{ ...tdStyle, textAlign: "right", ...fixedWidthStyle("10%") }}>
                             <Tooltip content={formatAmount(entry.savings)}>
                                 <span className="selectable" style={moneyStyle}>{formatAmount(entry.savings)}</span>
                             </Tooltip>
                         </td>
-                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("7%") }}>
+                        <td style={{ ...tdStyle, textAlign: "center", ...fixedWidthStyle("5%") }}>
                             <Tooltip content={entry.exchange_rate % 1 === 0 ? String(entry.exchange_rate) : entry.exchange_rate.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}>
                                 <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.table.meta, color: colors.fg.dim, opacity: 0.7, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{entry.exchange_rate % 1 === 0 ? String(entry.exchange_rate) : entry.exchange_rate.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </Tooltip>
@@ -242,6 +269,13 @@ export function HistoricalList({ entries, sort, order, onSort, onEdit, onDelete 
                 )})}
             </tbody>
         </table>
+        {isLoadingMore && (
+            <div style={{ padding: spacing[3], textAlign: "center", color: colors.fg.dim, fontSize: fonts.size.sm }}>
+                Cargando más...
+            </div>
+        )}
+
+        </div>
         </div>
     );
 }
