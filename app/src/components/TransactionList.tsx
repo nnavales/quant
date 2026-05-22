@@ -4,7 +4,7 @@ import { GroupedTableVirtuoso } from "react-virtuoso";
 import type { GroupedTableVirtuosoHandle } from "react-virtuoso";
 import { TransactionRowCells } from "./TransactionRow";
 import { TransactionRowEditCells } from "./TransactionRowEdit";
-import { Check, Minus } from "lucide-react";
+import { Check, Minus, ArrowUp } from "lucide-react";
 import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
@@ -102,6 +102,17 @@ export function TransactionList({
     const [editingId, setEditingId] = useState<string | null>(null);
     const virtuosoRef = useRef<GroupedTableVirtuosoHandle>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const [showScrollTop, setShowScrollTop] = useState(false);
+
+    useEffect(() => {
+        const el = wrapperRef.current;
+        if (!el) return;
+        const scroller = el.firstElementChild as HTMLElement | null;
+        if (!scroller) return;
+        const onScroll = () => setShowScrollTop(scroller.scrollTop > 400);
+        scroller.addEventListener("scroll", onScroll, { passive: true });
+        return () => scroller.removeEventListener("scroll", onScroll);
+    }, []);
 
     const { data: userConfig } = useUserConfig();
     const userDateFormat = useMemo(
@@ -342,7 +353,11 @@ export function TransactionList({
             <th
                 colSpan={12}
                 className="group-cell"
-                style={{ fontSize: fonts.table.header, paddingLeft: "48px", textAlign: "left" }}
+                style={{
+                    fontSize: fonts.table.principal.header,
+                    paddingLeft: "48px",
+                    textAlign: "left",
+                }}
             >
                 {monthCacheRef.current.get(month) ?? month}
             </th>
@@ -413,7 +428,7 @@ export function TransactionList({
     }
 
     return (
-        <div style={{ height: "100%", maxHeight: 755, display: "flex", flexDirection: "column" }}>
+        <div style={{ height: "95%", display: "flex", flexDirection: "column" }}>
             <div
                 style={{
                     borderRadius: radius.lg,
@@ -423,29 +438,30 @@ export function TransactionList({
                     flex: 1,
                     display: "flex",
                     flexDirection: "column",
-            }}
-        >
-            <style>
-                {`.virtuoso-table-wrapper table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}
+                    position: "relative",
+                }}
+            >
+                <style>
+                    {`.virtuoso-table-wrapper table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}
 .virtuoso-table-wrapper.is-scrolling td{pointer-events:none}
 .virtuoso-table-wrapper tbody tr{background:var(--bg-surface)}
 .virtuoso-table-wrapper tbody tr:hover{background:var(--bg-hover)}
-.virtuoso-table-wrapper td{height:48px;padding:${spacing[1]} ${spacing[3]};vertical-align:middle;text-align:center;border-bottom:1px solid var(--fill);border-left:1px solid var(--fill)}
+.virtuoso-table-wrapper td{height:30px;padding:${spacing[1]} ${spacing[3]};vertical-align:middle;text-align:center;border-bottom:1px solid var(--fill);border-left:1px solid var(--fill)}
 .virtuoso-table-wrapper td:first-child{border-left:none}
 .virtuoso-table-wrapper .td-center{text-align:center}
 .virtuoso-table-wrapper .td-left{text-align:left}
 .virtuoso-table-wrapper .td-right{text-align:right}
-.virtuoso-table-wrapper .badge{font-size:${fonts.table.badge};padding:${spacing[1]} ${spacing[2]};border-radius:${radius.md};text-transform:uppercase;font-weight:500}
-.virtuoso-table-wrapper .text-sub{font-size:${fonts.table.meta};color:var(--fg-dim)}
+.virtuoso-table-wrapper .badge{font-size:${fonts.table.principal.badge};padding:${spacing[1]} ${spacing[2]};border-radius:${radius.md};text-transform:uppercase;font-weight:500}
+.virtuoso-table-wrapper .text-sub{font-size:${fonts.table.principal.meta};color:var(--fg-dim)}
 .virtuoso-table-wrapper .text-trunc{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.virtuoso-table-wrapper .amount{font-family:${fonts.family.display};font-weight:500;font-size:${fonts.table.amount};color:var(--fg-base)}
-.virtuoso-table-wrapper .amount-alt{font-family:${fonts.family.display};font-size:${fonts.table.meta};color:var(--fg-dim);opacity:.7}
+.virtuoso-table-wrapper .amount{font-family:${fonts.family.display};font-weight:500;font-size:${fonts.table.principal.body};color:var(--fg-base)}
+.virtuoso-table-wrapper .amount-alt{font-family:${fonts.family.display};font-size:${fonts.table.principal.meta};color:var(--fg-dim);opacity:.7}
 .virtuoso-table-wrapper .checkbox-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);line-height:0}
 .virtuoso-table-wrapper .checkbox-wrap{position:relative;width:17px;height:17px;display:flex;align-items:center;justify-content:center}
 .virtuoso-table-wrapper .checkbox-input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;margin:0}
 .virtuoso-table-wrapper .checkbox-vis{width:14px;height:14px;border-radius:4px;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:background-color .12s,border-color .12s}
 .virtuoso-table-wrapper .td-checkbox{width:36px;min-width:36px;max-width:36px;position:relative}
-.virtuoso-table-wrapper .td-fecha{width:9%;min-width:9%;max-width:9%;cursor:pointer}
+.virtuoso-table-wrapper .td-fecha{width:9%;min-width:9%;max-width:9%;cursor:pointer;font-size:${fonts.table.principal.date}}
 .virtuoso-table-wrapper .td-desc{width:18%;min-width:18%;max-width:18%}
 .virtuoso-table-wrapper .td-tipo{width:6%;min-width:6%;max-width:6%}
 .virtuoso-table-wrapper .td-cat{width:12%;min-width:12%;max-width:12%}
@@ -458,7 +474,7 @@ export function TransactionList({
 .virtuoso-table-wrapper .td-opciones{width:8%;min-width:8%;max-width:8%}
 .virtuoso-table-wrapper .th-checkbox{width:36px;min-width:36px;max-width:36px;position:relative}
 .virtuoso-table-wrapper .group-cell{height:32px;padding:${spacing[1]} ${spacing[3]};background:var(--bg-header);font-weight:500;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--fill);color:var(--fg-dim);border-left:none}
-.virtuoso-table-wrapper th{padding:${spacing[2]} ${spacing[3]};font-weight:500;text-transform:uppercase;font-size:${fonts.table.header};letter-spacing:.05em;white-space:nowrap;border-bottom:1px solid var(--fill);border-left:1px solid var(--fill);background:var(--bg-header);z-index:3}
+.virtuoso-table-wrapper th{padding:${spacing[2]} ${spacing[3]};font-weight:500;text-transform:uppercase;font-size:${fonts.table.principal.header};letter-spacing:.05em;white-space:nowrap;border-bottom:1px solid var(--fill);border-left:1px solid var(--fill);background:var(--bg-header);z-index:3}
 .virtuoso-table-wrapper .th-sortable{cursor:pointer;user-select:none}
 .virtuoso-table-wrapper .th-sort-icon{font-size:11px;line-height:1;margin-left:${spacing[1]}}
 .virtuoso-table-wrapper .th-left{text-align:left}
@@ -466,29 +482,55 @@ export function TransactionList({
 .virtuoso-table-wrapper ::-webkit-scrollbar{width:8px}
 .virtuoso-table-wrapper ::-webkit-scrollbar-track{background:transparent}
 .virtuoso-table-wrapper ::-webkit-scrollbar-thumb{background:var(--fill);border-radius:4px}`}
-            </style>
-            <div
-                ref={wrapperRef}
-                className="virtuoso-table-wrapper"
-                style={{ flex: 1, minHeight: 0, fontSize: fonts.table.body }}
-            >
-                <GroupedTableVirtuoso<TransactionRowDTO>
-                    ref={virtuosoRef}
-                    style={{ height: "100%" }}
-                    data={transactions}
-                    groupCounts={groupCounts}
-                    fixedHeaderContent={fixedHeaderContent}
-                    groupContent={groupContent}
-                    itemContent={itemContent}
-                    endReached={endReached}
-                    increaseViewportBy={VIEWPORT_INCREASE}
-                    components={COMPONENTS}
-                    fixedItemHeight={48}
-                    isScrolling={(scrolling) => {
-                        wrapperRef.current?.classList.toggle("is-scrolling", scrolling);
-                    }}
-                />
-            </div>
+                </style>
+                <div
+                    ref={wrapperRef}
+                    className="virtuoso-table-wrapper"
+                    style={{ flex: 1, minHeight: 0, fontSize: fonts.table.principal.body }}
+                >
+                    <GroupedTableVirtuoso<TransactionRowDTO>
+                        ref={virtuosoRef}
+                        style={{ height: "100%" }}
+                        data={transactions}
+                        groupCounts={groupCounts}
+                        fixedHeaderContent={fixedHeaderContent}
+                        groupContent={groupContent}
+                        itemContent={itemContent}
+                        endReached={endReached}
+                        increaseViewportBy={VIEWPORT_INCREASE}
+                        components={COMPONENTS}
+                        fixedItemHeight={43}
+                        isScrolling={(scrolling) => {
+                            wrapperRef.current?.classList.toggle("is-scrolling", scrolling);
+                        }}
+                    />
+                </div>
+                {showScrollTop && (
+                    <button
+                        onClick={() => virtuosoRef.current?.scrollToIndex(0)}
+                        style={{
+                            position: "absolute",
+                            bottom: spacing[4],
+                            right: spacing[4],
+                            width: 36,
+                            height: 36,
+                            borderRadius: "50%",
+                            backgroundColor: colors.bg.header,
+                            border: `1px solid ${colors.border}`,
+                            color: colors.fg.base,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            zIndex: 10,
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                            transition: "all 0.15s",
+                        }}
+                        title="Volver arriba"
+                    >
+                        <ArrowUp size={18} />
+                    </button>
+                )}
             </div>
         </div>
     );

@@ -1,10 +1,10 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { useDashboard, useDashboardMetrics, useDimensionSeries } from "@/hooks";
 import { Dropdown } from "@/components/ui/Dropdown";
-import { Maximize2, X } from "lucide-react";
+import { Maximize2, X, BarChart3, GitCompare, PieChart } from "lucide-react";
 import ReactECharts from "echarts-for-react";
 import type { MetricCell, MonthlyData } from "@/api_client/types";
 
@@ -106,30 +106,30 @@ const groups = [
         id: "cashflow-capital",
         label: "Cash Flow & Capital",
         charts: [
-            { id: "cashflow", title: "CASH FLOW MENSUAL", desc: "Ingresos vs gastos por mes.", legend: [{ label: "Ingresos", color: colors.accent.green }, { label: "Gastos", color: colors.accent.red }] },
-            { id: "savings-rate", title: "SAVINGS RATE", desc: "Porcentaje ahorrado cada mes.", legend: [{ label: "50%", color: colors.fg.dim, style: "line" as const }] },
-            { id: "annual-area", title: "ACUMULADO ANUAL", desc: "Tendencia acumulada del año.", legend: [{ label: "Ingresos", color: colors.accent.green }, { label: "Gastos", color: colors.accent.red }, { label: "Ahorro", color: colors.accent.cyan }] },
-            { id: "capital-growth", title: "EVOLUCIÓN DEL CAPITAL", desc: "Patrimonio neto acumulado." },
+            { id: "cashflow", title: "Cash Flow", desc: "Ingresos vs gastos.", legend: [{ label: "Ingresos", color: colors.accent.green }, { label: "Gastos", color: colors.accent.red }] },
+            { id: "savings-rate", title: "Savings Rate", desc: "Porcentaje ahorrado.", legend: [{ label: "50%", color: colors.fg.dim, style: "line" as const }] },
+            { id: "annual-area", title: "Acumulado", desc: "Tendencia acumulada.", legend: [{ label: "Ingresos", color: colors.accent.green }, { label: "Gastos", color: colors.accent.red }, { label: "Ahorro", color: colors.accent.cyan }] },
+            { id: "capital-growth", title: "Evolución del Capital", desc: "Patrimonio neto acumulado." },
         ],
     },
     {
         id: "real-vs-plan",
         label: "Real vs Planning vs LY",
         charts: [
-            { id: "real-vs-plan-capital", title: "CAPITAL", desc: "Real, plan, forecast y año anterior.", legend: [{ label: "Real", color: colors.accent.blue }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
-            { id: "real-vs-plan-savings", title: "AHORRO", desc: "Real, plan, forecast y año anterior.", legend: [{ label: "Real", color: colors.accent.cyan }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
-            { id: "real-vs-plan-income", title: "INGRESOS", desc: "Real, plan, forecast y año anterior.", legend: [{ label: "Real", color: colors.accent.green }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
-            { id: "real-vs-plan-expense", title: "GASTOS", desc: "Real, plan, forecast y año anterior.", legend: [{ label: "Real", color: colors.accent.red }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
+            { id: "real-vs-plan-capital", title: "Capital", desc: "Real vs plan vs forecast vs LY.", legend: [{ label: "Real", color: colors.accent.blue }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
+            { id: "real-vs-plan-savings", title: "Ahorro", desc: "Real vs plan vs forecast vs LY.", legend: [{ label: "Real", color: colors.accent.cyan }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
+            { id: "real-vs-plan-income", title: "Ingresos", desc: "Real vs plan vs forecast vs LY.", legend: [{ label: "Real", color: colors.accent.green }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
+            { id: "real-vs-plan-expense", title: "Gastos", desc: "Real vs plan vs forecast vs LY.", legend: [{ label: "Real", color: colors.accent.red }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
         ],
     },
     {
         id: "composition-detail",
         label: "Composición & Detalle",
         charts: [
-            { id: "expense-fixed-vs-variable", title: "GASTO FIJO VS VARIABLE", desc: "Composición del gasto mensual.", legend: [{ label: "Fijo", color: `${colors.accent.orange}B3` }, { label: "Variable", color: `${colors.accent.yellow}B3` }] },
-            { id: "income-fixed-vs-variable", title: "INGRESO FIJO VS VARIABLE", desc: "Composición del ingreso mensual.", legend: [{ label: "Fijo", color: `${colors.accent.green}B3` }, { label: "Variable", color: `${colors.accent.green}50` }] },
-            { id: "expense-by-category", title: "DISTRIBUCIÓN POR CATEGORÍA", desc: "Gastos del último mes agrupados por categoría y subcategoría." },
-            { id: "expense-by-channel", title: "DISTRIBUCIÓN POR CANAL", desc: "Gastos del último mes agrupados por canal y cuenta." },
+            { id: "expense-fixed-vs-variable", title: "Gasto Fijo vs Variable", desc: "Composición del gasto.", legend: [{ label: "Fijo", color: `${colors.accent.orange}B3` }, { label: "Variable", color: `${colors.accent.yellow}B3` }] },
+            { id: "income-fixed-vs-variable", title: "Ingreso Fijo vs Variable", desc: "Composición del ingreso.", legend: [{ label: "Fijo", color: `${colors.accent.green}B3` }, { label: "Variable", color: `${colors.accent.green}50` }] },
+            { id: "expense-by-category", title: "Distribución por Categoría", desc: "Gastos agrupados por categoría y subcategoría." },
+            { id: "expense-by-channel", title: "Distribución por Canal", desc: "Gastos agrupados por canal y cuenta." },
         ],
     },
 ];
@@ -142,7 +142,17 @@ export function EvolutionPage() {
     const { data: expenseByCategory } = useDimensionSeries("category", dimParams);
     const { data: expenseByChannel } = useDimensionSeries("channel", dimParams);
     const [groupIdx, setGroupIdx] = useState(0);
+    const tabRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const [tabPill, setTabPill] = useState({ left: 0, width: 0 });
+    const measureTabs = useCallback(() => {
+        const el = tabRefs.current[groupIdx];
+        if (el?.parentElement) {
+            setTabPill({ left: el.offsetLeft, width: el.offsetWidth });
+        }
+    }, [groupIdx]);
+    useEffect(() => { measureTabs(); }, [measureTabs, groups.length]);
     const [hiddenSeries, setHiddenSeries] = useState<Record<string, string[]>>({});
+    const [modalHiddenSeries, setModalHiddenSeries] = useState<Record<string, string[]>>({});
     const [modalViewMode, setModalViewMode] = useState<ViewMode>("current_year");
     const [modalExpenseYear, setModalExpenseYear] = useState(String(new Date().getFullYear()));
     const [modalExpenseMonth, setModalExpenseMonth] = useState("all");
@@ -155,6 +165,13 @@ export function EvolutionPage() {
     }, [modalChartId]);
     const toggleSeries = (chartId: string, name: string) => {
         setHiddenSeries((prev) => {
+            const current = prev[chartId] ?? [];
+            const next = current.includes(name) ? current.filter((n) => n !== name) : [...current, name];
+            return { ...prev, [chartId]: next };
+        });
+    };
+    const toggleModalSeries = (chartId: string, name: string) => {
+        setModalHiddenSeries((prev) => {
             const current = prev[chartId] ?? [];
             const next = current.includes(name) ? current.filter((n) => n !== name) : [...current, name];
             return { ...prev, [chartId]: next };
@@ -269,6 +286,12 @@ export function EvolutionPage() {
             }) ?? [],
             color: name === "Real" ? realColor : seriesColors[name],
         }));
+
+    const groupIcons: Record<string, React.ReactNode> = {
+        "cashflow-capital": <BarChart3 size={14} strokeWidth={1.5} />,
+        "real-vs-plan": <GitCompare size={14} strokeWidth={1.5} />,
+        "composition-detail": <PieChart size={14} strokeWidth={1.5} />,
+    };
 
     if (dashLoading) {
         return <div style={{ padding: spacing[4], color: colors.fg.dim }}>Cargando evolución...</div>;
@@ -731,26 +754,53 @@ export function EvolutionPage() {
                 >
                     Evolución
                 </h1>
-                <div style={{ display: "flex", alignItems: "center", gap: spacing[1], background: colors.fill, borderRadius: radius.lg, padding: spacing[1], flexShrink: 0, alignSelf: "flex-start" }}>
+                <div style={{
+                    position: "relative",
+                    display: "inline-flex",
+                    borderRadius: "8px",
+                    background: colors.fill,
+                    overflow: "hidden",
+                    cursor: "pointer",
+                    userSelect: "none",
+                    flexShrink: 0,
+                    alignSelf: "flex-start",
+                }}>
+                    <div style={{
+                        position: "absolute",
+                        top: 0,
+                        left: tabPill.left,
+                        width: tabPill.width,
+                        height: "100%",
+                        borderRadius: "7px",
+                        background: colors.bg.surface,
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)",
+                        transition: "left 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                        pointerEvents: "none",
+                    }} />
                     {groups.map((g, i) => (
-                        <button
+                        <div
                             key={g.id}
-                            onClick={() => setGroupIdx(i)}
+                            ref={(el) => { tabRefs.current[i] = el; }}
+                            onClick={() => { setGroupIdx(i); }}
                             style={{
-                                background: groupIdx === i ? colors.bg.surface : "transparent",
-                                border: "none",
-                                borderRadius: radius.md,
-                                padding: `${spacing[1]} ${spacing[3]}`,
+                                position: "relative",
+                                zIndex: 1,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                padding: "5px 14px",
+                                whiteSpace: "nowrap",
                                 fontSize: fonts.size.sm,
-                                fontWeight: groupIdx === i ? 600 : 400,
+                                fontWeight: 500,
                                 color: groupIdx === i ? colors.fg.base : colors.fg.dim,
-                                cursor: "pointer",
-                                transition: "all 0.15s",
-                                boxShadow: groupIdx === i ? "0 1px 3px rgba(0,0,0,0.12)" : "none",
+                                transition: "color 0.2s",
+                                lineHeight: "18px",
+                                gap: "5px",
                             }}
                         >
+                            {groupIcons[g.id]}
                             {g.label}
-                        </button>
+                        </div>
                     ))}
                 </div>
             </div>
@@ -760,9 +810,9 @@ export function EvolutionPage() {
                     <div key={ch.id} style={card}>
                         <div style={{ ...chartHeader, display: "flex", flexDirection: "column", gap: 2 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: spacing[2] }}>
-                                <span style={{ letterSpacing: "0.5px" }}>{ch.title}</span>
+                                <span>{ch.title}</span>
                                 <button
-                                    onClick={() => setModalChartId(ch.id)}
+                                    onClick={() => { setModalChartId(ch.id); setModalHiddenSeries({}); }}
                                     title="Expandir"
                                     style={{
                                         background: "none",
@@ -844,13 +894,10 @@ export function EvolutionPage() {
                             ...chartHeader,
                             display: "flex",
                             flexDirection: "column",
-                            gap: spacing[2],
+                            gap: 2,
                         }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <div>
-                                    <span style={{ letterSpacing: "0.5px" }}>{chart.title}</span>
-                                    {chart.desc && <span style={{ fontSize: fonts.size.xs, fontWeight: 400, color: colors.fg.dim, marginLeft: spacing[2] }}>{chart.desc}</span>}
-                                </div>
+                                <span>{chart.title}</span>
                                 <button
                                     onClick={() => setModalChartId(null)}
                                     title="Cerrar"
@@ -874,65 +921,66 @@ export function EvolutionPage() {
                             </div>
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing[2], flexWrap: "wrap" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: spacing[2] }}>
-                                {["expense-by-category", "expense-by-channel"].includes(modalChartId) ? (
-                                    <>
-                                    <Dropdown
-                                        value={modalExpenseYear}
-                                        onChange={setModalExpenseYear}
-                                        options={expenseByCategory ? [...new Set(expenseByCategory.data.flatMap((s) => s.data.map((d) => d.month.split("-")[0])))].sort().reverse().map((y) => ({ id: y, label: y })) : []}
-                                        triggerStyle={{ height: "28px", width: "80px", fontSize: fonts.size.xs } as React.CSSProperties}
-                                    />
-                                    <Dropdown
-                                        value={modalExpenseMonth}
-                                        onChange={setModalExpenseMonth}
-                                        options={[{ id: "all", label: "Todo el año" }, ...["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"].map((name, i) => ({ id: String(i + 1).padStart(2, "0"), label: name }))]}
-                                        triggerStyle={{ height: "28px", width: "130px", fontSize: fonts.size.xs } as React.CSSProperties}
-                                    />
-                                    </>
-                                ) : modalChartId.startsWith("real-vs-plan") ? null : (
-                                    <div style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 2,
-                                        borderRadius: "6px",
-                                        background: colors.fill,
-                                        overflow: "hidden",
-                                        flexShrink: 0,
-                                    }}>
-                                        {[
-                                            { key: "current_year" as ViewMode, label: "YTD" },
-                                            { key: "ytd" as ViewMode, label: "YoY" },
-                                            { key: "monthly" as ViewMode, label: "MoM" },
-                                        ].map((m) => (
-                                            <div
-                                                key={m.key}
-                                                onClick={() => setModalViewMode(m.key)}
-                                                style={{
-                                                    padding: "2px 8px",
-                                                    fontSize: fonts.size.xs,
-                                                    fontWeight: 500,
-                                                    color: modalViewMode === m.key ? colors.fg.base : colors.fg.dim,
-                                                    background: modalViewMode === m.key ? colors.bg.surface : "transparent",
-                                                    borderRadius: "5px",
-                                                    cursor: "pointer",
-                                                    transition: "all 0.15s",
-                                                    lineHeight: "20px",
-                                                }}
-                                            >
-                                                {m.label}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                    {chart.desc && <span style={{ fontSize: fonts.size.xs, fontWeight: 400, color: colors.fg.dim }}>{chart.desc}</span>}
+                                    {["expense-by-category", "expense-by-channel"].includes(modalChartId) ? (
+                                        <>
+                                        <Dropdown
+                                            value={modalExpenseYear}
+                                            onChange={setModalExpenseYear}
+                                            options={expenseByCategory ? [...new Set(expenseByCategory.data.flatMap((s) => s.data.map((d) => d.month.split("-")[0])))].sort().reverse().map((y) => ({ id: y, label: y })) : []}
+                                            triggerStyle={{ height: "28px", width: "80px", fontSize: fonts.size.xs } as React.CSSProperties}
+                                        />
+                                        <Dropdown
+                                            value={modalExpenseMonth}
+                                            onChange={setModalExpenseMonth}
+                                            options={[{ id: "all", label: "Todo el año" }, ...["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"].map((name, i) => ({ id: String(i + 1).padStart(2, "0"), label: name }))]}
+                                            triggerStyle={{ height: "28px", width: "130px", fontSize: fonts.size.xs } as React.CSSProperties}
+                                        />
+                                        </>
+                                    ) : modalChartId.startsWith("real-vs-plan") ? null : (
+                                        <div style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 2,
+                                            borderRadius: "6px",
+                                            background: colors.fill,
+                                            overflow: "hidden",
+                                            flexShrink: 0,
+                                        }}>
+                                            {[
+                                                { key: "current_year" as ViewMode, label: "YTD" },
+                                                { key: "ytd" as ViewMode, label: "YoY" },
+                                                { key: "monthly" as ViewMode, label: "MoM" },
+                                            ].map((m) => (
+                                                <div
+                                                    key={m.key}
+                                                    onClick={() => setModalViewMode(m.key)}
+                                                    style={{
+                                                        padding: "2px 8px",
+                                                        fontSize: fonts.size.xs,
+                                                        fontWeight: 500,
+                                                        color: modalViewMode === m.key ? colors.fg.base : colors.fg.dim,
+                                                        background: modalViewMode === m.key ? colors.bg.surface : "transparent",
+                                                        borderRadius: "5px",
+                                                        cursor: "pointer",
+                                                        transition: "all 0.15s",
+                                                        lineHeight: "20px",
+                                                    }}
+                                                >
+                                                    {m.label}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                                 {chart.legend && (
                                     <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap", alignItems: "center" }}>
                                         {chart.legend.map((l: { label: string; color: string; style?: "line" }) => {
-                                            const isHidden = hiddenSeries[modalChartId]?.includes(l.label);
+                                            const isHidden = modalHiddenSeries[modalChartId]?.includes(l.label);
                                             return (
                                                 <div
                                                     key={l.label}
-                                                    onClick={l.style === "line" ? undefined : () => toggleSeries(modalChartId, l.label)}
+                                                    onClick={l.style === "line" ? undefined : () => toggleModalSeries(modalChartId, l.label)}
                                                     style={{
                                                         display: "flex",
                                                         alignItems: "center",
@@ -958,7 +1006,7 @@ export function EvolutionPage() {
                             </div>
                         </div>
                         <div style={{ flex: 1, minHeight: 0 }}>
-                            {renderChart(modalChartId, hiddenSeries[modalChartId] ?? [], {
+                            {renderChart(modalChartId, modalHiddenSeries[modalChartId] ?? [], {
                                 viewMode: modalViewMode,
                                 expenseYear: modalExpenseYear,
                                 expenseMonth: modalExpenseMonth,

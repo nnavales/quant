@@ -13,8 +13,9 @@ import type {
      SubcategoryReq,
      CategoryWithSubcategories,
      ChannelWithAccounts,
-     TransactionRowDTO,
-     TransactionAggregateReq,
+      TransactionRowDTO,
+      TransactionIDAmount,
+      TransactionAggregateReq,
      CancelInstallmentsReq,
      EconomicSeriesResponse,
      DollarMap,
@@ -157,6 +158,25 @@ export const transactionAggregates = {
     bulkDelete: (ids: string[]) => api.delete<void>("/transaction-aggregates/bulk", { ids }),
     cancelInstallments: (data: CancelInstallmentsReq) =>
         api.post<void>("/transaction-aggregates/cancel-installments", data),
+    listIds: (filters?: TransactionFilters) => {
+        const params = new URLSearchParams();
+        if (filters) {
+            if (filters.search) params.set("search", filters.search);
+            if (filters.type) params.set("type", filters.type);
+            if (filters.currency) params.set("currency", filters.currency);
+            if (filters.frequency) params.set("frequency", filters.frequency);
+            if (filters.installments !== undefined) params.set("installment", String(filters.installments));
+            if (filters.category) params.set("category", filters.category);
+            if (filters.subcategory) params.set("subcategory", filters.subcategory);
+            if (filters.channel) params.set("channel", filters.channel);
+            if (filters.account) params.set("account", filters.account);
+            if (filters.date_from) params.set("date_from", filters.date_from);
+            if (filters.date_to) params.set("date_to", filters.date_to);
+            if (filters.is_paid !== undefined) params.set("is_paid", String(filters.is_paid));
+        }
+        const query = params.toString();
+        return api.get<TransactionIDAmount[]>(`/transaction-aggregates/ids${query ? `?${query}` : ""}`);
+    },
 };
 
 // ============================================

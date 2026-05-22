@@ -96,6 +96,26 @@ func (h *Handler) ListTransactionsByInstallmentGroup(w http.ResponseWriter, r *h
 	httpx.WriteJSON(w, http.StatusOK, rows)
 }
 
+func (h *Handler) ListTransactionIDs(w http.ResponseWriter, r *http.Request) {
+	params := make(FilterParams)
+	for k, v := range r.URL.Query() {
+		params[k] = v[0]
+	}
+
+	filter, err := NewFilter(params)
+	if err != nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+
+	ids, err := h.service.ListTransactionIDs(r.Context(), filter)
+	if err != nil {
+		httpx.WriteServiceError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, ids)
+}
+
 func (h *Handler) UpdateTransactionAggregate(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {

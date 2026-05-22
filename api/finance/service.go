@@ -156,6 +156,14 @@ func (s *Service) ListTransactionsAggregate(ctx context.Context, filter *Filter)
 	return rows, nil
 }
 
+func (s *Service) ListTransactionIDs(ctx context.Context, filter *Filter) ([]TransactionIDAmount, error) {
+	rows, err := s.repo.ListTransactionIDs(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list transaction ids: %w", err)
+	}
+	return rows, nil
+}
+
 func (s *Service) ListTransactionsByInstallmentGroups(ctx context.Context) ([]InstallmentRowDTO, error) {
 	installmentGroups, err := s.installmentRepo.ListInstallmentGroups(ctx)
 	if err != nil {

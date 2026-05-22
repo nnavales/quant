@@ -286,10 +286,10 @@ export function AnalysisPage() {
                                     onClick={(e) => { e.stopPropagation(); setType(type === "expense" ? "income" : "expense"); }}
                                     style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: spacing[1], height: "24px", padding: 0 }}
                                 >
-                                    <span className="tab-title" style={{ fontSize: fonts.size.sm, color: type === "expense" ? colors.accent.red : colors.accent.green, textTransform: "uppercase", fontWeight: 500, letterSpacing: "0.5px", lineHeight: "24px" }}>{type === "expense" ? "Gastos" : "Ingresos"}</span>
-                                    <span style={{ fontSize: fonts.size.sm, color: colors.fg.dim, textTransform: "uppercase", fontWeight: 500, letterSpacing: "0.5px", lineHeight: "24px" }}>por</span>
+                                    <span className="tab-title" style={{ fontSize: fonts.size.sm, color: type === "expense" ? colors.accent.red : colors.accent.green, fontFamily: fonts.family.display, textTransform: "uppercase", fontWeight: 500, letterSpacing: "0.5px", lineHeight: "24px", WebkitFontSmoothing: "antialiased", MozOsxFontSmoothing: "grayscale" }}>{type === "expense" ? "Gastos" : "Ingresos"}</span>
+                                    <span style={{ fontSize: fonts.size.sm, color: colors.fg.dim, fontFamily: fonts.family.display, textTransform: "uppercase", fontWeight: 500, letterSpacing: "0.5px", lineHeight: "24px", WebkitFontSmoothing: "antialiased", MozOsxFontSmoothing: "grayscale" }}>por</span>
                                     <span className="tab-title" onClick={(e) => { e.stopPropagation(); setDimension(dimension === "category" ? "channel" : "category"); }} style={{ fontSize: fonts.size.sm, color: colors.fg.base, textTransform: "uppercase", fontWeight: 500, letterSpacing: "0.5px", cursor: "pointer", lineHeight: "24px" }}>{dimension === "category" ? "Categoría" : "Canal"}</span>
-                                    <span style={{ fontSize: fonts.size.sm, color: colors.fg.dim, textTransform: "uppercase", fontWeight: 500, letterSpacing: "0.5px", lineHeight: "24px" }}>{currentYear}</span>
+                                    <span style={{ fontSize: fonts.size.sm, color: colors.fg.dim, fontFamily: fonts.family.display, textTransform: "uppercase", fontWeight: 500, letterSpacing: "0.5px", lineHeight: "24px", WebkitFontSmoothing: "antialiased", MozOsxFontSmoothing: "grayscale" }}>{currentYear}</span>
                                 </button>
                             </div>
                             <HeatmapLegend isIncome={type === "income"} />

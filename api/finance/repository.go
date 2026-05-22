@@ -192,6 +192,24 @@ func (r *SQLiteRepo) ListTransactionsAggregate(ctx context.Context, filter *Filt
 	}, rows.Err()
 }
 
+func (r *SQLiteRepo) ListTransactionIDs(ctx context.Context, filter *Filter) ([]TransactionIDAmount, error) {
+	query, args := BuildListTransactionIDsQuery(filter)
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []TransactionIDAmount
+	for rows.Next() {
+		var row TransactionIDAmount
+		if err := rows.Scan(&row.ID, &row.Amount, &row.Currency, &row.ExchangeRate); err != nil {
+			return nil, err
+		}
+		result = append(result, row)
+	}
+	return result, rows.Err()
+}
+
 func (r *SQLiteRepo) GetTransactionAggregate(ctx context.Context, id string) (*TransactionRowDTO, error) {
 	var t TransactionRowDTO
 	err := r.db.QueryRowContext(ctx, QueryGetTransactionDTOByID, id).Scan(

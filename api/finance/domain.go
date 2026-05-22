@@ -28,6 +28,7 @@ type Repository interface {
 	BulkCreateTransactionAggregate(ctx context.Context, agg []TransactionAggregate) error
 	BulkCreateTransactionAggregateTx(ctx context.Context, tx *sql.Tx, agg []TransactionAggregate) error
 	ListTransactionsAggregate(ctx context.Context, filter *Filter) (*TransactionListResponse, error)
+	ListTransactionIDs(ctx context.Context, filter *Filter) ([]TransactionIDAmount, error)
 	GetTransactionAggregate(ctx context.Context, id string) (*TransactionRowDTO, error)
 	DeleteTransactionAggregate(ctx context.Context, id string) error
 	UpdateTransactionAggregate(ctx context.Context, id string, agg TransactionAggregate) error
@@ -142,6 +143,13 @@ type TransactionRowDTO struct {
 type TransactionListResponse struct {
 	Data       []TransactionRowDTO `json:"data"`
 	TotalCount int                 `json:"total_count"`
+}
+
+type TransactionIDAmount struct {
+	ID           string         `json:"id"`
+	Amount       money.Money    `json:"amount"`
+	Currency     entries.Currency `json:"currency"`
+	ExchangeRate float64        `json:"exchange_rate"`
 }
 
 type HistoricalListResponse struct {

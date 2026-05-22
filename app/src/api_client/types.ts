@@ -185,6 +185,13 @@ export interface ChannelWithAccounts {
     accounts: Account[] | null;
 }
 
+export interface TransactionIDAmount {
+    id: string;
+    amount: string;
+    currency: string;
+    exchange_rate: number;
+}
+
 export interface TransactionRowDTO {
     id: string;
     date: string;

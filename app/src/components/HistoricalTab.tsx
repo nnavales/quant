@@ -169,13 +169,13 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
     };
 
     return (
-        <div style={{ height: "100%", display: "flex", flexDirection: "column", gap: spacing[2] }}>
+        <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", gap: spacing[2] }}>
             <HistoricalFiltersComponent
                 filters={filters}
                 onChange={handleFiltersChange}
             />
 
-            <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+            <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
                 {isLoading ? (
                     <div style={{ padding: spacing[8], textAlign: "center", color: colors.fg.dim }}>
                         Cargando...

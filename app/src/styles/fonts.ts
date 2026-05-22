@@ -27,6 +27,13 @@ export const fonts = {
         relaxed: 1.6,
     },
     table: {
+        principal: {
+            badge: "11.5px",
+            header: "12px",
+            body: "12.5px",
+            meta: "11px",
+            date: "13.3px",
+        },
         // Column headers
         header: "12px",
         // Compact table text (metrics table)
@@ -47,4 +54,3 @@ export const fonts = {
 } as const;
 
 export type Fonts = typeof fonts;
-

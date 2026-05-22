@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { TransactionFilters, HistoricalFilters } from "@/api_client";
-import type { TransactionRowDTO } from "@/api_client/types";
+import type { TransactionRowDTO, TransactionIDAmount } from "@/api_client/types";
 import { TransactionList } from "@/components/TransactionList";
 import { TransactionFilters as TransactionFiltersComponent } from "@/components/TransactionFilters";
 import { TransactionModal } from "@/components/TransactionModal";
@@ -18,11 +18,11 @@ import {
     useCancelInstallments,
     useHistoricalEntries,
 } from "@/hooks";
-import { historical } from "@/api_client";
+import { historical, transactionAggregates } from "@/api_client";
 import { spacing, colors, radius } from "@/styles";
 import { fonts } from "@/styles/fonts";
 
-const Sep = () => <span style={{ color: colors.border, width: "1px", height: "18px", display: "inline-block" }} />;
+const Sep = () => <span style={{ color: colors.border, width: "1px", alignSelf: "stretch", display: "inline-block" }} />;
 
 type Tab = "transacciones" | "historico";
 
@@ -40,6 +40,7 @@ export function TransactionsPage() {
     const [showBulkImport, setShowBulkImport] = useState(false);
     const [historicalFilters] = useState<HistoricalFilters>({ page: 1, limit: 15 });
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [allSelectedData, setAllSelectedData] = useState<TransactionIDAmount[] | null>(null);
     const [lastClickedIndex, setLastClickedIndex] = useState<number | null>(null);
 
     const toggleSelect = (id: string, idx: number, shiftKey: boolean) => {
@@ -101,7 +102,9 @@ export function TransactionsPage() {
 
     const selectionSummary = useMemo(() => {
         if (selectedIds.size === 0) return null;
-        const selected = transactions.filter((t) => selectedIds.has(t.id));
+        const count = selectedIds.size;
+        const data = (allSelectedData ?? transactions) as Pick<TransactionRowDTO, "id" | "amount" | "currency" | "exchange_rate">[];
+        const selected = data.filter((t) => selectedIds.has(t.id));
         let arsSum = 0;
         let usdSum = 0;
         for (const t of selected) {
@@ -109,20 +112,27 @@ export function TransactionsPage() {
             if (t.currency === "ARS") arsSum += amount;
             else usdSum += amount;
         }
-        const arsUsdConverted = selected
+        const usdToArs = selected
             .filter((t) => t.currency === "USD")
             .reduce((sum, t) => sum + parseFloat(t.amount) * t.exchange_rate, 0);
-        return { count: selected.length, arsSum, usdSum, totalArs: arsSum + arsUsdConverted };
-    }, [selectedIds, transactions]);
-    const isAllSelected = transactions.length > 0 && selectedIds.size === transactions.length;
+        const arsToUsd = selected
+            .filter((t) => t.currency === "ARS")
+            .reduce((sum, t) => sum + parseFloat(t.amount) / (t.exchange_rate || 1), 0);
+        return { count, arsSum, usdSum, totalArs: arsSum + usdToArs, totalUsd: usdSum + arsToUsd };
+    }, [selectedIds, transactions, allSelectedData]);
+    const isAllSelected = total > 0 && selectedIds.size === total;
     const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
 
     const toggleSelectAll = () => {
         if (isAllSelected) {
             setSelectedIds(new Set());
-        } else {
-            setSelectedIds(new Set(transactions.map((t) => t.id)));
+            setAllSelectedData(null);
+            return;
         }
+        transactionAggregates.listIds(filters).then((rows) => {
+            setSelectedIds(new Set(rows.map((r) => r.id)));
+            setAllSelectedData(rows);
+        });
     };
 
     const handleToggleOrder = () => {
@@ -299,38 +309,54 @@ export function TransactionsPage() {
                                 <div
                                     style={{
                                         position: "fixed",
-                                        bottom: spacing[4],
-                                        right: spacing[4],
+                                        bottom: spacing[5],
+                                        right: spacing[5],
                                         display: "flex",
                                         alignItems: "center",
-                                        gap: spacing[4],
-                                        padding: `${spacing[2]} ${spacing[4]}`,
+                                        gap: spacing[2],
+                                        padding: `${spacing[1]} ${spacing[3]}`,
                                         backgroundColor: colors.bg.header,
-                                        border: `1px solid ${colors.border}`,
-                                        borderRadius: radius.md,
-                                        outline: `1px solid ${colors.fill}`,
-                                        fontSize: "13px",
+                                        border: `1px solid ${colors.fill}`,
+                                        borderRadius: radius.xl,
+                                        boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+                                        fontSize: "12px",
                                         color: colors.fg.dim,
                                         zIndex: 1000,
                                         WebkitFontSmoothing: "antialiased",
                                         MozOsxFontSmoothing: "grayscale",
+                                        lineHeight: 1,
                                     }}
                                 >
-                                    <span style={{ display: "flex", alignItems: "center", gap: spacing[1] }}>
-                                        <span className="selectable" style={{ fontWeight: 600, color: colors.fg.base, whiteSpace: "nowrap" }}>
-                                            {selectionSummary.count}
-                                        </span>
-                                        <span>seleccionadas</span>
+                                    <span className="selectable" style={{ fontWeight: 600, color: colors.fg.base, whiteSpace: "nowrap", fontSize: "12px", lineHeight: "18px" }}>
+                                        {selectionSummary.count}
+                                    </span>
+                                    <span style={{ lineHeight: "18px" }}>seleccionadas</span>
+                                    <Sep />
+                                    <span style={{
+                                        color: colors.accent.cyan,
+                                        textTransform: "uppercase",
+                                        fontWeight: 600,
+                                        fontSize: "12.5px",
+                                        lineHeight: "18px",
+                                        opacity: 0.55,
+                                    }}>ARS</span>
+                                    <span className="selectable" style={{ fontFamily: fonts.family.display, fontWeight: 700, color: colors.fg.base, whiteSpace: "nowrap", fontSize: "12.5px", lineHeight: "18px" }}>
+                                        {selectionSummary.totalArs.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </span>
                                     <Sep />
-                                    <span style={{ display: "flex", alignItems: "center", gap: spacing[2] }}>
-                                        <span style={{ color: colors.fg.base, fontWeight: 500 }}>ARS</span>
-                                        <span className="selectable" style={{ fontFamily: fonts.family.display, fontWeight: 700, color: colors.fg.base, whiteSpace: "nowrap" }}>
-                                            {selectionSummary.totalArs.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </span>
+                                    <span style={{
+                                        color: colors.accent.green,
+                                        textTransform: "uppercase",
+                                        fontWeight: 600,
+                                        fontSize: "12.5px",
+                                        lineHeight: "18px",
+                                        opacity: 0.55,
+                                    }}>USD</span>
+                                    <span className="selectable" style={{ fontFamily: fonts.family.display, fontWeight: 700, color: colors.fg.base, whiteSpace: "nowrap", fontSize: "12.5px", lineHeight: "18px" }}>
+                                        {selectionSummary.totalUsd.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </span>
                                     <span style={{ flex: 1 }} />
-                                    <span style={{ display: "flex", alignItems: "center", gap: spacing[1], marginLeft: spacing[2] }}>
+                                    <span style={{ display: "flex", alignItems: "center", gap: spacing[1] }}>
                                         <button
                                             onClick={() => setBulkDeleteConfirm(true)}
                                             onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
