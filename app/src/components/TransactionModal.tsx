@@ -539,6 +539,8 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                                 onChange={handleCategorySelect}
                                 placeholder="-"
                                 searchable
+                                fixPanelWidth
+                                panelStyle={{ maxWidth: "min(420px, 90vw)" }}
                             />
                         </div>
                         <div>
@@ -549,6 +551,8 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                                 onChange={handleAccountSelect}
                                 placeholder="-"
                                 searchable
+                                fixPanelWidth
+                                panelStyle={{ maxWidth: "min(420px, 90vw)" }}
                             />
                         </div>
                     </div>

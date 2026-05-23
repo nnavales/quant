@@ -2,152 +2,18 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useDashboard } from "@/hooks";
 import { dashboard as dashboardApi } from "@/api_client/endpoints";
-import { spacing, radius } from "@/styles/theme";
+import { spacing, radius, shadows } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { Modal, ModalContent } from "@/components/ui/Modal";
-import { CustomSelect } from "@/components/ui/Select";
+import { Dropdown } from "@/components/ui/Dropdown";
+import { chipTriggerStyle } from "@/styles/filters";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import ReactECharts from "echarts-for-react";
 import type { KPI, MetricCell } from "@/api_client/types";
 
-const KPI_LABELS: Record<string, string> = {
-    capital_total: "Balance",
-    net_savings_ytd: "Ahorro Neto",
-    income_ytd: "Ingresos",
-    expenses_ytd: "Gastos",
-    savings_margin: "Margen Ahorro",
-    avg_monthly_savings: "Ahorro Promedio",
-    fixed_cost_ratio: "Ratio Costos Fijos",
-    fixed_expense_mix: "Mix Gastos Fijos",
-    fixed_income_mix: "Mix Ingresos Fijos",
-    stable_income_coverage: "Cobertura Ingresos",
-    financial_flexibility: "Flexibilidad",
-    core_burn_rate: "Gasto Core",
-    savings_volatility: "Volatilidad",
-    savings_volatility_ratio: "Ratio Volatilidad",
-    projected_yearly_savings: "Ahorro Proyectado",
-    projected_yearly_capital: "Capital Proyectado",
-    capital_growth_rate_ytd: "Crecimiento",
-    expense_coverage_months: "Meses Cobertura",
-};
-
-interface KPISimpleModalProps {
-    kpi: KPI;
-    onClose: () => void;
-}
-
-export function KPISimpleModal({ kpi, onClose }: KPISimpleModalProps) {
-    const label = KPI_LABELS[kpi] || kpi;
-    const { data, isLoading, isError } = useQuery({
-        queryKey: ["dashboard", "kpi", kpi],
-        queryFn: () => dashboardApi.getKPIEvolution(kpi),
-        enabled: !!kpi,
-    });
-
-    return (
-        <Modal isOpen onClose={onClose}>
-            <ModalContent
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                    backgroundColor: colors.bg.surface,
-                    borderRadius: radius.lg,
-                    padding: spacing[4],
-                    width: "90%",
-                    maxWidth: "600px",
-                    maxHeight: "80vh",
-                    overflow: "auto",
-                    border: `1px solid ${colors.border}`,
-                    outline: `1px solid ${colors.fill}`,
-                }}
-            >
-                <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: spacing[4],
-                    }}
-                >
-                    <h2 style={{ fontSize: fonts.size.lg, fontWeight: 600, color: colors.fg.base }}>
-                        {label}
-                    </h2>
-                    <Button
-                        variant="plain"
-                        onClick={onClose}
-                    >
-                        <X size={20} />
-                    </Button>
-                </div>
-
-                {isLoading && (
-                    <div style={{ color: colors.fg.dim, textAlign: "center", padding: spacing[4] }}>
-                        Cargando...
-                    </div>
-                )}
-
-                {isError && (
-                    <div style={{ color: colors.accent.red, textAlign: "center", padding: spacing[4] }}>
-                        Error al cargar evolución
-                    </div>
-                )}
-
-                {data && data.data.length > 0 && (
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "flex-end",
-                            gap: "8px",
-                            height: "200px",
-                            padding: spacing[2],
-                        }}
-                    >
-                        {data.data.map((point) => {
-                            const max = Math.max(...data.data.map((d) => d.value));
-                            const min = Math.min(...data.data.map((d) => d.value));
-                            const range = max - min || 1;
-                            return (
-                                <div
-                                    key={point.year}
-                                    style={{
-                                        flex: 1,
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: "center",
-                                        gap: "4px",
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            width: "100%",
-                                            height: `${((point.value - min) / range) * 100}%`,
-                                            backgroundColor: colors.accent.cyan,
-                                            borderRadius: "4px 4px 0 0",
-                                            minHeight: "4px",
-                                        }}
-                                        title={`${point.year}: ${Math.round(point.value).toLocaleString("es-AR")}`}
-                                    />
-                                    <span style={{ fontSize: fonts.size.xs, color: colors.fg.dim }}>
-                                        {point.year}
-                                    </span>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-
-                {(!data || data.data.length === 0) && !isLoading && !isError && (
-                    <div style={{ color: colors.fg.dim, textAlign: "center", padding: spacing[4] }}>
-                        Sin datos históricos
-                    </div>
-                )}
-            </ModalContent>
-        </Modal>
-    );
-}
-
-/* ──────────── Full Line Chart Modal (AnalysisPage) ──────────── */
+/* ──────────── Full Line Chart Modal ──────────── */
 
 const KPI_MODAL_KPIS: Record<string, KPI> = {
     "Ingresos YTD": "income_ytd",
@@ -188,7 +54,11 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
     const { data: dashboardData, isLoading, isError } = useDashboard();
     const [viewMode, setViewMode] = useState<ViewMode>("current_year");
     const [metricType, setMetricType] = useState<MetricType>("total");
+    const [hiddenSeries, setHiddenSeries] = useState<string[]>([]);
     const isMultiSeries = !!metricMonths && metricMonths.length > 0;
+    const toggleSeries = (name: string) => {
+        setHiddenSeries((prev) => prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]);
+    };
     const formatX = (v: string) => {
         if (isMultiSeries || viewMode === "ytd") return v;
         const p = v.split("-");
@@ -214,7 +84,15 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
     if (isLoading || evolutionLoading)
         return (
             <Modal isOpen onClose={onClose} opacity={0.7}>
-                <ModalContent>
+                <ModalContent
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                        backgroundColor: colors.bg.surface,
+                        borderRadius: radius.lg,
+                        padding: spacing[5],
+                        boxShadow: shadows.modal,
+                    }}
+                >
                     <div style={{ color: colors.fg.dim, textAlign: "center" }}>Cargando...</div>
                 </ModalContent>
             </Modal>
@@ -222,7 +100,15 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
     if (isError)
         return (
             <Modal isOpen onClose={onClose} opacity={0.7}>
-                <ModalContent>
+                <ModalContent
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                        backgroundColor: colors.bg.surface,
+                        borderRadius: radius.lg,
+                        padding: spacing[5],
+                        boxShadow: shadows.modal,
+                    }}
+                >
                     <div style={{ color: colors.accent.red, textAlign: "center" }}>Error al cargar</div>
                 </ModalContent>
             </Modal>
@@ -329,134 +215,170 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
     };
     const title = titleMap[kpi] || kpi;
 
+    const descMap: Record<string, string> = {
+        "Ingresos YTD": "Evolución de ingresos período a período",
+        "Gastos YTD": "Evolución de gastos período a período",
+        "Ahorro Neto YTD": "Evolución del ahorro neto período a período",
+        "Balance Total": "Evolución del balance total período a período",
+        "Patrimonio Neto": "Evolución del patrimonio neto período a período",
+    };
+    const multiDescMap: Record<string, string> = {
+        "Capital": "Comparativa real vs plan vs forecast vs año anterior",
+        "Ahorro": "Comparativa real vs plan vs forecast vs año anterior",
+        "Egresos": "Comparativa real vs plan vs forecast vs año anterior",
+        "Ingresos": "Comparativa real vs plan vs forecast vs año anterior",
+    };
+    const desc = isMultiSeries ? (multiDescMap[kpi] || "Comparativa período a período") : (descMap[kpi] || "Evolución período a período");
+    const visibleSeries = isMultiSeries
+        ? multiSeriesOptions.filter((s) => !hiddenSeries.includes(s.name))
+        : [];
+
     return (
         <Modal isOpen onClose={onClose} opacity={0.8}>
             <ModalContent
                 onClick={(e) => e.stopPropagation()}
                 style={{
                     backgroundColor: colors.bg.surface,
-                    borderRadius: radius.xl,
-                    padding: spacing[5],
-                    width: "92%",
-                    maxWidth: "900px",
-                    maxHeight: "80vh",
-                    overflow: "auto",
-                    border: `1px solid ${colors.border}`,
-                    outline: `1px solid ${colors.fill}`,
+                    borderRadius: radius.lg,
+                    width: "1140px",
+                    height: "650px",
+                    display: "flex",
+                    flexDirection: "column",
+                    overflow: "hidden",
+                    boxShadow: shadows.modal,
                 }}
             >
-                <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        marginBottom: spacing[4],
-                    }}
-                >
-                    <div style={{ display: "flex", flexDirection: "column", gap: spacing[1] }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: spacing[3] }}>
-                            <h2
-                                style={{
-                                    fontSize: fonts.size.lg,
-                                    fontWeight: 600,
-                                    color: colors.fg.base,
-                                }}
-                            >
-                                {title}
-                            </h2>
-                            <div style={{ display: "flex", alignItems: "center" }}>
-                                {isIncomeOrExpense && viewMode === "current_year" && (
-                                    <CustomSelect
-                                        value={metricType}
-                                        options={[
-                                            { value: "total", label: "Total" },
-                                            { value: "fixed", label: "Fijo" },
-                                            { value: "variable", label: "Variable" },
-                                        ]}
-                                        onChange={(v) => setMetricType(v as MetricType)}
-                                        style={{ width: "100px" }}
-                                    />
-                                )}
-                            </div>
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: spacing[3] }}>
-                            <p style={{ fontSize: fonts.size.xs, color: colors.fg.dim, margin: 0 }}>
-                                {isMultiSeries
-                                    ? "Real · Forecast · Plan · Año anterior — comparativa mensual"
-                                    : viewMode === "current_year"
-                                      ? "Año en curso (acumulado)"
-                                      : viewMode === "ytd"
-                                        ? "Comparativo año a año"
-                                        : "Histórico mensual completo"}
-                            </p>
-                        </div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: spacing[2], flexShrink: 0 }}>
-                        {!isMultiSeries && (
-                            <div style={{
-                                position: "relative",
-                                display: "flex",
-                                borderRadius: "8px",
-                                background: colors.fill,
-                                overflow: "hidden",
-                                cursor: "pointer",
-                                userSelect: "none",
-                            }}>
-                                <div style={{
-                                    position: "absolute",
-                                    top: 0,
-                                    left: `calc(${["current_year", "ytd", "monthly"].indexOf(viewMode)} * (100% / 3))`,
-                                    width: "calc(100% / 3)",
-                                    height: "100%",
-                                    borderRadius: "7px",
-                                    background: colors.bg.surface,
-                                    boxShadow: "0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)",
-                                    transition: "left 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                                    pointerEvents: "none",
-                                }} />
-                                {[
-                                    { key: "current_year", label: "YTD" },
-                                    { key: "ytd", label: "YoY" },
-                                    { key: "monthly", label: "MoM" },
-                                ].map((m) => (
-                                    <div
-                                        key={m.key}
-                                        onClick={() => setViewMode(m.key as ViewMode)}
-                                        style={{
-                                            position: "relative",
-                                            zIndex: 1,
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            flex: 1,
-                                            padding: "3px 10px",
-                                            whiteSpace: "nowrap",
-                                            fontSize: fonts.size.xs,
-                                            fontWeight: 500,
-                                            color: viewMode === m.key ? colors.fg.base : colors.fg.dim,
-                                            transition: "color 0.2s",
-                                            lineHeight: "18px",
-                                        }}
-                                    >
-                                        {m.label}
-                                    </div>
-                                ))}
-                            </div>
+                <div style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: spacing[1],
+                    padding: spacing[5],
+                    paddingBottom: spacing[3],
+                    borderBottom: `1px solid ${colors.fill}`,
+                    flexShrink: 0,
+                }}>
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            gap: spacing[2],
+                        }}
+                    >
+                        <h2 style={{ fontSize: fonts.size.lg, fontWeight: 600, color: colors.fg.base, margin: 0 }}>
+                            {title}
+                        </h2>
+                        {!isMultiSeries && isIncomeOrExpense && viewMode === "current_year" && (
+                            <Dropdown
+                                value={metricType}
+                                options={[
+                                    { id: "total", label: "Total" },
+                                    { id: "fixed", label: "Fijo" },
+                                    { id: "variable", label: "Variable" },
+                                ]}
+                                onChange={(id) => setMetricType(id as MetricType)}
+                                triggerStyle={{ ...chipTriggerStyle(true), width: "auto", minWidth: 0, height: "24px" }}
+                            />
                         )}
-                        <Button
-                            variant="plain"
-                            onClick={onClose}
-                        >
-                            <X size={20} />
-                        </Button>
+                        <div style={{ display: "flex", alignItems: "center", gap: spacing[2], marginLeft: "auto" }}>
+                            {!isMultiSeries && (
+                                <>
+                                <div style={{
+                                    position: "relative",
+                                    display: "flex",
+                                    borderRadius: "8px",
+                                    background: colors.fill,
+                                    overflow: "hidden",
+                                    cursor: "pointer",
+                                    userSelect: "none",
+                                }}>
+                                    <div style={{
+                                        position: "absolute",
+                                        top: 0,
+                                        left: `calc(${["current_year", "ytd", "monthly"].indexOf(viewMode)} * (100% / 3))`,
+                                        width: "calc(100% / 3)",
+                                        height: "100%",
+                                        borderRadius: "7px",
+                                        background: colors.bg.surface,
+                                        boxShadow: "0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)",
+                                        transition: "left 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                                        pointerEvents: "none",
+                                    }} />
+                                    {[
+                                        { key: "current_year", label: "YTD" },
+                                        { key: "ytd", label: "YoY" },
+                                        { key: "monthly", label: "MoM" },
+                                    ].map((m) => (
+                                        <div
+                                            key={m.key}
+                                            onClick={() => setViewMode(m.key as ViewMode)}
+                                            style={{
+                                                position: "relative",
+                                                zIndex: 1,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                flex: 1,
+                                                padding: "3px 10px",
+                                                whiteSpace: "nowrap",
+                                                fontSize: fonts.size.xs,
+                                                fontWeight: 500,
+                                                color: viewMode === m.key ? colors.fg.base : colors.fg.dim,
+                                                transition: "color 0.2s",
+                                                lineHeight: "18px",
+                                            }}
+                                        >
+                                            {m.label}
+                                        </div>
+                                    ))}
+                                </div>
+                                </>
+                            )}
+                            <Button variant="plain" onClick={onClose}>
+                                <X size={20} />
+                            </Button>
+                        </div>
                     </div>
+
+                    {(desc || isMultiSeries) && (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing[2], flexWrap: "wrap" }}>
+                            <span style={{ fontSize: fonts.size.xs, fontWeight: 400, color: colors.fg.dim }}>{desc}</span>
+                            {isMultiSeries && (
+                                <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap", alignItems: "center", paddingRight: spacing[1] }}>
+                                    {(["Real", "FCST", "Plan", "LY"] as const).map((name) => {
+                                        const isHidden = hiddenSeries.includes(name);
+                                        return (
+                                            <div
+                                                key={name}
+                                                onClick={() => toggleSeries(name)}
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 3,
+                                                    cursor: "pointer",
+                                                    fontSize: fonts.size.sm,
+                                                    fontWeight: fonts.weight.medium,
+                                                    color: isHidden ? colors.fg.dim : undefined,
+                                                    opacity: isHidden ? 0.45 : 1,
+                                                    transition: "opacity 0.15s",
+                                                }}
+                                            >
+                                                <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: seriesColors[name], flexShrink: 0 }} />
+                                                {name}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
-                <div style={{ height: "400px" }}>
+                <div style={{ flex: 1, minHeight: 0 }}>
                     <ReactECharts
+                        key={isMultiSeries ? hiddenSeries.join(",") : viewMode}
                         option={{
                             backgroundColor: "transparent",
                             grid: { top: 20, right: 20, bottom: 30, left: 60 },
-                            legend: isMultiSeries ? { data: ["Real", "FCST", "Plan", "LY"], textStyle: { color: colors.fg.dim, fontSize: fonts.size.xs }, top: 0, right: 0 } : undefined,
                             xAxis: {
                                 type: "category",
                                 data: isMultiSeries ? multiSeriesMonths : chartData.map((d) => d.month),
@@ -503,7 +425,7 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
                                 },
                             },
                             series: isMultiSeries
-                                ? multiSeriesOptions.map((s) => ({
+                                ? visibleSeries.map((s) => ({
                                       name: s.name,
                                       data: s.data,
                                       type: "line",

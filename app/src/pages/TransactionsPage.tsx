@@ -251,11 +251,35 @@ export function TransactionsPage() {
                     </h1>
                 </div>
                 {activeTab === "transacciones" ? (
-                    <Button variant="primary" color="default" iconLeft={<Plus size={18} />} onClick={() => setTransactionModal({ open: true, type: "expense" })}>
+                    <Button variant="chip" size="sm" color="default" iconLeft={<Plus size={14} />}
+                        style={{
+                            height: "32px",
+                            padding: "0 14px",
+                            fontSize: fonts.size.sm,
+                            border: "none",
+                            borderRadius: "8px",
+                            transition: "background-color 0.15s",
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.border; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
+                        onClick={() => setTransactionModal({ open: true, type: "expense" })}
+                    >
                         Nueva Transacción
                     </Button>
                 ) : (
-                    <Button variant="primary" color="default" iconLeft={<Upload size={18} />} onClick={() => setShowBulkImport(true)}>
+                    <Button variant="chip" size="sm" color="default" iconLeft={<Upload size={14} />}
+                        style={{
+                            height: "32px",
+                            padding: "0 14px",
+                            fontSize: fonts.size.sm,
+                            border: "none",
+                            borderRadius: "8px",
+                            transition: "background-color 0.15s",
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.border; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
+                        onClick={() => setShowBulkImport(true)}
+                    >
                         Importar CSV
                     </Button>
                 )}

@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { spacing, radius } from "@/styles/theme";
+import { spacing, radius, shadows } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { useDashboard, useDashboardMetrics, useDimensionSeries } from "@/hooks";
 import { Dropdown } from "@/components/ui/Dropdown";
+import { Button } from "@/components/ui/Button";
 import { Maximize2, X, BarChart3, GitCompare, PieChart } from "lucide-react";
 import ReactECharts from "echarts-for-react";
 import type { MetricCell, MonthlyData } from "@/api_client/types";
@@ -811,31 +812,14 @@ export function EvolutionPage() {
                         <div style={{ ...chartHeader, display: "flex", flexDirection: "column", gap: 2 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: spacing[2] }}>
                                 <span>{ch.title}</span>
-                                <button
-                                    onClick={() => { setModalChartId(ch.id); setModalHiddenSeries({}); }}
-                                    title="Expandir"
-                                    style={{
-                                        background: "none",
-                                        border: "none",
-                                        cursor: "pointer",
-                                        padding: 2,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        color: colors.fg.dim,
-                                        borderRadius: radius.sm,
-                                        transition: "all 0.15s",
-                                    }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.fill; e.currentTarget.style.color = colors.fg.base; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = colors.fg.dim; }}
-                                >
-                                        <Maximize2 size={12} />
-                                </button>
+                                <Button variant="plain" onClick={() => { setModalChartId(ch.id); setModalHiddenSeries({}); }} title="Expandir">
+                                    <Maximize2 size={14} />
+                                </Button>
                             </div>
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing[2], flexWrap: "wrap" }}>
                                 {ch.desc && <span style={{ fontSize: fonts.size.xs, fontWeight: 400, color: colors.fg.dim }}>{ch.desc}</span>}
                                 {ch.legend && (
-                                    <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap", justifyContent: "flex-end" }}>
+                                    <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap", justifyContent: "flex-end", paddingRight: spacing[1] }}>
                                         {ch.legend.map((l: { label: string; color: string; style?: "line" }) => {
                                             const isHidden = hiddenSeries[ch.id]?.includes(l.label);
                                             return (
@@ -881,63 +865,29 @@ export function EvolutionPage() {
                         style={{
                             backgroundColor: colors.bg.surface,
                             borderRadius: radius.lg,
-                            border: `1px solid ${colors.border}`,
-                                width: "90vw",
-                                height: "70vh",
-                                maxWidth: 1200,
+                            boxShadow: shadows.modal,
+                            width: "1140px",
+                            height: "650px",
                             display: "flex",
                             flexDirection: "column",
                             overflow: "hidden",
                         }}
                     >
                         <div style={{
-                            ...chartHeader,
                             display: "flex",
                             flexDirection: "column",
-                            gap: 2,
+                            gap: spacing[1],
+                            padding: spacing[5],
+                            paddingBottom: spacing[3],
+                            borderBottom: `1px solid ${colors.fill}`,
+                            flexShrink: 0,
                         }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span>{chart.title}</span>
-                                <button
-                                    onClick={() => setModalChartId(null)}
-                                    title="Cerrar"
-                                    style={{
-                                        background: "none",
-                                        border: "none",
-                                        cursor: "pointer",
-                                        padding: 4,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        color: colors.fg.dim,
-                                        borderRadius: radius.sm,
-                                        transition: "all 0.15s",
-                                    }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.fill; e.currentTarget.style.color = colors.fg.base; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = colors.fg.dim; }}
-                                >
-                                    <X size={16} />
-                                </button>
-                            </div>
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing[2], flexWrap: "wrap" }}>
+                                <h2 style={{ fontSize: fonts.size.lg, fontWeight: 600, color: colors.fg.base, margin: 0 }}>
+                                    {chart.title}
+                                </h2>
                                 <div style={{ display: "flex", alignItems: "center", gap: spacing[2] }}>
-                                    {chart.desc && <span style={{ fontSize: fonts.size.xs, fontWeight: 400, color: colors.fg.dim }}>{chart.desc}</span>}
-                                    {["expense-by-category", "expense-by-channel"].includes(modalChartId) ? (
-                                        <>
-                                        <Dropdown
-                                            value={modalExpenseYear}
-                                            onChange={setModalExpenseYear}
-                                            options={expenseByCategory ? [...new Set(expenseByCategory.data.flatMap((s) => s.data.map((d) => d.month.split("-")[0])))].sort().reverse().map((y) => ({ id: y, label: y })) : []}
-                                            triggerStyle={{ height: "28px", width: "80px", fontSize: fonts.size.xs } as React.CSSProperties}
-                                        />
-                                        <Dropdown
-                                            value={modalExpenseMonth}
-                                            onChange={setModalExpenseMonth}
-                                            options={[{ id: "all", label: "Todo el año" }, ...["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"].map((name, i) => ({ id: String(i + 1).padStart(2, "0"), label: name }))]}
-                                            triggerStyle={{ height: "28px", width: "130px", fontSize: fonts.size.xs } as React.CSSProperties}
-                                        />
-                                        </>
-                                    ) : modalChartId.startsWith("real-vs-plan") ? null : (
+                                    {!["expense-by-category", "expense-by-channel"].includes(modalChartId) && !modalChartId.startsWith("real-vs-plan") && (
                                         <div style={{
                                             display: "flex",
                                             alignItems: "center",
@@ -972,9 +922,33 @@ export function EvolutionPage() {
                                             ))}
                                         </div>
                                     )}
+                                    <Button variant="plain" onClick={() => setModalChartId(null)}>
+                                        <X size={20} />
+                                    </Button>
+                                </div>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing[2], flexWrap: "wrap" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: spacing[2] }}>
+                                    {chart.desc && <span style={{ fontSize: fonts.size.xs, fontWeight: 400, color: colors.fg.dim }}>{chart.desc}</span>}
+                                    {["expense-by-category", "expense-by-channel"].includes(modalChartId) && (
+                                        <>
+                                        <Dropdown
+                                            value={modalExpenseYear}
+                                            onChange={setModalExpenseYear}
+                                            options={expenseByCategory ? [...new Set(expenseByCategory.data.flatMap((s) => s.data.map((d) => d.month.split("-")[0])))].sort().reverse().map((y) => ({ id: y, label: y })) : []}
+                                            triggerStyle={{ height: "28px", width: "80px", fontSize: fonts.size.xs } as React.CSSProperties}
+                                        />
+                                        <Dropdown
+                                            value={modalExpenseMonth}
+                                            onChange={setModalExpenseMonth}
+                                            options={[{ id: "all", label: "Todo el año" }, ...["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"].map((name, i) => ({ id: String(i + 1).padStart(2, "0"), label: name }))]}
+                                            triggerStyle={{ height: "28px", width: "130px", fontSize: fonts.size.xs } as React.CSSProperties}
+                                        />
+                                        </>
+                                    )}
                                 </div>
                                 {chart.legend && (
-                                    <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap", alignItems: "center" }}>
+                                    <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap", alignItems: "center", paddingRight: spacing[1] }}>
                                         {chart.legend.map((l: { label: string; color: string; style?: "line" }) => {
                                             const isHidden = modalHiddenSeries[modalChartId]?.includes(l.label);
                                             return (
@@ -985,7 +959,8 @@ export function EvolutionPage() {
                                                         display: "flex",
                                                         alignItems: "center",
                                                         gap: 3,
-                                                        fontSize: fonts.size.xs,
+                                                        fontSize: fonts.size.sm,
+                                                        fontWeight: fonts.weight.medium,
                                                         color: isHidden ? colors.fg.dim : undefined,
                                                         cursor: l.style === "line" ? "default" : "pointer",
                                                         opacity: isHidden ? 0.45 : 1,

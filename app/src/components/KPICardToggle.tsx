@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
@@ -32,6 +32,81 @@ export interface KPICardToggleProps {
     segments?: [string, string];
     toggleChangeLabel?: string;
     inverseTrend?: boolean;
+}
+
+function SlidingToggle({
+    segments,
+    showToggle,
+    setShowToggle,
+    iconColor,
+}: {
+    segments: [string, string];
+    showToggle: boolean;
+    setShowToggle: (v: boolean) => void;
+    iconColor: string;
+}) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const labelRefs = useRef<(HTMLSpanElement | null)[]>([null, null]);
+    const [indicatorStyle, setIndicatorStyle] = useState({ width: 0, transform: "translateX(0px)" });
+
+    useEffect(() => {
+        const el = labelRefs.current[showToggle ? 1 : 0];
+        if (el && containerRef.current) {
+            const parentRect = containerRef.current.getBoundingClientRect();
+            const rect = el.getBoundingClientRect();
+            setIndicatorStyle({
+                width: rect.width,
+                transform: `translateX(${rect.left - parentRect.left}px)`,
+            });
+        }
+    }, [showToggle, segments]);
+
+    return (
+        <div
+            ref={containerRef}
+            style={{ position: "relative", display: "flex", marginLeft: spacing[2] }}
+        >
+            <div
+                style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    height: "100%",
+                    width: indicatorStyle.width,
+                    transform: indicatorStyle.transform,
+                    backgroundColor: colors.fill,
+                    borderRadius: "4px",
+                    transition: "transform 0.2s, width 0.2s",
+                }}
+            />
+            {segments.map((seg, i) => {
+                const isActive = (i === 0) !== showToggle;
+                return (
+                    <span
+                        key={seg}
+                        ref={(el) => { labelRefs.current[i] = el; }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isActive) setShowToggle(i === 1);
+                        }}
+                        style={{
+                            position: "relative",
+                            zIndex: 1,
+                            fontSize: fonts.size.xs,
+                            fontWeight: isActive ? 600 : 400,
+                            color: isActive ? iconColor : colors.fg.dim,
+                            padding: "1px 6px",
+                            cursor: "pointer",
+                            lineHeight: "18px",
+                            userSelect: "none",
+                        }}
+                    >
+                        {seg}
+                    </span>
+                );
+            })}
+        </div>
+    );
 }
 
 export function KPICardToggle({
@@ -139,35 +214,7 @@ export function KPICardToggle({
                         <HelpCircle size={12} color={colors.fg.dim} style={{ opacity: 0.5 }} />
                     </Tooltip>
                 )}
-                {hasSegments && (
-                    <div style={{ display: "flex", gap: 2, marginLeft: spacing[2] }}>
-                        {segments.map((seg, i) => {
-                            const isActive = (i === 0) !== showToggle;
-                            return (
-                                <span
-                                    key={seg}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (!isActive) setShowToggle(i === 1);
-                                    }}
-                                    style={{
-                                        fontSize: fonts.size.xs,
-                                        fontWeight: isActive ? 600 : 400,
-                                        color: isActive ? iconColor : colors.fg.dim,
-                                        backgroundColor: isActive ? colors.fill : "transparent",
-                                        padding: "1px 6px",
-                                        borderRadius: "4px",
-                                        cursor: "pointer",
-                                        border: isActive ? "none" : `1px solid ${colors.border}`,
-                                        lineHeight: "18px",
-                                    }}
-                                >
-                                    {seg}
-                                </span>
-                            );
-                        })}
-                    </div>
-                )}
+                {hasSegments && <SlidingToggle segments={segments} showToggle={showToggle} setShowToggle={setShowToggle} iconColor={iconColor} />}
                 {year && (
                     <span
                         style={{

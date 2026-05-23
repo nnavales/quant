@@ -16,18 +16,8 @@ interface DatePickerProps {
 
 const WEEKDAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const MONTHS = [
-    "Enero",
-    "Febrero",
-    "Marzo",
-    "Abril",
-    "Mayo",
-    "Junio",
-    "Julio",
-    "Agosto",
-    "Septiembre",
-    "Octubre",
-    "Noviembre",
-    "Diciembre",
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
 
 function getDaysInMonth(year: number, month: number, timezone?: string): (Date | null)[] {
@@ -35,15 +25,8 @@ function getDaysInMonth(year: number, month: number, timezone?: string): (Date |
     const firstDay = timezone ? createDateForDayInTimezone(year, month, 1, timezone) : new Date(year, month, 1);
     const firstDayOfWeek = firstDay.getDay();
     const totalDays = new Date(year, month + 1, 0).getDate();
-
-    for (let i = 0; i < firstDayOfWeek; i++) {
-        days.push(null);
-    }
-
-    for (let i = 1; i <= totalDays; i++) {
-        days.push(timezone ? createDateForDayInTimezone(year, month, i, timezone) : new Date(year, month, i));
-    }
-
+    for (let i = 0; i < firstDayOfWeek; i++) days.push(null);
+    for (let i = 1; i <= totalDays; i++) days.push(timezone ? createDateForDayInTimezone(year, month, i, timezone) : new Date(year, month, i));
     return days;
 }
 
@@ -55,7 +38,7 @@ function isToday(date: Date, timezone?: string): boolean {
     return isTodayInTimezone(date, timezone);
 }
 
-function DropdownSelect({
+function ChipSelect({
     value,
     options,
     onChange,
@@ -68,6 +51,7 @@ function DropdownSelect({
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
     const selected = options.find((o) => o.value === value);
 
     useEffect(() => {
@@ -78,6 +62,13 @@ function DropdownSelect({
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    useEffect(() => {
+        if (isOpen && menuRef.current) {
+            const selectedEl = menuRef.current.querySelector("[data-selected]");
+            if (selectedEl) selectedEl.scrollIntoView({ block: "center" });
+        }
+    }, [isOpen]);
+
     return (
         <div ref={ref} style={{ position: "relative" }}>
             <div
@@ -87,38 +78,47 @@ function DropdownSelect({
                     alignItems: "center",
                     justifyContent: "space-between",
                     gap: spacing[1],
-                    padding: "4px 8px",
-                    backgroundColor: colors.bg.surface,
-                    border: `1px solid ${colors.fill}`,
-                    borderRadius: radius.base,
+                    padding: "0 8px",
+                    height: "26px",
+                    backgroundColor: colors.fill,
+                    borderRadius: "8px",
                     color: colors.fg.base,
-                    fontSize: "13px",
+                    fontSize: fonts.size.sm,
+                    fontFamily: fonts.family.text,
+                    fontWeight: 500,
                     cursor: "pointer",
                     minWidth: width,
+                    border: "none",
+                    boxSizing: "border-box",
                 }}
             >
                 <span>{selected?.label}</span>
                 <ChevronDown
-                    size={14}
+                    size={12}
                     style={{
                         color: colors.fg.dim,
                         transform: isOpen ? "rotate(180deg)" : "none",
                         transition: "transform 0.15s",
+                        flexShrink: 0,
                     }}
                 />
             </div>
             {isOpen && (
                 <div
+                    ref={menuRef}
                     style={{
                         position: "absolute",
                         top: "100%",
                         left: 0,
-                        marginTop: "2px",
+                        marginTop: "4px",
                         backgroundColor: colors.bg.surface,
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: radius.base,
+                        border: "none",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06)",
                         zIndex: 10,
-                        maxHeight: "180px",
+                        minWidth: "100%",
+                        padding: spacing[1],
+                        maxHeight: "200px",
                         overflowY: "auto",
                         overscrollBehavior: "contain",
                     }}
@@ -126,26 +126,26 @@ function DropdownSelect({
                     {options.map((opt) => (
                         <div
                             key={opt.value}
+                            data-selected={opt.value === value ? "" : undefined}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onChange(opt.value);
                                 setIsOpen(false);
                             }}
                             style={{
-                                padding: "6px 10px",
-                                fontSize: "13px",
+                                padding: `4px 8px`,
+                                fontSize: fonts.size.sm,
                                 cursor: "pointer",
-                                backgroundColor:
-                                    opt.value === value ? colors.fill : "transparent",
+                                borderRadius: "8px",
+                                backgroundColor: opt.value === value ? colors.fill : "transparent",
                                 color: colors.fg.base,
+                                transition: "background-color 0.1s",
                             }}
                             onMouseEnter={(e) => {
-                                if (opt.value !== value)
-                                    e.currentTarget.style.backgroundColor = colors.fill;
+                                if (opt.value !== value) e.currentTarget.style.backgroundColor = colors.fill;
                             }}
                             onMouseLeave={(e) => {
-                                if (opt.value !== value)
-                                    e.currentTarget.style.backgroundColor = "transparent";
+                                if (opt.value !== value) e.currentTarget.style.backgroundColor = "transparent";
                             }}
                         >
                             {opt.label}
@@ -216,14 +216,6 @@ export function DatePicker({
     })).filter((o) => o.value >= 2000);
     const monthOptions = MONTHS.map((m, idx) => ({ value: idx, label: m }));
 
-    const handleToday = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        const today = getNowInTimezone(tz);
-        setViewDate(today);
-        onChange(formatISODateInTimezone(today, tz));
-        setIsOpen(false);
-    };
-
     return (
         <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
             <div
@@ -247,22 +239,15 @@ export function DatePicker({
                     transition: "border-color 0.15s",
                     ...triggerStyle,
                 }}
-
             >
                 <span style={{ display: "flex", alignItems: "center", gap: spacing[2], flex: 1, overflow: "hidden" }}>
                     {showIcon && <CalendarIcon size={16} style={{ flexShrink: 0, color: colors.fg.dim }} />}
                     <span style={{ flex: 1, fontSize: fonts.size.sm, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {selectedDate
-                            ? formatDateInTimezone(selectedDate, userDateFormat, tz)
-                            : placeholder}
+                        {selectedDate ? formatDateInTimezone(selectedDate, userDateFormat, tz) : placeholder}
                     </span>
                 </span>
                 {showIcon && (selectedDate ? (
-                    <X
-                        size={14}
-                        style={{ color: colors.fg.dim, cursor: "pointer", flexShrink: 0 }}
-                        onClick={handleClear}
-                    />
+                    <X size={14} style={{ color: colors.fg.dim, cursor: "pointer", flexShrink: 0 }} onClick={handleClear} />
                 ) : (
                     <ChevronDown size={14} style={{ flexShrink: 0, opacity: 0.6 }} />
                 ))}
@@ -275,9 +260,10 @@ export function DatePicker({
                         visibility: "hidden",
                         zIndex: 1000,
                         backgroundColor: colors.bg.surface,
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: radius.lg,
-                        padding: spacing[3],
+                        border: "none",
+                        borderRadius: "8px",
+                        padding: spacing[2],
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06)",
                     }}
                 >
                     <div
@@ -298,24 +284,17 @@ export function DatePicker({
                                 cursor: "pointer",
                                 padding: "4px",
                                 display: "flex",
-                                borderRadius: radius.base,
+                                borderRadius: "8px",
+                                transition: "background-color 0.15s",
                             }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
                         >
                             <ChevronLeft size={18} />
                         </button>
                         <div style={{ display: "flex", gap: spacing[2] }}>
-                            <DropdownSelect
-                                value={month}
-                                options={monthOptions}
-                                onChange={(v) => setViewDate(tz ? createDateForDayInTimezone(year, v, 1, tz) : new Date(year, v, 1))}
-                                width="110px"
-                            />
-                            <DropdownSelect
-                                value={year}
-                                options={yearOptions}
-                                onChange={(v) => setViewDate(tz ? createDateForDayInTimezone(v, month, 1, tz) : new Date(v, month, 1))}
-                                width="70px"
-                            />
+                            <ChipSelect value={month} options={monthOptions} onChange={(v) => setViewDate(tz ? createDateForDayInTimezone(year, v, 1, tz) : new Date(year, v, 1))} width="110px" />
+                            <ChipSelect value={year} options={yearOptions} onChange={(v) => setViewDate(tz ? createDateForDayInTimezone(v, month, 1, tz) : new Date(v, month, 1))} width="70px" />
                         </div>
                         <button
                             type="button"
@@ -327,13 +306,16 @@ export function DatePicker({
                                 cursor: "pointer",
                                 padding: "4px",
                                 display: "flex",
-                                borderRadius: radius.base,
+                                borderRadius: "8px",
+                                transition: "background-color 0.15s",
                             }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
                         >
                             <ChevronRight size={18} />
                         </button>
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 32px)", gap: "2px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 34px)", gap: "2px" }}>
                         {WEEKDAYS.map((day) => (
                             <div
                                 key={day}
@@ -341,7 +323,7 @@ export function DatePicker({
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
-                                    fontSize: "11px",
+                                    fontSize: fonts.size.xs,
                                     fontWeight: 600,
                                     color: colors.fg.dim,
                                     height: "28px",
@@ -354,70 +336,44 @@ export function DatePicker({
                             day ? (
                                 <div
                                     key={idx}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleSelect(day);
-                                    }}
+                                    onClick={(e) => { e.stopPropagation(); handleSelect(day); }}
                                     style={{
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
-                                        width: "32px",
-                                        height: "32px",
-                                        fontSize: "13px",
-                                        borderRadius: radius.base,
+                                        width: "34px",
+                                        height: "34px",
+                                        fontSize: fonts.size.sm,
+                                        borderRadius: "8px",
                                         cursor: "pointer",
-                                        backgroundColor:
-                                            selectedDate && isSameDay(day, selectedDate, tz)
-                                                ? colors.accent.teal
-                                                : "transparent",
-                                        color:
-                                            selectedDate && isSameDay(day, selectedDate, tz)
-                                                ? colors.bg.base
-                                                : isToday(day, tz)
-                                                  ? colors.accent.teal
-                                                  : colors.fg.base,
-                                        fontWeight:
-                                            (selectedDate && isSameDay(day, selectedDate, tz)) || isToday(day, tz)
-                                                ? 600
-                                                : 400,
+                                        backgroundColor: selectedDate && isSameDay(day, selectedDate, tz)
+                                            ? colors.accent.cyan
+                                            : "transparent",
+                                        color: selectedDate && isSameDay(day, selectedDate, tz)
+                                            ? colors.bg.base
+                                            : isToday(day, tz)
+                                                ? colors.accent.cyan
+                                                : colors.fg.base,
+                                        fontWeight: (selectedDate && isSameDay(day, selectedDate, tz)) || isToday(day, tz) ? 600 : 400,
+                                        transition: "background-color 0.1s",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!(selectedDate && isSameDay(day, selectedDate, tz)))
+                                            e.currentTarget.style.backgroundColor = colors.fill;
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!(selectedDate && isSameDay(day, selectedDate, tz)))
+                                            e.currentTarget.style.backgroundColor = "transparent";
                                     }}
                                 >
                                     {tz ? getPartsInTimezone(day, tz).day : day.getDate()}
                                 </div>
                             ) : (
-                                <div key={idx} style={{ width: "32px", height: "32px" }} />
+                                <div key={idx} style={{ width: "34px", height: "34px" }} />
                             )
                         )}
                     </div>
-                    <div
-                        style={{
-                            display: "flex",
-                            justifyContent: "center",
-                            marginTop: spacing[2],
-                            paddingTop: spacing[2],
-                            borderTop: `1px solid ${colors.fill}`,
-                        }}
-                    >
-                        <button
-                            type="button"
-                            onClick={handleToday}
-                            style={{
-                                backgroundColor: colors.variant.teal.bg,
-                                border: `1px solid ${colors.variant.teal.border}`,
-                                color: colors.accent.teal,
-                                fontSize: "13px",
-                                fontWeight: 500,
-                                cursor: "pointer",
-                                padding: "4px 8px",
-                                borderRadius: radius.base,
-                            }}
-                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.variant.teal.hoverBg; e.currentTarget.style.borderColor = colors.variant.teal.hoverBorder; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.variant.teal.bg; e.currentTarget.style.borderColor = colors.variant.teal.border; }}
-                        >
-                            Hoy
-                        </button>
-                    </div>
+
                 </div>
             )}
         </div>

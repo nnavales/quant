@@ -17,7 +17,7 @@ export const filterWrapperStyle: React.CSSProperties = {
 export const dropdownItemStyle: React.CSSProperties = {
     padding: `${spacing[1]} ${spacing[2]}`,
     cursor: "pointer",
-    borderRadius: radius.sm,
+    borderRadius: "8px",
     fontSize: fonts.size.sm,
     color: colors.fg.base,
     transition: "background-color 0.1s",
@@ -28,15 +28,15 @@ export const clearButtonStyle: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    width: "28px",
-    height: "28px",
+    width: "26px",
+    height: "26px",
     padding: "0",
-    backgroundColor: "transparent",
-    border: `1px solid ${colors.border}`,
+    backgroundColor: colors.fill,
     color: colors.accent.red,
     cursor: "pointer",
-    borderRadius: radius.md,
+    borderRadius: "8px",
     transition: "all 0.15s ease",
+    border: "none",
 };
 
 export const paginationButtonStyle = (disabled: boolean): React.CSSProperties => ({
@@ -55,24 +55,22 @@ export const paginationButtonStyle = (disabled: boolean): React.CSSProperties =>
     transition: "all 0.15s ease",
 });
 
-/* ─── Filter chip trigger style ───
- * Designed to work WITH Dropdown's internal hover mechanics:
- * - Inactive: subtle border → hover reveals to colors.fill
- * - Active: colors.fill border → hover stays at colors.fill (seamless)
- */
+/* ─── Filter chip trigger style ─── */
 export const chipTriggerStyle = (isActive: boolean): React.CSSProperties => ({
-    height: "28px",
+    height: "26px",
     padding: "0 12px",
     fontSize: fonts.size.sm,
-    fontWeight: 400,
+    fontWeight: 500,
+    fontFamily: fonts.family.text,
     color: isActive ? colors.fg.base : colors.fg.dim,
-    backgroundColor: "transparent",
-    border: `1px solid ${colors.overlay.white08}`,
-    borderRadius: radius.md,
+    backgroundColor: colors.fill,
+    borderRadius: "8px",
     cursor: "pointer",
     boxSizing: "border-box",
     display: "flex",
     alignItems: "center",
     gap: "4px",
     whiteSpace: "nowrap",
+    border: "none",
+    outline: "none",
 });

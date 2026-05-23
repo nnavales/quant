@@ -247,7 +247,7 @@ export function AnalysisPage() {
 
             <div style={{ display: "grid", gridTemplateColumns: "1338px 1fr", gap: spacing[4] }}>
                 {viewMode === "networth" ? (
-                    <div style={{ backgroundColor: colors.bg.surface, borderRadius: radius.lg, border: `1px solid ${colors.border}`, overflow: "hidden", display: "flex", flexDirection: "column", height: "624px" }}>
+                    <div style={{ backgroundColor: colors.bg.surface, borderRadius: radius.lg, border: `1px solid ${colors.border}`, overflow: "hidden", display: "flex", flexDirection: "column", height: "623px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: `${spacing[3]} ${spacing[4]}`, borderBottom: `1px solid ${colors.border}`, flexShrink: 0 }}>
                             <span style={{ fontSize: fonts.size.sm, lineHeight: "24px", color: colors.fg.base, textTransform: "uppercase", fontWeight: 500, letterSpacing: "0.5px" }}>Net Worth</span>
                             <Button variant="primary" color="default" size="sm" iconLeft={<Plus size={14} />} onClick={() => setShowNetWorthForm(true)}>
@@ -268,7 +268,7 @@ export function AnalysisPage() {
                             overflow: "hidden",
                             display: "flex",
                             flexDirection: "column",
-                            height: "624px",
+                            height: "623px",
                         }}
                     >
                         <div

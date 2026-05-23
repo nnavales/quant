@@ -18,13 +18,16 @@ export interface DateDropdownProps {
 const PANEL_BASE: React.CSSProperties = {
     position: "fixed",
     backgroundColor: colors.bg.surface,
-    border: `1px solid ${colors.border}`,
+    border: "none",
     borderRadius: radius.md,
     padding: spacing[2],
     zIndex: 1001,
     display: "flex",
     flexDirection: "column",
-    gap: "1px",
+    gap: spacing[1],
+    minWidth: "160px",
+    maxWidth: "280px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06)",
 };
 
 export function DateDropdown({
@@ -39,7 +42,7 @@ export function DateDropdown({
     const triggerRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
 
-    useDropdownPosition(triggerRef, panelRef, open, { maxHeight: 320 });
+    useDropdownPosition(triggerRef, panelRef, open, { maxHeight: 320, matchTriggerWidth: true, minWidth: 160 });
 
     useClickOutside(triggerRef, () => {
         if (open) onToggle();
@@ -106,9 +109,6 @@ export function DateDropdown({
                     style={{
                         ...PANEL_BASE,
                         visibility: "hidden",
-                        width: typeof triggerStyle?.width === "number"
-                            ? `${triggerStyle.width}px`
-                            : triggerStyle?.width || "260px",
                         maxHeight: "320px",
                         overflowY: "auto",
                     }}

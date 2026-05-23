@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, X } from "lucide-react";
 import type { HistoricalFilters } from "@/api_client/endpoints";
 import { colors } from "@/styles/colors";
 import { spacing } from "@/styles/theme";
+import { fonts } from "@/styles/fonts";
 import { filterContainerStyle, filterWrapperStyle, dropdownItemStyle, clearButtonStyle, chipTriggerStyle } from "@/styles/filters";
 import { useClickOutside, useUserConfig } from "@/hooks";
 import { DatePicker } from "@/components/ui/DatePicker";
@@ -80,32 +81,6 @@ export function HistoricalFiltersComponent({ filters, onChange }: HistoricalFilt
                         onToggle={() => setOpenDropdown(openDropdown === "date" ? null : "date")}
                         triggerStyle={chipTriggerStyle(!!filters.date_from || !!filters.date_to)}
                     >
-                        <div
-                            style={{
-                                ...dropdownItemStyle,
-                                backgroundColor: !filters.date_from && !filters.date_to ? colors.fill : "transparent",
-                                fontWeight: !filters.date_from && !filters.date_to ? 500 : 400,
-                                color: colors.fg.dim,
-                            }}
-                            onClick={() => {
-                                setDateFrom("");
-                                setDateTo("");
-                                onChange({ ...filters, date_from: undefined, date_to: undefined, page: 1 });
-                                setOpenDropdown(null);
-                            }}
-                            onMouseEnter={(e) => {
-                                if (filters.date_from || filters.date_to) {
-                                    e.currentTarget.style.backgroundColor = colors.fill;
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                if (filters.date_from || filters.date_to) {
-                                    e.currentTarget.style.backgroundColor = "transparent";
-                                }
-                            }}
-                        >
-                            Todas las fechas
-                        </div>
                         {getHistoricalDatePresets(userConfig?.timezone).map((preset) => (
                             <div
                                 key={preset.label}
@@ -131,8 +106,6 @@ export function HistoricalFiltersComponent({ filters, onChange }: HistoricalFilt
                                 display: "flex",
                                 flexDirection: "column",
                                 gap: spacing[2],
-                                paddingTop: spacing[1],
-                                borderTop: `1px solid ${colors.fill}`,
                             }}
                         >
                             <DatePicker
@@ -142,7 +115,7 @@ export function HistoricalFiltersComponent({ filters, onChange }: HistoricalFilt
                                     onChange({ ...filters, date_from: value || undefined, page: 1 });
                                 }}
                                 placeholder="Desde"
-                                triggerStyle={{ height: "28px" }}
+                                triggerStyle={chipTriggerStyle(!!dateFrom)}
                             />
                             <DatePicker
                                 value={dateTo}
@@ -151,9 +124,43 @@ export function HistoricalFiltersComponent({ filters, onChange }: HistoricalFilt
                                     onChange({ ...filters, date_to: value || undefined, page: 1 });
                                 }}
                                 placeholder="Hasta"
-                                triggerStyle={{ height: "28px" }}
+                                triggerStyle={chipTriggerStyle(!!dateTo)}
                             />
                         </div>
+                        {(filters.date_from || filters.date_to) && (
+                            <div
+                                onClick={() => {
+                                    setDateFrom("");
+                                    setDateTo("");
+                                    onChange({ ...filters, date_from: undefined, date_to: undefined, page: 1 });
+                                    setOpenDropdown(null);
+                                }}
+                                style={{
+                                    marginTop: spacing[1],
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: spacing[1],
+                                    padding: 0,
+                                    lineHeight: 1,
+                                    cursor: "pointer",
+                                    fontSize: fonts.size.xs,
+                                    fontWeight: 400,
+                                    color: colors.fg.dim,
+                                    transition: "color 0.15s",
+                                    flexShrink: 0,
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.color = colors.fg.base;
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.color = colors.fg.dim;
+                                }}
+                            >
+                                <X size={11} />
+                                Limpiar
+                            </div>
+                        )}
                     </DateDropdown>
                 </div>
 
@@ -178,11 +185,9 @@ export function HistoricalFiltersComponent({ filters, onChange }: HistoricalFilt
                         onClick={clearAllFilters}
                         onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = `${colors.accent.red}15`;
-                            e.currentTarget.style.borderColor = `${colors.accent.red}40`;
                         }}
                         onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "transparent";
-                            e.currentTarget.style.borderColor = colors.border;
+                            e.currentTarget.style.backgroundColor = colors.fill;
                         }}
                         title="Limpiar filtros"
                     >

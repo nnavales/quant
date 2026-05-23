@@ -497,7 +497,7 @@ function NetWorthWidget({ networthData, hideFrame = false }: { networthData: Net
             </div>
 
             {(hideFrame || (!hideFrame && assets.length > 0)) && (
-                <div style={{ borderTop: `1px solid ${colors.fill}`, paddingTop: spacing[3], flex: 1, minHeight: 0, display: "flex", flexDirection: "column", gap: spacing[3] }}>
+                <div style={{ borderTop: `1px solid ${colors.fill}`, paddingTop: spacing[3], flex: 1, minHeight: 0, display: "flex", flexDirection: "column", gap: spacing[5] }}>
                     <div style={{ display: "flex", alignItems: "center", gap: spacing[2], flexShrink: 0 }}>
                         <span style={{ fontSize: fonts.size.sm, fontWeight: 600, color: colors.fg.base }}>
                             Activos ({assets.length})
@@ -546,7 +546,7 @@ function NetWorthWidget({ networthData, hideFrame = false }: { networthData: Net
                         )}
                     </div>
                     {filteredAssets.length > 0 ? (
-                        <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: spacing[1], paddingRight: spacing[1], boxSizing: "border-box", maxHeight: hideFrame ? undefined : "244px" }}>
+                        <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: spacing[1], paddingRight: spacing[1], boxSizing: "border-box", maxHeight: hideFrame ? "360px" : "244px" }}>
                             {filteredAssets.map((asset) => (
                                 <AssetRow key={asset.id} asset={asset} />
                             ))}

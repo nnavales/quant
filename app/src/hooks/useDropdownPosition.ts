@@ -3,7 +3,8 @@ import { useLayoutEffect, RefObject } from "react";
 interface UseDropdownPositionOptions {
     margin?: number;
     maxHeight?: number;
-    matchTriggerWidth?: boolean;
+    minWidth?: number;
+    matchTriggerWidth?: boolean | "fixed";
 }
 
 export function useDropdownPosition(
@@ -12,7 +13,7 @@ export function useDropdownPosition(
     isOpen: boolean,
     options: UseDropdownPositionOptions = {}
 ) {
-    const { margin = 8, maxHeight, matchTriggerWidth } = options;
+    const { margin = 8, maxHeight, minWidth = 0, matchTriggerWidth } = options;
 
     useLayoutEffect(() => {
         if (!isOpen || !triggerRef.current || !panelRef.current) return;
@@ -31,8 +32,16 @@ export function useDropdownPosition(
             if (maxHeight) {
                 panel.style.maxHeight = `${maxHeight}px`;
             }
-            if (matchTriggerWidth) {
-                panel.style.minWidth = `${Math.round(rect.width)}px`;
+            if (matchTriggerWidth === "fixed") {
+                const w = Math.max(Math.round(rect.width), minWidth);
+                panel.style.width = `${w}px`;
+                panel.style.minWidth = "";
+            } else if (matchTriggerWidth) {
+                const maxW = panel.style.maxWidth;
+                const maxNum = maxW && /^\d/.test(maxW) ? parseFloat(maxW) : Infinity;
+                const w = Math.max(minWidth, Math.min(Math.round(rect.width), maxNum));
+                panel.style.minWidth = `${w}px`;
+                panel.style.width = "";
             }
 
             const ddHeight = panel.offsetHeight;
@@ -42,7 +51,7 @@ export function useDropdownPosition(
             const spaceAbove = rect.top;
             const placeBottom = spaceBelow >= ddHeight || spaceBelow > spaceAbove;
 
-            let top = placeBottom ? rect.bottom : rect.top - ddHeight;
+            let top = placeBottom ? rect.bottom + margin : rect.top - ddHeight - margin;
             top = Math.max(margin, Math.min(top, window.innerHeight - ddHeight - margin));
 
             let left = rect.left;
@@ -56,7 +65,10 @@ export function useDropdownPosition(
         // Allow browser to finish layout before measuring
         const raf = requestAnimationFrame(update);
 
-        const handleScroll = () => update();
+        const handleScroll = (e: Event) => {
+            if (panel.contains(e.target as Node)) return;
+            update();
+        };
         const handleResize = () => update();
 
         window.addEventListener("scroll", handleScroll, true);

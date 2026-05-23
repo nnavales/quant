@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { RotateCcw, X } from "lucide-react";
+import { Search, RotateCcw, X } from "lucide-react";
 import type { TransactionFilters } from "@/api_client";
 import { colors } from "@/styles/colors";
 import { spacing } from "@/styles/theme";
+import { fonts } from "@/styles/fonts";
 import { filterContainerStyle, dropdownItemStyle, clearButtonStyle, chipTriggerStyle } from "@/styles/filters";
 import { useCategories, useSubcategories, useChannels, useAccounts, useClickOutside, useUserConfig, useCategoryGroups, useAccountGroups } from "@/hooks";
 import { DatePicker } from "@/components/ui/DatePicker";
@@ -19,23 +20,7 @@ const filterWrapperStyle: React.CSSProperties = {
     maxWidth: "160px",
 };
 
-const inputWrapperStyle: React.CSSProperties = {
-    position: "relative",
-    display: "flex",
-    alignItems: "center",
-};
 
-const clearInputStyle: React.CSSProperties = {
-    position: "absolute",
-    right: "6px",
-    background: "none",
-    border: "none",
-    color: colors.fg.dim,
-    cursor: "pointer",
-    padding: "2px",
-    display: "flex",
-    alignItems: "center",
-};
 
 import { getTransactionDatePresets, formatShortDate } from "@/utils/date";
 
@@ -113,7 +98,14 @@ export function TransactionFilters({
         <div>
             <div style={filterContainerStyle} ref={dropdownRef}>
                 {/* Search */}
-                <div style={inputWrapperStyle}>
+                <div style={{
+                    ...chipTriggerStyle(!!filters.search),
+                    gap: spacing[1],
+                    width: "120px",
+                    paddingRight: searchText ? "22px" : "12px",
+                    position: "relative",
+                }}>
+                    <Search size={14} strokeWidth={1.5} color={colors.fg.dim} style={{ flexShrink: 0 }} />
                     <input
                         type="text"
                         placeholder="Buscar..."
@@ -121,17 +113,33 @@ export function TransactionFilters({
                         onChange={(e) => setSearchText(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                         style={{
-                            ...chipTriggerStyle(!!filters.search),
-                            width: "120px",
+                            background: "none",
+                            border: "none",
                             outline: "none",
+                            color: colors.fg.base,
+                            fontFamily: fonts.family.text,
+                            fontSize: fonts.size.sm,
+                            flex: 1,
+                            minWidth: 0,
                         }}
                     />
                     {searchText && (
                         <button
-                            style={clearInputStyle}
                             onClick={() => {
                                 setSearchText("");
                                 onChange({ ...filters, search: undefined });
+                            }}
+                            style={{
+                                position: "absolute",
+                                right: "6px",
+                                background: "none",
+                                border: "none",
+                                color: colors.fg.dim,
+                                cursor: "pointer",
+                                padding: "2px",
+                                display: "flex",
+                                alignItems: "center",
+                                lineHeight: 1,
                             }}
                         >
                             <X size={12} />
@@ -156,40 +164,6 @@ export function TransactionFilters({
                         onToggle={() => toggleDropdown("date")}
                         triggerStyle={chipTriggerStyle(!!filters.date_from || !!filters.date_to)}
                     >
-                        <div
-                            style={{
-                                ...dropdownItemStyle,
-                                backgroundColor:
-                                    !filters.date_from && !filters.date_to
-                                        ? colors.fill
-                                        : "transparent",
-                                fontWeight: !filters.date_from && !filters.date_to ? 500 : 400,
-                                color: colors.fg.dim,
-                            }}
-                            onClick={() => {
-                                setDateFrom("");
-                                setDateTo("");
-                                onChange({
-                                    ...filters,
-                                    date_from: undefined,
-                                    date_to: undefined,
-
-                                });
-                                setOpenDropdown(null);
-                            }}
-                            onMouseEnter={(e) => {
-                                if (filters.date_from || filters.date_to) {
-                                    e.currentTarget.style.backgroundColor = colors.fill;
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                if (filters.date_from || filters.date_to) {
-                                    e.currentTarget.style.backgroundColor = "transparent";
-                                }
-                            }}
-                        >
-                            Todas las fechas
-                        </div>
                         {getTransactionDatePresets(userConfig?.timezone).map((preset) => (
                             <div
                                 key={preset.label}
@@ -223,8 +197,6 @@ export function TransactionFilters({
                                 display: "flex",
                                 flexDirection: "column",
                                 gap: spacing[2],
-                                paddingTop: spacing[1],
-                                borderTop: `1px solid ${colors.fill}`,
                             }}
                         >
                             <DatePicker
@@ -238,7 +210,7 @@ export function TransactionFilters({
                                     });
                                 }}
                                 placeholder="Desde"
-                                triggerStyle={{ height: "28px" }}
+                                triggerStyle={chipTriggerStyle(!!dateFrom)}
                             />
                             <DatePicker
                                 value={dateTo}
@@ -251,9 +223,47 @@ export function TransactionFilters({
                                     });
                                 }}
                                 placeholder="Hasta"
-                                triggerStyle={{ height: "28px" }}
+                                triggerStyle={chipTriggerStyle(!!dateTo)}
                             />
                         </div>
+                        {(filters.date_from || filters.date_to) && (
+                            <div
+                                onClick={() => {
+                                    setDateFrom("");
+                                    setDateTo("");
+                                    onChange({
+                                        ...filters,
+                                        date_from: undefined,
+                                        date_to: undefined,
+                                    });
+                                    setOpenDropdown(null);
+                                }}
+                                style={{
+                                    marginTop: spacing[1],
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: spacing[1],
+                                    padding: 0,
+                                    lineHeight: 1,
+                                    cursor: "pointer",
+                                    fontSize: fonts.size.xs,
+                                    fontWeight: 400,
+                                    color: colors.fg.dim,
+                                    transition: "color 0.15s",
+                                    flexShrink: 0,
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.color = colors.fg.base;
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.color = colors.fg.dim;
+                                }}
+                            >
+                                <X size={11} />
+                                Limpiar
+                            </div>
+                        )}
                     </DateDropdown>
                 </div>
 
@@ -279,48 +289,6 @@ export function TransactionFilters({
                     />
                 </div>
 
-                {/* Currency */}
-                <div style={filterWrapperStyle}>
-                    <Dropdown
-                        options={[
-                            { id: "ARS", label: "ARS" },
-                            { id: "USD", label: "USD" },
-                        ]}
-                        value={filters.currency ?? ""}
-                        onChange={(id) =>
-                            onChange({
-                                ...filters,
-                                currency: (id as "ARS" | "USD") || undefined,
-                                page: 1,
-                            })
-                        }
-                        placeholder="Moneda"
-                        clearable
-                        triggerStyle={chipTriggerStyle(!!filters.currency)}
-                    />
-                </div>
-
-                {/* Frequency */}
-                <div style={filterWrapperStyle}>
-                    <Dropdown
-                        options={[
-                            { id: "fixed", label: "Fija" },
-                            { id: "variable", label: "Variable" },
-                        ]}
-                        value={filters.frequency ?? ""}
-                        onChange={(id) =>
-                            onChange({
-                                ...filters,
-                                frequency: (id as "fixed" | "variable") || undefined,
-                                page: 1,
-                            })
-                        }
-                        placeholder="Frecuencia"
-                        clearable
-                        triggerStyle={chipTriggerStyle(!!filters.frequency)}
-                    />
-                </div>
-
                 {/* Installments */}
                 <div style={filterWrapperStyle}>
                     <Dropdown
@@ -341,29 +309,6 @@ export function TransactionFilters({
                         placeholder="Cuotas"
                         clearable
                         triggerStyle={chipTriggerStyle(filters.installments !== undefined)}
-                    />
-                </div>
-
-                {/* Is Paid */}
-                <div style={filterWrapperStyle}>
-                    <Dropdown
-                        options={[
-                            { id: "true", label: "Cumplidos" },
-                            { id: "false", label: "Pendientes" },
-                        ]}
-                        value={
-                            filters.is_paid === undefined ? "" : String(filters.is_paid)
-                        }
-                        onChange={(id) =>
-                            onChange({
-                                ...filters,
-                                is_paid: id === "" ? undefined : id === "true",
-                                page: 1,
-                            })
-                        }
-                        placeholder="Estado"
-                        clearable
-                        triggerStyle={chipTriggerStyle(filters.is_paid !== undefined)}
                     />
                 </div>
 
@@ -430,16 +375,79 @@ export function TransactionFilters({
                     />
                 </div>
 
+                {/* Currency */}
+                <div style={filterWrapperStyle}>
+                    <Dropdown
+                        options={[
+                            { id: "ARS", label: "ARS" },
+                            { id: "USD", label: "USD" },
+                        ]}
+                        value={filters.currency ?? ""}
+                        onChange={(id) =>
+                            onChange({
+                                ...filters,
+                                currency: (id as "ARS" | "USD") || undefined,
+                                page: 1,
+                            })
+                        }
+                        placeholder="Moneda"
+                        clearable
+                        triggerStyle={chipTriggerStyle(!!filters.currency)}
+                    />
+                </div>
+
+                {/* Frequency */}
+                <div style={filterWrapperStyle}>
+                    <Dropdown
+                        options={[
+                            { id: "fixed", label: "Fija" },
+                            { id: "variable", label: "Variable" },
+                        ]}
+                        value={filters.frequency ?? ""}
+                        onChange={(id) =>
+                            onChange({
+                                ...filters,
+                                frequency: (id as "fixed" | "variable") || undefined,
+                                page: 1,
+                            })
+                        }
+                        placeholder="Frecuencia"
+                        clearable
+                        triggerStyle={chipTriggerStyle(!!filters.frequency)}
+                    />
+                </div>
+
+                {/* Is Paid */}
+                <div style={filterWrapperStyle}>
+                    <Dropdown
+                        options={[
+                            { id: "true", label: "Cumplidos" },
+                            { id: "false", label: "Pendientes" },
+                        ]}
+                        value={
+                            filters.is_paid === undefined ? "" : String(filters.is_paid)
+                        }
+                        onChange={(id) =>
+                            onChange({
+                                ...filters,
+                                is_paid: id === "" ? undefined : id === "true",
+                                page: 1,
+                            })
+                        }
+                        placeholder="Estado"
+                        clearable
+                        triggerStyle={chipTriggerStyle(filters.is_paid !== undefined)}
+                    />
+                </div>
+
                 {hasActiveFilters && (
                     <button
                         onClick={clearAllFilters}
                         onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = `${colors.accent.red}15`;
-                            e.currentTarget.style.borderColor = `${colors.accent.red}40`;
                         }}
                         onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "transparent";
-                            e.currentTarget.style.borderColor = colors.border;
+                            e.currentTarget.style.backgroundColor = colors.fill;
                         }}
                         style={clearButtonStyle}
                         title="Limpiar filtros"

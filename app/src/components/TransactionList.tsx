@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import type { TransactionRowDTO } from "@/api_client";
-import { GroupedTableVirtuoso } from "react-virtuoso";
-import type { GroupedTableVirtuosoHandle } from "react-virtuoso";
+import { TableVirtuoso } from "react-virtuoso";
+import type { TableVirtuosoHandle } from "react-virtuoso";
 import { TransactionRowCells } from "./TransactionRow";
 import { TransactionRowEditCells } from "./TransactionRowEdit";
 import { Check, Minus, ArrowUp } from "lucide-react";
@@ -45,45 +45,6 @@ interface TransactionListProps {
     isAllSelected?: boolean;
 }
 
-const monthNames = [
-    "Enero",
-    "Febrero",
-    "Marzo",
-    "Abril",
-    "Mayo",
-    "Junio",
-    "Julio",
-    "Agosto",
-    "Septiembre",
-    "Octubre",
-    "Noviembre",
-    "Diciembre",
-];
-
-function formatMonth(month: string): string {
-    const [year, num] = month.split("-");
-    const m = monthNames[parseInt(num, 10) - 1];
-    return `${m} ${year}`;
-}
-
-function calcGroupCounts(txns: TransactionRowDTO[]): number[] {
-    if (txns.length === 0) return [];
-    const counts: number[] = [];
-    let currentMonth = txns[0].date.substring(0, 7);
-    let count = 0;
-    for (const tx of txns) {
-        const m = tx.date.substring(0, 7);
-        if (m !== currentMonth) {
-            counts.push(count);
-            currentMonth = m;
-            count = 1;
-        } else {
-            count++;
-        }
-    }
-    counts.push(count);
-    return counts;
-}
 
 export function TransactionList({
     transactions,
@@ -100,7 +61,7 @@ export function TransactionList({
     isAllSelected,
 }: TransactionListProps) {
     const [editingId, setEditingId] = useState<string | null>(null);
-    const virtuosoRef = useRef<GroupedTableVirtuosoHandle>(null);
+    const virtuosoRef = useRef<TableVirtuosoHandle>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -192,29 +153,6 @@ export function TransactionList({
     const fetchNextPageRef = useRef(fetchNextPage);
     fetchNextPageRef.current = fetchNextPage;
 
-    const groupCounts = useMemo(() => calcGroupCounts(transactions), [transactions]);
-
-    const groupMonths = useMemo(() => {
-        const months: string[] = [];
-        let idx = 0;
-        for (const count of groupCounts) {
-            months.push(transactions[idx].date.substring(0, 7));
-            idx += count;
-        }
-        return months;
-    }, [groupCounts, transactions]);
-
-    const groupMonthsRef = useRef(groupMonths);
-    groupMonthsRef.current = groupMonths;
-
-    const monthCache = useMemo(() => {
-        const cache = new Map<string, string>();
-        for (const m of groupMonths) cache.set(m, formatMonth(m));
-        return cache;
-    }, [groupMonths]);
-
-    const monthCacheRef = useRef(monthCache);
-    monthCacheRef.current = monthCache;
 
     useEffect(() => {
         const input = checkboxInputRef.current;
@@ -347,25 +285,8 @@ export function TransactionList({
         );
     }, []);
 
-    const groupContent = useCallback((groupIndex: number) => {
-        const month = groupMonthsRef.current[groupIndex];
-        return (
-            <th
-                colSpan={12}
-                className="group-cell"
-                style={{
-                    fontSize: fonts.table.principal.header,
-                    paddingLeft: "48px",
-                    textAlign: "left",
-                }}
-            >
-                {monthCacheRef.current.get(month) ?? month}
-            </th>
-        );
-    }, []);
-
     const itemContent = useCallback(
-        (_index: number, _groupIndex: number, tx: TransactionRowDTO) => {
+        (_index: number, tx: TransactionRowDTO) => {
             const editId = editingIdRef.current;
             if (editId === tx.id) {
                 return (
@@ -446,7 +367,8 @@ export function TransactionList({
 .virtuoso-table-wrapper.is-scrolling td{pointer-events:none}
 .virtuoso-table-wrapper tbody tr{background:var(--bg-surface)}
 .virtuoso-table-wrapper tbody tr:hover{background:var(--bg-hover)}
-.virtuoso-table-wrapper td{height:30px;padding:${spacing[1]} ${spacing[3]};vertical-align:middle;text-align:center;border-bottom:1px solid var(--fill);border-left:1px solid var(--fill)}
+.virtuoso-table-wrapper tbody tr:hover td:first-child{box-shadow:inset 3px 0 0 0 ${colors.accent.cyan}80}
+.virtuoso-table-wrapper td{padding:${spacing[1]} ${spacing[3]};vertical-align:middle;text-align:center;border-bottom:1px solid var(--fill);border-left:1px solid var(--fill)}
 .virtuoso-table-wrapper td:first-child{border-left:none}
 .virtuoso-table-wrapper .td-center{text-align:center}
 .virtuoso-table-wrapper .td-left{text-align:left}
@@ -473,7 +395,6 @@ export function TransactionList({
 .virtuoso-table-wrapper .td-estado{width:7%;min-width:7%;max-width:7%}
 .virtuoso-table-wrapper .td-opciones{width:8%;min-width:8%;max-width:8%}
 .virtuoso-table-wrapper .th-checkbox{width:36px;min-width:36px;max-width:36px;position:relative}
-.virtuoso-table-wrapper .group-cell{height:32px;padding:${spacing[1]} ${spacing[3]};background:var(--bg-header);font-weight:500;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--fill);color:var(--fg-dim);border-left:none}
 .virtuoso-table-wrapper th{padding:${spacing[2]} ${spacing[3]};font-weight:500;text-transform:uppercase;font-size:${fonts.table.principal.header};letter-spacing:.05em;white-space:nowrap;border-bottom:1px solid var(--fill);border-left:1px solid var(--fill);background:var(--bg-header);z-index:3}
 .virtuoso-table-wrapper .th-sortable{cursor:pointer;user-select:none}
 .virtuoso-table-wrapper .th-sort-icon{font-size:11px;line-height:1;margin-left:${spacing[1]}}
@@ -488,13 +409,11 @@ export function TransactionList({
                     className="virtuoso-table-wrapper"
                     style={{ flex: 1, minHeight: 0, fontSize: fonts.table.principal.body }}
                 >
-                    <GroupedTableVirtuoso<TransactionRowDTO>
+                    <TableVirtuoso<TransactionRowDTO>
                         ref={virtuosoRef}
                         style={{ height: "100%" }}
                         data={transactions}
-                        groupCounts={groupCounts}
                         fixedHeaderContent={fixedHeaderContent}
-                        groupContent={groupContent}
                         itemContent={itemContent}
                         endReached={endReached}
                         increaseViewportBy={VIEWPORT_INCREASE}

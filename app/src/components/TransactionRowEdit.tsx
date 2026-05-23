@@ -33,7 +33,7 @@ const tdStyle: React.CSSProperties = {
     textAlign: "center",
     borderBottom: `1px solid ${colors.fill}`,
     borderLeft: `1px solid ${colors.fill}`,
-    height: "48px",
+    height: "43px",
 };
 
 const fixedWidthStyle = (width: string): React.CSSProperties => ({
@@ -42,7 +42,7 @@ const fixedWidthStyle = (width: string): React.CSSProperties => ({
     maxWidth: width,
 });
 
-const EDIT_ROW_FONT_SIZE = fonts.size.sm;
+const EDIT_ROW_FONT_SIZE = fonts.table.principal.body;
 
 const formInputStyle: React.CSSProperties = {
     width: "100%",
@@ -185,7 +185,7 @@ export function TransactionRowEditCells({ transaction, onSave, onCancel }: Trans
     return (
         <>
             {/* Checkbox placeholder */}
-            <td style={{ ...tdStyle, width: "36px", minWidth: "36px", maxWidth: "36px", borderLeft: `3px solid ${colors.accent.cyan}` }} />
+            <td style={{ ...tdStyle, width: "36px", minWidth: "36px", maxWidth: "36px", borderLeft: `3px solid ${colors.accent.cyan}`, boxShadow: "none" }} />
             {/* Fecha */}
             <td style={{ ...tdStyle, ...fixedWidthStyle("9%") }}>
                 <DatePicker
@@ -230,13 +230,11 @@ export function TransactionRowEditCells({ transaction, onSave, onCancel }: Trans
                             }}
                             style={{
                                 ...formInputStyle,
-                                fontSize: fonts.table.badge,
+                                fontSize: EDIT_ROW_FONT_SIZE,
                                 width: "32px",
-                                height: "20px",
-                                padding: "0 4px",
                             }}
                         />
-                        <span style={{ fontSize: fonts.table.badge, color: colors.fg.dim }}>cuotas</span>
+                        <span style={{ fontSize: EDIT_ROW_FONT_SIZE, color: colors.fg.dim }}>cuotas</span>
                     </div>
                 </div>
             </td>
@@ -250,8 +248,8 @@ export function TransactionRowEditCells({ transaction, onSave, onCancel }: Trans
                         backgroundColor: colors.fill,
                         color: colors.fg.base,
                         cursor: "pointer",
-                        display: "inline-block",
                         userSelect: "none",
+                        fontSize: fonts.table.principal.badge,
                     }}
                 >
                     {formData.type === "expense" ? "Egreso" : "Ingreso"}
@@ -302,8 +300,8 @@ export function TransactionRowEditCells({ transaction, onSave, onCancel }: Trans
                         backgroundColor: colors.fill,
                         color: colors.fg.base,
                         cursor: "pointer",
-                        display: "inline-block",
                         userSelect: "none",
+                        fontSize: fonts.table.principal.badge,
                     }}
                 >
                     {formData.currency}
@@ -376,8 +374,8 @@ export function TransactionRowEditCells({ transaction, onSave, onCancel }: Trans
                         backgroundColor: colors.fill,
                         color: colors.fg.base,
                         cursor: "pointer",
-                        display: "inline-block",
                         userSelect: "none",
+                        fontSize: fonts.table.principal.badge,
                     }}
                 >
                     {formData.frequency === "fixed" ? "Fijo" : "Var"}
@@ -393,8 +391,8 @@ export function TransactionRowEditCells({ transaction, onSave, onCancel }: Trans
                         backgroundColor: colors.fill,
                         color: colors.fg.base,
                         cursor: "pointer",
-                        display: "inline-block",
                         userSelect: "none",
+                        fontSize: fonts.table.principal.badge,
                     }}
                 >
                     {transaction.is_paid ? (transaction.type === "income" ? "Recibido" : "Pagado") : "Pendiente"}

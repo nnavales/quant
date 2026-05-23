@@ -30,8 +30,9 @@ export interface DropdownProps {
     clearLabel?: string;
     triggerStyle?: React.CSSProperties;
     disabled?: boolean;
-    panelWidth?: number | string;
     panelMaxHeight?: number;
+    panelStyle?: React.CSSProperties;
+    fixPanelWidth?: boolean;
 }
 
 const PANEL_BASE: React.CSSProperties = {
@@ -39,20 +40,22 @@ const PANEL_BASE: React.CSSProperties = {
     top: 0,
     left: 0,
     backgroundColor: colors.bg.surface,
-    border: `1px solid ${colors.border}`,
+    border: "none",
     borderRadius: radius.md,
     padding: spacing[2],
     zIndex: 1001,
     display: "flex",
     flexDirection: "column",
-    gap: spacing[1],
-    overflow: "hidden",
+    gap: "2px",
+    minWidth: "160px",
+    maxWidth: "280px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06)",
 };
 
 const ITEM_BASE: React.CSSProperties = {
     padding: `${spacing[1]} ${spacing[2]}`,
     cursor: "pointer",
-    borderRadius: radius.sm,
+    borderRadius: "8px",
     fontSize: fonts.size.sm,
     color: colors.fg.base,
     transition: "background-color 0.1s",
@@ -68,11 +71,11 @@ export function Dropdown({
     placeholder = "Seleccionar...",
     searchable = false,
     clearable = false,
-    clearLabel = "Todas",
     triggerStyle,
     disabled = false,
-    panelWidth = 260,
     panelMaxHeight = 320,
+    panelStyle,
+    fixPanelWidth,
 }: DropdownProps) {
     const instanceId = useRef(++instanceCounter);
     const [isOpen, setIsOpen] = useState(false);
@@ -81,7 +84,8 @@ export function Dropdown({
     const searchRef = useRef<HTMLInputElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
 
-    useDropdownPosition(triggerRef, panelRef, isOpen, { maxHeight: panelMaxHeight });
+    const matchMode = fixPanelWidth ? "fixed" : true;
+    useDropdownPosition(triggerRef, panelRef, isOpen, { maxHeight: panelMaxHeight, matchTriggerWidth: matchMode, minWidth: 160 });
 
     const resolvedGroups = useMemo<DropdownGroup[]>(() => {
         if (groups) return groups;
@@ -227,8 +231,8 @@ export function Dropdown({
                     data-dropdown-panel
                     style={{
                         ...PANEL_BASE,
+                        ...panelStyle,
                         visibility: "hidden",
-                        width: typeof panelWidth === "number" ? `${panelWidth}px` : panelWidth,
                         maxHeight: `${panelMaxHeight}px`,
                     }}
                 >
@@ -237,15 +241,17 @@ export function Dropdown({
                             style={{
                                 display: "flex",
                                 alignItems: "center",
-                                gap: spacing[2],
-                                padding: `${spacing[1]} ${spacing[2]}`,
-                                backgroundColor: colors.bg.surface,
-                                borderRadius: radius.sm,
-                                border: `1px solid ${colors.fill}`,
+                                gap: spacing[1],
+                                padding: `0 ${spacing[2]}`,
+                                backgroundColor: colors.fill,
+                                borderRadius: "8px",
+                                height: "26px",
                                 flexShrink: 0,
+                                boxSizing: "border-box",
+                                marginBottom: spacing[1],
                             }}
                         >
-                            <Search size={14} color={colors.fg.dim} />
+                            <Search size={14} strokeWidth={1.5} color={colors.fg.dim} style={{ flexShrink: 0 }} />
                             <input
                                 ref={searchRef}
                                 type="text"
@@ -258,8 +264,10 @@ export function Dropdown({
                                     border: "none",
                                     outline: "none",
                                     color: colors.fg.base,
+                                    fontFamily: fonts.family.text,
                                     fontSize: fonts.size.sm,
                                     padding: 0,
+                                    minWidth: 0,
                                 }}
                             />
                             {search && (
@@ -274,10 +282,11 @@ export function Dropdown({
                                         border: "none",
                                         color: colors.fg.dim,
                                         cursor: "pointer",
-                                        fontSize: fonts.size.xs,
                                         padding: 0,
                                         display: "flex",
                                         alignItems: "center",
+                                        lineHeight: 1,
+                                        flexShrink: 0,
                                     }}
                                 >
                                     <X size={12} />
@@ -308,30 +317,6 @@ export function Dropdown({
                                 }}
                             >
                                 Sin resultados
-                            </div>
-                        )}
-
-                        {clearable && hasResults && (
-                            <div
-                                onClick={() => handleSelect("")}
-                                style={{
-                                    ...ITEM_BASE,
-                                    backgroundColor: value === "" ? colors.fill : "transparent",
-                                    fontWeight: value === "" ? 500 : 400,
-                                    color: colors.fg.dim,
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (value !== "") {
-                                        e.currentTarget.style.backgroundColor = colors.fill;
-                                    }
-                                }}
-                                onMouseLeave={(e) => {
-                                    if (value !== "") {
-                                        e.currentTarget.style.backgroundColor = "transparent";
-                                    }
-                                }}
-                            >
-                                {clearLabel}
                             </div>
                         )}
 
@@ -370,7 +355,7 @@ export function Dropdown({
                                             paddingLeft: group.label ? "16px" : spacing[2],
                                             display: "flex",
                                             alignItems: "center",
-                                            gap: spacing[2],
+    gap: spacing[1],
                                         }}
                                         onMouseEnter={(e) => {
                                             if (!item.disabled && item.id !== value) {
@@ -400,6 +385,35 @@ export function Dropdown({
                             </div>
                         ))}
                     </div>
+                    {clearable && value !== "" && (
+                        <div
+                            onClick={() => handleSelect("")}
+                            style={{
+                                marginTop: spacing[1],
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: spacing[1],
+                                padding: 0,
+                                lineHeight: 1,
+                                cursor: "pointer",
+                                fontSize: fonts.size.xs,
+                                fontWeight: 400,
+                                color: colors.fg.dim,
+                                transition: "color 0.15s",
+                                flexShrink: 0,
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.color = colors.fg.base;
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.color = colors.fg.dim;
+                            }}
+                        >
+                            <X size={11} />
+                            Limpiar
+                        </div>
+                    )}
                 </div>
             )}
         </>

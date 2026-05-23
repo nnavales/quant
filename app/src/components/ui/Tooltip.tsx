@@ -38,7 +38,7 @@ export function Tooltip({ content, children, alwaysShow = false }: TooltipProps)
         const trigger = triggerRef.current;
         if (!tooltip || !trigger) return;
 
-        const pad = 12;
+        const pad = 16;
         const vw = window.innerWidth;
         const vh = window.innerHeight;
 
@@ -98,7 +98,7 @@ export function Tooltip({ content, children, alwaysShow = false }: TooltipProps)
         const tooltip = tooltipRef.current;
         if (!tooltip) return;
 
-        const pad = 12;
+        const pad = 16;
         const vw = window.innerWidth;
         const vh = window.innerHeight;
         const rect = tooltip.getBoundingClientRect();
@@ -143,7 +143,7 @@ export function Tooltip({ content, children, alwaysShow = false }: TooltipProps)
                     ref={tooltipRef}
                     style={{
                         ...tooltipBaseStyle,
-                        maxWidth: Math.min(260, window.innerWidth - 24),
+                        maxWidth: Math.min(260, window.innerWidth - 32),
                         minWidth: alwaysShow ? 180 : undefined,
                         opacity: show ? 1 : 0,
                     }}

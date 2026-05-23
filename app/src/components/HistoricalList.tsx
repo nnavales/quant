@@ -190,6 +190,8 @@ export function HistoricalList({
                 .historical-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
                 .historical-table thead { position: sticky; top: 0; z-index: 1; }
                 .historical-table thead th { background-color: ${colors.bg.header}; }
+                .historical-table tbody tr:hover{background:${colors.bg.hover}}
+                .historical-table tbody tr:hover td:first-child{box-shadow:inset 3px 0 0 0 ${colors.accent.cyan}80}
                 .historical-scroll::-webkit-scrollbar { width: 8px; }
                 .historical-scroll::-webkit-scrollbar-track { background: transparent; }
                 .historical-scroll::-webkit-scrollbar-thumb { background: ${colors.fill}; border-radius: 4px; }
@@ -251,19 +253,7 @@ export function HistoricalList({
                     <tbody>
                         {entries.map((entry) => {
                             return (
-                                <tr
-                                    key={entry.month}
-                                    style={{
-                                        transition: "background-color 0.15s",
-                                        backgroundColor: "transparent",
-                                    }}
-                                    onMouseEnter={(e) =>
-                                        (e.currentTarget.style.backgroundColor = colors.bg.hover)
-                                    }
-                                    onMouseLeave={(e) =>
-                                        (e.currentTarget.style.backgroundColor = "")
-                                    }
-                                >
+                                <tr key={entry.month}>
                                     <td
                                         style={{
                                             ...tdStyle,
