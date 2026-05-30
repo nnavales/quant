@@ -134,6 +134,10 @@ func (h *Handler) UpdateTransactionAggregate(w http.ResponseWriter, r *http.Requ
 		httpx.WriteServiceError(w, r, err)
 		return
 	}
+	if agg == nil {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	httpx.WriteJSON(w, http.StatusOK, agg)
 }
 

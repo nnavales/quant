@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { X, Check, ChevronRight, CreditCard, Wallet, Plus, RotateCcw, Pencil, Trash2 } from "lucide-react";
-import type { Channel, Account, Instrument } from "@/api_client/types";
+import { X, Check, ChevronRight, Plus, RotateCcw, Pencil, Trash2 } from "lucide-react";
+import type { Channel, Account } from "@/api_client/types";
 import {
     useGroupedChannels,
     useChannelsWithAccounts,
@@ -21,40 +21,12 @@ import { InputGroup } from "./ui/InputGroup";
 import { Button } from "@/components/ui/Button";
 import { toast } from "@/utils/toast";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
-import { Dropdown } from "./ui/Dropdown";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
-import { cardStyle, rowStyle } from "@/styles/layout";
-
-const instrumentLabels: Record<Instrument, string> = {
-    credit_card: "Crédito",
-    debit_card: "Débito",
-    transfer: "Transferencia",
-    cash: "Efectivo",
-    crypto: "Cripto",
-};
-
-const instrumentIcons: Record<Instrument, React.ElementType> = {
-    credit_card: CreditCard,
-    debit_card: CreditCard,
-    transfer: Wallet,
-    cash: Wallet,
-    crypto: Wallet,
-};
-
-const inputStyle: React.CSSProperties = {
-    height: "28px",
-    padding: `0 ${spacing[3]}`,
-    backgroundColor: colors.bg.surface,
-    border: `1px solid ${colors.fill}`,
-    borderRadius: radius.md,
-    color: colors.fg.base,
-    fontSize: fonts.size.sm,
-    outline: "none",
-    boxSizing: "border-box",
-};
+import { cardStyle, rowStyle, inputStyle, flexBetween, flexColumn, flexRow, truncate } from "@/styles/layout";
+import { SettingsCard } from "@/components/SettingsCard";
 
 export function ChannelAccountManager() {
     const queryClient = useQueryClient();
@@ -76,13 +48,11 @@ export function ChannelAccountManager() {
 
     const [newChannelName, setNewChannelName] = useState("");
     const [newAccountName, setNewAccountName] = useState("");
-    const [newAccountInstrument, setNewAccountInstrument] = useState<Instrument>("debit_card");
 
     const [editingChannelId, setEditingChannelId] = useState<string | null>(null);
     const [editingChannelName, setEditingChannelName] = useState("");
     const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
     const [editingAccountName, setEditingAccountName] = useState("");
-    const [editingAccountInstrument, setEditingAccountInstrument] = useState<Instrument>("debit_card");
 
     const [showAccountForm, setShowAccountForm] = useState<string | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; type: "channel" | "account" } | null>(null);
@@ -137,12 +107,11 @@ export function ChannelAccountManager() {
             {
                 name,
                 channel_id: channelId,
-                instrument: newAccountInstrument,
+                instrument: "transfer",
             },
             {
                 onSuccess: () => {
                     setNewAccountName("");
-                    setNewAccountInstrument("debit_card");
                     setShowAccountForm(null);
                     refetch();
                     toast("Cuenta creada", "success");
@@ -269,7 +238,6 @@ export function ChannelAccountManager() {
     const startEditAccount = (acc: Account) => {
         setEditingAccountId(acc.id);
         setEditingAccountName(acc.name);
-        setEditingAccountInstrument(acc.instrument);
     };
 
     const saveEditAccount = () => {
@@ -280,10 +248,9 @@ export function ChannelAccountManager() {
         }
         const allAccs = channelGroups.flatMap((g) => g.accounts);
         const originalAcc = allAccs.find((a) => a.id === editingAccountId);
-        if (originalAcc && originalAcc.name === name && originalAcc.instrument === editingAccountInstrument) {
+        if (originalAcc && originalAcc.name === name) {
             setEditingAccountId(null);
             setEditingAccountName("");
-            setEditingAccountInstrument("debit_card");
             return;
         }
         const parentGroup = channelGroups.find((g) => g.accounts.some((a) => a.id === editingAccountId));
@@ -299,14 +266,12 @@ export function ChannelAccountManager() {
                 id: editingAccountId,
                 data: {
                     name,
-                    instrument: editingAccountInstrument,
                 },
             },
             {
                 onSuccess: () => {
                     setEditingAccountId(null);
                     setEditingAccountName("");
-                    setEditingAccountInstrument("debit_card");
                     toast("Cuenta actualizada", "success");
                     refetch();
                 },
@@ -321,56 +286,67 @@ export function ChannelAccountManager() {
     const deletedGroups = channelGroups.filter((g) => g.channel.deleted_at);
 
     return (
-        <div>
-            <InputGroup
-                placeholder="Nuevo canal..."
-                value={newChannelName}
-                onChange={setNewChannelName}
-                onSubmit={handleAddChannel}
-                buttonLabel="Agregar"
-            />
+        <div style={{ ...flexColumn, gap: spacing[4] }}>
+            <SettingsCard>
+                <InputGroup
+                    placeholder="Nuevo canal..."
+                    value={newChannelName}
+                    onChange={setNewChannelName}
+                    onSubmit={handleAddChannel}
+                    buttonLabel="Agregar"
+                />
+            </SettingsCard>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: spacing[3] }}>
+            <div style={{ ...flexColumn, gap: spacing[3] }}>
                 {activeGroups.map((group) => (
                     <div
                         key={group.channel.id}
-                        style={cardStyle}
+                        style={{ ...cardStyle, backgroundColor: colors.bg.elevated }}
                     >
                         {editingChannelId === group.channel.id ? (
-                            <div style={{ display: "flex", gap: spacing[2], alignItems: "center" }}>
-                                <input
-                                    type="text"
-                                    value={editingChannelName}
-                                    onChange={(e) => setEditingChannelName(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") saveEditChannel();
-                                        if (e.key === "Escape") setEditingChannelId(null);
-                                    }}
-                                    onBlur={saveEditChannel}
-                                    autoFocus
-                                    style={{ ...inputStyle, flex: 1 }}
-                                />
-                                <Button variant="icon" onClick={saveEditChannel}>
-                                    <Check size={14} />
-                                </Button>
-                                <Button variant="icon" onClick={() => setEditingChannelId(null)}>
-                                    <X size={14} />
-                                </Button>
+                            <div style={{ ...flexBetween, gap: spacing[5] }}>
+                                <div style={{ ...flexRow, gap: spacing[2], flex: 1, minWidth: 0 }}>
+                                    <ChevronRight
+                                        size={16}
+                                        style={{ color: colors.fg.dim, flexShrink: 0, transition: "transform 0.15s", transform: expandedChannels.has(group.channel.id) ? "rotate(90deg)" : "rotate(0deg)", cursor: "pointer" }}
+                                        onClick={() => toggleExpandChannel(group.channel.id)}
+                                    />
+                                    <div style={{ display: "flex", gap: spacing[2], alignItems: "center", flex: 1, padding: spacing[1], backgroundColor: colors.bg.surface, borderRadius: radius.md, overflow: "hidden", height: "32px" }}>
+                                        <input
+                                            type="text"
+                                            value={editingChannelName}
+                                            onChange={(e) => setEditingChannelName(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") saveEditChannel();
+                                                if (e.key === "Escape") setEditingChannelId(null);
+                                            }}
+                                            onBlur={saveEditChannel}
+                                            autoFocus
+                                            style={{ ...inputStyle, flex: 1, border: "none", minWidth: 0 }}
+                                        />
+                                        {group.channel.id !== "__uncategorized__" && (
+                                            <span style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
+                                                <Button variant="icon" onClick={saveEditChannel}>
+                                                    <Check size={14} />
+                                                </Button>
+                                                <Button variant="icon" onClick={() => setEditingChannelId(null)}>
+                                                    <X size={14} />
+                                                </Button>
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         ) : (
                             <div
                                 style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
+                                    ...flexBetween,
                                     gap: spacing[5],
-                                    marginBottom: expandedChannels.has(group.channel.id) ? spacing[3] : 0,
                                 }}
                             >
                                 <div
                                     style={{
-                                        display: "flex",
-                                        alignItems: "center",
+                                        ...flexRow,
                                         gap: spacing[2],
                                         cursor: "pointer",
                                         flex: 1,
@@ -387,17 +363,12 @@ export function ChannelAccountManager() {
                                             transform: expandedChannels.has(group.channel.id) ? "rotate(90deg)" : "rotate(0deg)",
                                         }}
                                     />
-                                    <span style={{
-                                        fontWeight: 600,
+                                    <span style={{...truncate, fontWeight: fonts.weight.semibold,
                                         color: colors.fg.base,
                                         fontSize: fonts.size.sm,
                                         flex: 1,
                                         minWidth: 0,
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                        paddingRight: spacing[2],
-                                    }}>
+                                        paddingRight: spacing[2]}}>
                                         {group.channel.name}
                                     </span>
                                 </div>
@@ -415,11 +386,11 @@ export function ChannelAccountManager() {
                         )}
 
                         {expandedChannels.has(group.channel.id) && (
-                            <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: spacing[1], marginTop: spacing[3], paddingLeft: spacing[6], borderLeft: `1px solid ${colors.fill}` }}>
                                 {group.accounts.filter(a => !a.deleted_at).map((acc) => (
                                     <div key={acc.id}>
                                         {editingAccountId === acc.id ? (
-                                            <div style={{ display: "flex", gap: spacing[2], flexWrap: "nowrap", alignItems: "center", padding: spacing[2], backgroundColor: colors.fill, borderRadius: radius.md, border: `1px solid ${colors.border}` }}>
+                                            <div style={{ display: "flex", gap: spacing[2], alignItems: "center", padding: spacing[1], backgroundColor: colors.bg.surface, borderRadius: radius.md, overflow: "hidden", height: "32px" }}>
                                                 <input
                                                     type="text"
                                                     value={editingAccountName}
@@ -430,51 +401,22 @@ export function ChannelAccountManager() {
                                                     }}
                                                     autoFocus
                                                     placeholder="Nombre"
-                                                    style={{ ...inputStyle, flex: 1, minWidth: 0 }}
+                                                    style={{ ...inputStyle, flex: 1, minWidth: 0, border: "none" }}
                                                 />
-                                                <div style={{ flex: "0 0 130px", minWidth: 0 }}>
-                                                    <Dropdown
-                                                        options={[
-                                                            { id: "debit_card", label: "Débito" },
-                                                            { id: "credit_card", label: "Crédito" },
-                                                            { id: "transfer", label: "Transferencia" },
-                                                            { id: "cash", label: "Efectivo" },
-                                                        ]}
-                                                        value={editingAccountInstrument}
-                                                        onChange={(id) => setEditingAccountInstrument(id as Instrument)}
-                                                        placeholder="Instrumento"
-                                                        triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                                                    />
-                                                </div>
                                                 <div style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
                                                     <Button variant="icon" onClick={saveEditAccount}>
-                                                        <Check size={12} />
+                                                        <Check size={14} />
                                                     </Button>
                                                     <Button variant="icon" onClick={() => setEditingAccountId(null)}>
-                                                        <X size={12} />
+                                                        <X size={14} />
                                                     </Button>
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div style={{ ...rowStyle, gap: spacing[5] }}>
-                                                <div style={{ display: "flex", alignItems: "center", gap: spacing[2], flex: 1, minWidth: 0, overflow: "hidden" }}>
-                                                    <span style={{ color: colors.fg.dim, display: "flex", flexShrink: 0 }}>
-                                                        {(() => {
-                                                            const Icon = instrumentIcons[acc.instrument];
-                                                            return <Icon size={14} />;
-                                                        })()}
-                                                    </span>
-                                                    <span style={{
-                                                        fontSize: fonts.size.sm,
-                                                        color: colors.fg.base,
-                                                        overflow: "hidden",
-                                                        textOverflow: "ellipsis",
-                                                        whiteSpace: "nowrap",
-                                                    }}>
+                                            <div style={{ ...rowStyle, paddingRight: 0, gap: spacing[5] }}>
+                                                <div style={{ ...flexRow, gap: spacing[2], flex: 1, minWidth: 0, overflow: "hidden" }}>
+                                                    <span style={{...truncate, fontSize: fonts.size.sm, color: colors.fg.base}}>
                                                         {acc.name}
-                                                    </span>
-                                                    <span style={{ fontSize: fonts.size.xs, color: colors.fg.dim, flexShrink: 0 }}>
-                                                        {instrumentLabels[acc.instrument]}
                                                     </span>
                                                 </div>
                                                 <div style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
@@ -491,15 +433,9 @@ export function ChannelAccountManager() {
                                 ))}
 
                                 {group.accounts.filter(a => a.deleted_at).map((acc) => (
-                                    <div key={acc.id} style={{ ...rowStyle, opacity: 0.6, backgroundColor: colors.bg.surface, gap: spacing[5] }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: spacing[2], flex: 1, minWidth: 0, overflow: "hidden" }}>
-                                            <span style={{ color: colors.fg.dim, display: "flex", flexShrink: 0 }}>
-                                                {(() => {
-                                                    const Icon = instrumentIcons[acc.instrument];
-                                                    return <Icon size={14} />;
-                                                })()}
-                                            </span>
-                                            <span style={{ fontSize: fonts.size.sm, color: colors.fg.dim, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    <div key={acc.id} style={{ ...rowStyle, opacity: 0.6, backgroundColor: colors.bg.surface, paddingRight: 0, gap: spacing[5] }}>
+                                        <div style={{ ...flexRow, gap: spacing[2], flex: 1, minWidth: 0, overflow: "hidden" }}>
+                                            <span style={{...truncate, fontSize: fonts.size.sm, color: colors.fg.dim}}>
                                                 {acc.name}
                                             </span>
                                         </div>
@@ -515,36 +451,22 @@ export function ChannelAccountManager() {
                                 ))}
 
                                 {showAccountForm === group.channel.id ? (
-                                    <div style={{ display: "flex", gap: spacing[2], flexWrap: "nowrap", alignItems: "center", padding: spacing[2], backgroundColor: colors.fill, borderRadius: radius.md, border: `1px solid ${colors.border}` }}>
+                                    <div style={{ display: "flex", gap: spacing[2], alignItems: "center", padding: spacing[1], backgroundColor: colors.bg.surface, borderRadius: radius.md, overflow: "hidden", height: "32px" }}>
                                         <input
                                             type="text"
                                             placeholder="Nombre cuenta..."
                                             value={newAccountName}
                                             onChange={(e) => setNewAccountName(e.target.value)}
                                             onKeyDown={(e) => e.key === "Enter" && handleAddAccount(group.channel.id)}
-                                            style={{ ...inputStyle, flex: 1, minWidth: 0 }}
+                                            style={{ ...inputStyle, flex: 1, minWidth: 0, border: "none" }}
                                             autoFocus
                                         />
-                                        <div style={{ flex: "0 0 130px", minWidth: 0 }}>
-                                            <Dropdown
-                                                options={[
-                                                    { id: "debit_card", label: "Débito" },
-                                                    { id: "credit_card", label: "Crédito" },
-                                                    { id: "transfer", label: "Transferencia" },
-                                                    { id: "cash", label: "Efectivo" },
-                                                ]}
-                                                value={newAccountInstrument}
-                                                onChange={(id) => setNewAccountInstrument(id as Instrument)}
-                                                placeholder="Instrumento"
-                                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                                            />
-                                        </div>
                                         <div style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
                                             <Button variant="icon" onClick={() => handleAddAccount(group.channel.id)}>
-                                                <Check size={12} />
+                                                <Check size={14} />
                                             </Button>
                                             <Button variant="icon" onClick={() => setShowAccountForm(null)}>
-                                                <X size={12} />
+                                                <X size={14} />
                                             </Button>
                                         </div>
                                     </div>
@@ -553,22 +475,24 @@ export function ChannelAccountManager() {
                                         <button
                                             type="button"
                                             onClick={() => setShowAccountForm(group.channel.id)}
+                                            onMouseEnter={(e) => { e.currentTarget.style.color = colors.fg.base; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.color = colors.fg.dim; }}
                                             style={{
                                                 display: "inline-flex",
                                                 alignItems: "center",
                                                 gap: spacing[1],
                                                 padding: `${spacing[1]} ${spacing[2]}`,
-                                                fontSize: fonts.size.xs,
+                                                fontSize: fonts.size.sm,
                                                 backgroundColor: "transparent",
                                                 border: "none",
                                                 color: colors.fg.dim,
                                                 cursor: "pointer",
-                                                fontWeight: 500,
-                                                fontFamily: fonts.family.text,
+                                                fontWeight: fonts.weight.medium,
+                                                fontFamily: fonts.family,
                                                 whiteSpace: "nowrap",
                                             }}
                                         >
-                                            <Plus size={12} />
+                                            <Plus size={14} />
                                             Agregar cuenta
                                         </button>
                                     )
@@ -581,10 +505,10 @@ export function ChannelAccountManager() {
 
             {deletedGroups.length > 0 && (
                 <div style={{ marginTop: spacing[6] }}>
-                    <h4 style={{ color: colors.fg.dim, fontSize: fonts.size.sm, marginBottom: spacing[3], fontWeight: 500 }}>
+                    <h4 style={{ color: colors.fg.dim, fontSize: fonts.size.sm, marginBottom: spacing[3], fontWeight: fonts.weight.medium }}>
                         Canales borrados
                     </h4>
-                    <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
+                    <div style={{ ...flexColumn, gap: spacing[2] }}>
                         {deletedGroups.map((group) => (
                             <div
                                 key={group.channel.id}

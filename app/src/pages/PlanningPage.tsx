@@ -4,13 +4,17 @@ import type { PlanningInput } from "@/api_client/types";
 import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, PiggyBank, Wallet, Settings2, LayoutGrid } from "lucide-react";
+import { inputStyle, labelStyle } from "@/styles/formStyles";
+import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, PiggyBank, Wallet, Settings2, LayoutGrid, BarChart3, Target, Plus } from "lucide-react";
 import { toast } from "@/utils/toast";
-import { KPICard } from "@/components/KPICard";
-import { Modal, ModalContent } from "@/components/ui/Modal";
+import { KPICardToggle } from "@/components/KPICardToggle";
+import { Modal, ModalContent, ModalCloseButton } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 import { PlanningForecastTable } from "@/components/PlanningForecastTable";
 import { PlanningPlanTable } from "@/components/PlanningPlanTable";
+import { formatForInput, parseLocaleNumber } from "@/utils/format";
+import { flexBetween, flexColumn, flexRow, ghostButton } from "@/styles/layout";
 
 type Tab = "forecast" | "plan";
 
@@ -46,14 +50,18 @@ export function PlanningPage() {
     const startCellEdit = useCallback((id: string, key: string, currentValue: string | undefined) => {
         setEditingCell({ id, key });
         const v = currentValue && currentValue !== "0" ? currentValue : "";
-        setEditCellVal(v);
+        const formatted = key === "description" ? v : (v ? formatForInput(v) : "");
+        setEditCellVal(formatted);
         setEditOriginalVal(v);
     }, []);
 
     const saveCellEdit = useCallback(() => {
         if (!editingCell) return;
-        const val = editingCell.key === "description" ? (editCellVal.trim() || editOriginalVal) : (editCellVal || "0");
-        if (editCellVal === editOriginalVal || val === editOriginalVal) {
+        const isNumeric = editingCell.key !== "description";
+        const normalized = isNumeric ? String(parseLocaleNumber(editCellVal || "0")) : editCellVal.trim();
+        const normalizedOriginal = isNumeric ? String(parseLocaleNumber(editOriginalVal || "0")) : editOriginalVal;
+        const val = isNumeric ? normalized : (normalized || editOriginalVal);
+        if (normalized === normalizedOriginal) {
             setEditingCell(null);
             setEditCellVal("");
             return;
@@ -94,14 +102,16 @@ export function PlanningPage() {
             : (planData?.goals || []).find((g) => g.metric === "expense");
         setPlanEditingCell({ id: goal?.id ?? null, key, metric });
         const v = value && value !== "0" ? value : "";
-        setPlanEditCellVal(v);
+        setPlanEditCellVal(v ? formatForInput(v) : "");
         setPlanEditOriginalVal(v);
     }, [planData]);
 
     const savePlanCellEdit = useCallback(() => {
         if (!planEditingCell) return;
-        const val = planEditCellVal || "0";
-        if (planEditCellVal === planEditOriginalVal || val === planEditOriginalVal) {
+        const normalized = String(parseLocaleNumber(planEditCellVal || "0"));
+        const normalizedOriginal = String(parseLocaleNumber(planEditOriginalVal || "0"));
+        const val = normalized || "0";
+        if (normalized === normalizedOriginal) {
             setPlanEditingCell(null);
             setPlanEditCellVal("");
             return;
@@ -127,8 +137,8 @@ export function PlanningPage() {
         setPlanEditCellVal("");
     }, []);
 
-    const [hoveredRow, setHoveredRow] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<Tab>("forecast");
+    const [yearBtnHover, setYearBtnHover] = useState<string | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; desc: string } | null>(null);
 
     const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -153,9 +163,9 @@ export function PlanningPage() {
     const [newCurrency, setNewCurrency] = useState<"ARS" | "USD">("USD");
     const [newAmounts, setNewAmounts] = useState<string[]>(Array(12).fill(""));
 
-    const handleOpenNew = useCallback(() => {
+    const handleOpenNew = useCallback((type: "income" | "expense" = "expense") => {
         setNewDesc("");
-        setNewType("expense");
+        setNewType(type);
         setNewCurrency("USD");
         setNewAmounts(Array(12).fill(""));
         setShowNewModal(true);
@@ -226,23 +236,22 @@ export function PlanningPage() {
         const savingsMargin = hasSavingsMargin ? savings / income : 0;
         const initialCap = kpiMonths.length > 0 ? (centsToNum(kpiMonths[0].capital) ?? 0) - (centsToNum(kpiMonths[0].savings) ?? 0) : 0;
         const hasCapGrowth = capital > 0 && initialCap > 0;
-        const capGrowth = hasCapGrowth ? (capital - initialCap) / capital : 0;
+        const capGrowth = hasCapGrowth ? (capital - initialCap) / initialCap : 0;
 
 const isPlan = activeTab === "plan";
-         const incomeLabel = isPlan ? "Ingreso Objetivo" : "Ingresos Proyectados";
-         const expenseLabel = isPlan ? "Egreso Objetivo" : "Gastos Proyectados";
-         const savingsLabel = isPlan ? "Ahorro Neto Objetivo" : "Ahorro Neto Proyectado";
-         const capitalLabel = isPlan ? "Patrimonio Neto Objetivo" : "Patrimonio Neto Proyectado";
+         const incomeLabel = isPlan ? "Ingreso Objetivo Anual" : "Ingresos Proyectados Anual";
+         const expenseLabel = isPlan ? "Egreso Objetivo Anual" : "Egresos Proyectados Anual";
+         const savingsLabel = isPlan ? "Ahorro Neto Objetivo Anual" : "Ahorro Neto Proyectado Anual";
+         const capitalLabel = isPlan ? "Patrimonio Neto Objetivo Anual" : "Patrimonio Neto Proyectado Anual";
 
           return (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: spacing[3] }}>
-                <KPICard
+                <KPICardToggle
                     label={capitalLabel}
                     value={capital}
                     format="currency"
                     icon={Wallet}
                     iconColor={colors.accent.blue}
-                    year={year}
                     tooltip={isPlan
                         ? "Capital acumulado objetivo al cierre del año."
                         : "Capital acumulado proyectado al cierre del año, incluyendo el capital inicial."}
@@ -250,40 +259,37 @@ const isPlan = activeTab === "plan";
                     changeDiffColor={hasCapGrowth ? (capGrowth >= 0 ? colors.accent.green : colors.accent.red) : undefined}
                     changeDiffLabel={hasCapGrowth ? "crecimiento acumulado" : undefined}
                 />
-                <KPICard
+                <KPICardToggle
                     label={savingsLabel}
                     value={savings}
                     format="currency"
                     icon={PiggyBank}
                     iconColor={colors.accent.cyan}
-                    year={year}
                     tooltip={isPlan
-                        ? "Diferencia entre ingresos y gastos objetivo."
-                        : "Diferencia entre ingresos y gastos proyectados para el año."}
+                        ? "Diferencia entre ingresos y egresos objetivo."
+                        : "Diferencia entre ingresos y egresos proyectados para el año."}
                     changeDiff={hasSavingsMargin ? `${(savingsMargin * 100).toFixed(1)}%` : undefined}
                     changeDiffColor={hasSavingsMargin ? (savingsMargin >= 0 ? colors.accent.green : colors.accent.red) : undefined}
                     changeDiffLabel={hasSavingsMargin ? "margen de ahorro" : undefined}
                 />
-                <KPICard
+                <KPICardToggle
                     label={expenseLabel}
                     value={expense}
                     format="currency"
                     icon={TrendingDown}
                     iconColor={colors.accent.red}
-                    year={year}
                     tooltip={isPlan
                         ? "Egresos objetivo según los objetivos de planificación."
                         : "Egresos totales proyectados según los conceptos cargados en el forecast anual."}
                     changeDiff={`${(expensePct * 100).toFixed(1)}%`}
                     changeDiffLabel="del total operado"
                 />
-                <KPICard
+                <KPICardToggle
                     label={incomeLabel}
                     value={income}
                     format="currency"
                     icon={TrendingUp}
                     iconColor={colors.accent.green}
-                    year={year}
                     tooltip={isPlan
                         ? "Ingresos objetivo según los objetivos de planificación."
                         : "Ingresos totales proyectados según los conceptos cargados en el forecast anual."}
@@ -294,135 +300,186 @@ const isPlan = activeTab === "plan";
         );
     })();
 
-    if (isLoading) {
-        return (
-            <div style={{ padding: spacing[4], color: colors.fg.dim, textAlign: "center", fontSize: fonts.size.sm }}>
-                Cargando...
-            </div>
-        );
-    }
-
     return (
-        <div style={{ padding: spacing[3], display: "flex", flexDirection: "column", gap: spacing[4], animation: "fadeIn 0.2s ease-out" }}>
+        <div style={{ padding: spacing[3], ...flexColumn, gap: spacing[3], height: "100%", boxSizing: "border-box", animation: "fadeIn 0.2s ease-out" }}>
             <style>{`
                 .planning-scroll::-webkit-scrollbar { display: none; }
                 .planning-scroll { scrollbar-width: none; -ms-overflow-style: none; }
             `}</style>
             {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                    <h1
-                        onClick={() => setActiveTab(activeTab === "forecast" ? "plan" : "forecast")}
-                        title="Clic para cambiar de tabla"
-                        style={{
-                            fontFamily: fonts.family.display,
-                            fontSize: fonts.size.xl,
-                            fontWeight: fonts.weight.semibold,
-                            color: colors.fg.base,
-                            margin: 0,
-                            marginBottom: spacing[1],
-                            cursor: "pointer",
-                            userSelect: "none",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: spacing[2],
-                        }}>
-                        <span style={{ color: activeTab === "forecast" ? colors.fg.base : colors.fg.dim, transition: "color 0.15s" }}>
-                            Forecast
-                        </span>
-                        <span style={{ color: colors.fg.dim, fontWeight: fonts.weight.regular }}>/</span>
-                        <span style={{ color: activeTab === "plan" ? colors.fg.base : colors.fg.dim, transition: "color 0.15s" }}>
-                            Plan
-                        </span>
-                    </h1>
-                    <p style={{
-                        fontFamily: fonts.family.text,
-                        fontSize: fonts.size.sm,
-                        color: colors.fg.dim,
-                        margin: 0,
-                    }}>
-                        Proyecciones anuales y objetivos financieros
-                    </p>
+            <div style={{ ...flexColumn, gap: spacing[2], flexShrink: 0, minHeight: "64px" }}>
+            <h1 style={{
+                fontFamily: fonts.family,
+                fontSize: fonts.size.xl,
+                fontWeight: fonts.weight.semibold,
+                color: colors.fg.base,
+                margin: 0,
+            }}>
+                Planning
+            </h1>
+            <div style={{ ...flexBetween }}>
+                <div style={{
+                    display: "inline-flex",
+                    borderRadius: "8px",
+                    background: colors.fill,
+                    overflow: "hidden",
+                    cursor: "pointer",
+                    userSelect: "none",
+                    flexShrink: 0,
+                }}>
+                        {[["forecast", "Forecast", BarChart3] as const, ["plan", "Plan", Target] as const].map(([key, label, Icon]) => (
+                            <div
+                                key={key}
+                                onClick={() => setActiveTab(key as Tab)}
+                                style={{
+                                    ...flexRow,
+                                    justifyContent: "center",
+                                    gap: "5px",
+                                    padding: "4px 14px",
+                                    whiteSpace: "nowrap",
+                                    fontSize: fonts.size.sm,
+                                    fontWeight: fonts.weight.medium,
+                                    color: activeTab === key ? colors.fg.base : colors.fg.dim,
+                                    borderRadius: "7px",
+                                    background: activeTab === key ? colors.bg.surface : "transparent",
+                                    transition: "background 0.15s ease, color 0.2s",
+                                    lineHeight: "18px",
+                            }}
+                        >
+                            <Icon size={14} strokeWidth={1.5} />
+                            {label}
+                        </div>
+                    ))}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: spacing[2], backgroundColor: colors.fill, borderRadius: radius.md, padding: "2px" }}>
-                    <button onClick={() => setYear((y) => y - 1)}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: colors.fg.dim, padding: "4px 6px", borderRadius: radius.sm, display: "flex", alignItems: "center" }}>
+                <div style={{ ...flexRow, gap: spacing[2] }}>
+                    {activeTab === "forecast" && (
+                        <Button
+                            variant="chip"
+                            size="sm"
+                            color="default"
+                            iconLeft={<Plus size={14} />}
+                            style={{
+                                height: "26px",
+                                padding: "0 12px",
+                                fontSize: fonts.size.sm,
+                                border: "none",
+                                borderRadius: "8px",
+                                transition: "background-color 0.15s",
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.border; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
+                            onClick={() => handleOpenNew("expense")}
+                        >
+                            Nueva Línea
+                        </Button>
+                    )}
+                    {activeTab === "plan" && (
+                        <Button
+                            variant="chip"
+                            size="sm"
+                            color="default"
+                            iconLeft={<LayoutGrid size={14} />}
+                            style={{
+                                height: "26px",
+                                padding: "0 12px",
+                                fontSize: fonts.size.sm,
+                                border: "none",
+                                borderRadius: "8px",
+                                transition: "background-color 0.15s",
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.border; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
+                            onClick={() => setShowGenerateModal(true)}
+                        >
+                            Generar Plan
+                        </Button>
+                    )}
+                <div style={{ ...flexRow, gap: spacing[2], backgroundColor: colors.fill, borderRadius: radius.md, padding: "2px", height: "26px", boxSizing: "border-box" }}>
+                    <button
+                        onClick={() => setYear((y) => y - 1)}
+                        onMouseEnter={() => setYearBtnHover("prev")}
+                        onMouseLeave={() => setYearBtnHover(null)}
+                        style={{ ...ghostButton, color: yearBtnHover === "prev" ? colors.fg.base : colors.fg.dim, padding: "4px 6px", borderRadius: radius.sm, ...flexRow, transition: "color 0.15s" }}
+                    >
                         <ChevronLeft size={14} />
                     </button>
-                    <span style={{ fontSize: fonts.size.base, fontWeight: fonts.weight.semibold, color: colors.fg.base, padding: "0 8px", minWidth: "44px", textAlign: "center" }}>
+                    <span style={{ fontSize: fonts.size.sm, fontWeight: fonts.weight.semibold, color: colors.fg.base, padding: "0 8px", minWidth: "44px", textAlign: "center" }}>
                         {year}
                     </span>
-                    <button onClick={() => setYear((y) => y + 1)}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: colors.fg.dim, padding: "4px 6px", borderRadius: radius.sm, display: "flex", alignItems: "center" }}>
+                    <button
+                        onClick={() => setYear((y) => y + 1)}
+                        onMouseEnter={() => setYearBtnHover("next")}
+                        onMouseLeave={() => setYearBtnHover(null)}
+                        style={{ background: "none", border: "none", cursor: "pointer", color: yearBtnHover === "next" ? colors.fg.base : colors.fg.dim, padding: "4px 6px", borderRadius: radius.sm, ...flexRow, transition: "color 0.15s" }}
+                    >
                         <ChevronRight size={14} />
                     </button>
-<button onClick={() => {
-                         setCfgCapital(existingCfg?.initial_capital || "0");
-                         const rates = existingRates || [];
-                         const monthRates = Array(12).fill("");
-                         rates.forEach((r) => {
-                             const m = parseInt(r.month.split("-")[1], 10) - 1;
-                             monthRates[m] = String(r.exchange_rate);
-                         });
-                         setCfgRates(monthRates);
-                         setShowSettingsModal(true);
-                     }}
-                         style={{ background: "none", border: "none", cursor: "pointer", color: colors.fg.dim, padding: "4px 6px", borderRadius: radius.sm, display: "flex", alignItems: "center", marginLeft: spacing[1] }}>
-<Settings2 size={14} />
-                      </button>
-                 </div>
+                    <button
+                        onClick={() => {
+                            setCfgCapital(formatForInput(existingCfg?.initial_capital || "0"));
+                            const rates = existingRates || [];
+                            const monthRates = Array(12).fill("");
+                            rates.forEach((r) => {
+                                const m = parseInt(r.month.split("-")[1], 10) - 1;
+                                monthRates[m] = formatForInput(String(r.exchange_rate));
+                            });
+                            setCfgRates(monthRates);
+                            setShowSettingsModal(true);
+                        }}
+                        onMouseEnter={() => setYearBtnHover("settings")}
+                        onMouseLeave={() => setYearBtnHover(null)}
+                        style={{ background: "none", border: "none", cursor: "pointer", color: yearBtnHover === "settings" ? colors.fg.base : colors.fg.dim, padding: "4px 6px", borderRadius: radius.sm, ...flexRow, transition: "color 0.15s" }}
+                    >
+                        <Settings2 size={14} />
+                    </button>
+                </div>
+                </div>
+            </div>
             </div>
 
             {/* Totals cards */}
             {kpis}
 
             {/* Tab content */}
-            {activeTab === "forecast" && (
-                <PlanningForecastTable
-                    inputs={inputs}
-                    months={months}
-                    editingCell={editingCell}
-                    editCellVal={editCellVal}
-                    onEditCellValChange={setEditCellVal}
-                    onStartCellEdit={startCellEdit}
-                    onSaveCellEdit={saveCellEdit}
-                    onCancelCellEdit={cancelCellEdit}
-                    onSaveFieldEdit={saveFieldEdit}
-                    hoveredRow={hoveredRow}
-                    onSetHoveredRow={setHoveredRow}
-                    deleteConfirm={deleteConfirm}
-                    onSetDeleteConfirm={setDeleteConfirm}
-                    onOpenNew={handleOpenNew}
-                    onDelete={handleDelete}
-                />
+            {isLoading ? (
+                <div style={{ color: colors.fg.dim, padding: spacing[4], textAlign: "center" }}>Cargando...</div>
+            ) : (
+            <div style={{ flex: 1, minHeight: 0, ...flexColumn, gap: spacing[2] }}>
+                {activeTab === "forecast" && (
+                    <PlanningForecastTable
+                        inputs={inputs}
+                        months={months}
+                        editingCell={editingCell}
+                        editCellVal={editCellVal}
+                        onEditCellValChange={setEditCellVal}
+                        onStartCellEdit={startCellEdit}
+                        onSaveCellEdit={saveCellEdit}
+                        onCancelCellEdit={cancelCellEdit}
+                        onSaveFieldEdit={saveFieldEdit}
+                        deleteConfirm={deleteConfirm}
+                        onSetDeleteConfirm={setDeleteConfirm}
+                        onDelete={handleDelete}
+                    />
+                )}
+
+                {activeTab === "plan" && (
+                    <PlanningPlanTable
+                        goals={planData?.goals || []}
+                        months={planData?.months || []}
+                        editingCell={planEditingCell}
+                        editCellVal={planEditCellVal}
+                        onEditCellValChange={setPlanEditCellVal}
+                        onStartCellEdit={startPlanCellEdit}
+                        onSaveCellEdit={savePlanCellEdit}
+                        onCancelCellEdit={cancelPlanCellEdit}
+                        deleteConfirm={deleteConfirm}
+                        onSetDeleteConfirm={setDeleteConfirm}
+                        onDelete={handlePlanDelete}
+                    />
+                )}
+
+            </div>
             )}
-
-            {activeTab === "plan" && (
-                <PlanningPlanTable
-                    goals={planData?.goals || []}
-                    editingCell={planEditingCell}
-                    editCellVal={planEditCellVal}
-                    onEditCellValChange={setPlanEditCellVal}
-                    onStartCellEdit={startPlanCellEdit}
-                    onSaveCellEdit={savePlanCellEdit}
-                    onCancelCellEdit={cancelPlanCellEdit}
-                    deleteConfirm={deleteConfirm}
-                    onSetDeleteConfirm={setDeleteConfirm}
-onDelete={handlePlanDelete}
-                 />
-)}
-
-             {activeTab === "plan" && (
-                 <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: spacing[3] }}>
-                     <button onClick={() => setShowGenerateModal(true)}
-                         style={{ background: "none", border: "none", cursor: "pointer", color: colors.fg.dim, padding: "4px 6px", borderRadius: radius.sm, display: "flex", alignItems: "center", fontSize: fonts.size.xs, fontWeight: fonts.weight.medium }}
-onMouseEnter={(e) => e.currentTarget.style.color = colors.fg.base}
-                             onMouseLeave={(e) => e.currentTarget.style.color = colors.fg.dim}>
-                             <LayoutGrid size={14} style={{ marginRight: spacing[1] }} /> Generar Plan
-                     </button>
-                 </div>
-             )}
-
              {/* Generate Goals Modal */}
             {showGenerateModal && (
                 <Modal isOpen={showGenerateModal} onClose={() => setShowGenerateModal(false)} opacity={0.8}>
@@ -432,35 +489,32 @@ onMouseEnter={(e) => e.currentTarget.style.color = colors.fg.base}
                         width: "420px",
                         maxHeight: "80vh",
                         overflow: "hidden",
-                        display: "flex",
-                        flexDirection: "column",
-                        border: `1px solid ${colors.border}`,
-                        outline: `1px solid ${colors.border}`,
+                        ...flexColumn,
+                        border: `1px solid transparent`,
                     }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: `${spacing[4]} ${spacing[5]}`, borderBottom: `1px solid ${colors.fill}` }}>
-                            <h2 style={{ margin: 0, fontSize: fonts.size.lg, fontWeight: 600, color: colors.fg.base }}>Generar Plan {year}</h2>
-                            <Button variant="plain" onClick={() => setShowGenerateModal(false)}>✕</Button>
+                            <h2 style={{ margin: 0, fontSize: fonts.size.lg, fontWeight: fonts.weight.semibold, color: colors.fg.base }}>Generar Plan {year}</h2>
+                            <ModalCloseButton onClick={() => setShowGenerateModal(false)} />
                         </div>
                         <div style={{ padding: `${spacing[4]} ${spacing[5]}`, overflowY: "auto", display: "flex", flexDirection: "column", gap: spacing[3] }}>
                             <p style={{ fontSize: fonts.size.sm, color: colors.fg.dim, margin: 0 }}>
                                 Se generarán los objetivos de ingreso y egreso para el año {year} basándose en los datos del forecast anual. Se utilizará el capital inicial configurado y los ajustes indicados abajo.
                             </p>
                             <div>
-                                <label style={{ fontSize: fonts.size.xs, color: colors.fg.dim, fontWeight: 500, marginBottom: spacing[2], display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>Extra Ingreso (mensual)</label>
+                                <label style={labelStyle}>Extra Ingreso (mensual)</label>
                                 <input value={genExtraIncome} onChange={(e) => setGenExtraIncome(e.target.value)}
                                     placeholder="0"
-                                    style={{ width: "100%", padding: `${spacing[2]} ${spacing[3]}`, backgroundColor: colors.bg.base, border: `1px solid ${colors.border}`, borderRadius: radius.md, color: colors.fg.base, fontSize: fonts.size.sm, height: "40px", boxSizing: "border-box", outline: "none" }} />
+                                    style={inputStyle} />
                             </div>
                             <div>
-                                <label style={{ fontSize: fonts.size.xs, color: colors.fg.dim, fontWeight: 500, marginBottom: spacing[2], display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>Extra Egreso (mensual)</label>
+                                <label style={labelStyle}>Extra Egreso (mensual)</label>
                                 <input value={genExtraExpense} onChange={(e) => setGenExtraExpense(e.target.value)}
                                     placeholder="0"
-                                    style={{ width: "100%", padding: `${spacing[2]} ${spacing[3]}`, backgroundColor: colors.bg.base, border: `1px solid ${colors.border}`, borderRadius: radius.md, color: colors.fg.base, fontSize: fonts.size.sm, height: "40px", boxSizing: "border-box", outline: "none" }} />
+                                    style={inputStyle} />
                             </div>
                         </div>
                         <div style={{ display: "flex", gap: spacing[3], padding: `${spacing[3]} ${spacing[5]}`, borderTop: `1px solid ${colors.fill}` }}>
-                            <Button variant="secondary" type="button" onClick={() => setShowGenerateModal(false)}>Cancelar</Button>
-                            <Button variant="primary" type="submit" onClick={handleGenerateGoals} fullWidth>Generar</Button>
+                            <SubmitButton type="submit" onClick={handleGenerateGoals} fullWidth>Generar</SubmitButton>
                         </div>
                     </ModalContent>
                 </Modal>
@@ -475,54 +529,51 @@ onMouseEnter={(e) => e.currentTarget.style.color = colors.fg.base}
                         width: "660px",
                         maxHeight: "80vh",
                         overflow: "hidden",
-                        display: "flex",
-                        flexDirection: "column",
-                        border: `1px solid ${colors.border}`,
-                        outline: `1px solid ${colors.border}`,
+                        ...flexColumn,
+                        border: `1px solid transparent`,
                     }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: `${spacing[4]} ${spacing[5]}`, borderBottom: `1px solid ${colors.fill}` }}>
-                            <h2 style={{ margin: 0, fontSize: fonts.size.lg, fontWeight: 600, color: colors.fg.base }}>Nuevo concepto</h2>
-                            <Button variant="plain" onClick={() => setShowNewModal(false)}>✕</Button>
+                            <h2 style={{ margin: 0, fontSize: fonts.size.lg, fontWeight: fonts.weight.semibold, color: colors.fg.base }}>Nuevo concepto</h2>
+                            <ModalCloseButton onClick={() => setShowNewModal(false)} />
                         </div>
                         <div style={{ padding: `${spacing[4]} ${spacing[5]}`, overflowY: "auto", display: "flex", flexDirection: "column", gap: spacing[3] }}>
                             <div>
-                                <label style={{ fontSize: fonts.size.xs, color: colors.fg.dim, fontWeight: 500, marginBottom: spacing[2], display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>Descripción</label>
+                                <label style={labelStyle}>Descripción</label>
                                 <input value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="Ej: Salario, Alquiler, etc."
-                                    style={{ width: "100%", padding: `${spacing[2]} ${spacing[3]}`, backgroundColor: colors.bg.base, border: `1px solid ${colors.border}`, borderRadius: radius.md, color: colors.fg.base, fontSize: fonts.size.sm, height: "40px", boxSizing: "border-box", outline: "none" }} />
+                                    style={inputStyle} />
                             </div>
                             <div style={{ display: "flex", gap: spacing[3] }}>
                                 <div style={{ flex: 1 }}>
-                                    <label style={{ fontSize: fonts.size.xs, color: colors.fg.dim, fontWeight: 500, marginBottom: spacing[2], display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>Tipo</label>
-                                    <div style={{ display: "flex", backgroundColor: colors.bg.base, border: `1px solid ${colors.border}`, borderRadius: radius.md, padding: "2px", overflow: "hidden" }}>
-                                        <Button type="button" variant="tab" color="red" active={newType === "expense"} onClick={() => setNewType("expense")} fullWidth iconLeft={<TrendingDown size={16} />}>Gasto</Button>
-                                        <Button type="button" variant="tab" color="green" active={newType === "income"} onClick={() => setNewType("income")} fullWidth iconLeft={<TrendingUp size={16} />}>Ingreso</Button>
+                                    <label style={{ fontSize: fonts.size.xs, color: colors.fg.dim, fontWeight: fonts.weight.medium, marginBottom: spacing[2], display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>Tipo</label>
+                                    <div style={{ display: "flex", backgroundColor: colors.bg.elevated, borderRadius: radius.md, padding: "2px", overflow: "hidden", height: "34px" }}>
+                                        <Button type="button" variant="tab" color="red" active={newType === "expense"} onClick={() => setNewType("expense")} fullWidth iconLeft={<TrendingDown size={16} />} noHover style={{ borderRadius: radius.md }}>Egreso</Button>
+                                        <Button type="button" variant="tab" color="green" active={newType === "income"} onClick={() => setNewType("income")} fullWidth iconLeft={<TrendingUp size={16} />} noHover style={{ borderRadius: radius.md }}>Ingreso</Button>
                                     </div>
                                 </div>
                                 <div style={{ width: "140px" }}>
-                                    <label style={{ fontSize: fonts.size.xs, color: colors.fg.dim, fontWeight: 500, marginBottom: spacing[2], display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>Moneda</label>
-                                    <div style={{ display: "flex", backgroundColor: colors.bg.base, border: `1px solid ${colors.border}`, borderRadius: radius.md, padding: "2px", overflow: "hidden" }}>
-                                        <Button type="button" variant="tab" color="green" active={newCurrency === "USD"} onClick={() => setNewCurrency("USD")} fullWidth>USD</Button>
-                                        <Button type="button" variant="tab" color="cyan" active={newCurrency === "ARS"} onClick={() => setNewCurrency("ARS")} fullWidth>ARS</Button>
+                                    <label style={{ fontSize: fonts.size.xs, color: colors.fg.dim, fontWeight: fonts.weight.medium, marginBottom: spacing[2], display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>Moneda</label>
+                                    <div style={{ display: "flex", backgroundColor: colors.bg.elevated, borderRadius: radius.md, padding: "2px", overflow: "hidden", height: "34px" }}>
+                                        <Button type="button" variant="tab" color="green" active={newCurrency === "USD"} onClick={() => setNewCurrency("USD")} fullWidth noHover style={{ borderRadius: radius.md }}>USD</Button>
+                                        <Button type="button" variant="tab" color="cyan" active={newCurrency === "ARS"} onClick={() => setNewCurrency("ARS")} fullWidth noHover style={{ borderRadius: radius.md }}>ARS</Button>
                                     </div>
                                 </div>
                             </div>
                             <div>
-                                <label style={{ fontSize: fonts.size.xs, color: colors.fg.dim, fontWeight: 500, marginBottom: spacing[2], display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>Valores mensuales</label>
+                                <label style={{ fontSize: fonts.size.xs, color: colors.fg.dim, fontWeight: fonts.weight.medium, marginBottom: spacing[2], display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>Valores mensuales</label>
                                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: spacing[2] }}>
                                     {FULL_MONTHS.map((m, i) => (
                                         <div key={m}>
                                             <label style={{ fontSize: "10px", color: colors.fg.dim, display: "block", marginBottom: "2px" }}>{m}</label>
                                             <input value={newAmounts[i]} onChange={(e) => setNewAmounts((p) => { const n = [...p]; n[i] = e.target.value; return n; })}
                                                 placeholder="—"
-                                                style={{ width: "100%", padding: `${spacing[1]} ${spacing[2]}`, backgroundColor: colors.bg.base, border: `1px solid ${colors.border}`, borderRadius: radius.md, color: colors.fg.base, fontSize: fonts.size.sm, height: "36px", boxSizing: "border-box", outline: "none" }} />
+                                                style={inputStyle} />
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         </div>
                         <div style={{ display: "flex", gap: spacing[3], padding: `${spacing[3]} ${spacing[5]}`, borderTop: `1px solid ${colors.fill}` }}>
-                            <Button variant="secondary" type="button" onClick={() => setShowNewModal(false)}>Cancelar</Button>
-                            <Button variant="primary" type="submit" onClick={handleSaveNew} disabled={!newDesc.trim()} fullWidth>Crear concepto</Button>
+                            <SubmitButton type="submit" onClick={handleSaveNew} disabled={!newDesc.trim()} fullWidth>Crear concepto</SubmitButton>
                         </div>
                     </ModalContent>
                 </Modal>
@@ -533,51 +584,51 @@ onMouseEnter={(e) => e.currentTarget.style.color = colors.fg.base}
                 <Modal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} opacity={0.8}>
                     <ModalContent onClick={(e) => e.stopPropagation()} style={{
                         backgroundColor: colors.bg.surface, borderRadius: radius.xl, width: "460px",
-                        maxHeight: "80vh", overflow: "hidden", display: "flex", flexDirection: "column",
-                        border: `1px solid ${colors.border}`, outline: `1px solid ${colors.border}`,
+                        maxHeight: "80vh", overflow: "hidden", ...flexColumn,
+                        border: `1px solid transparent`,
                     }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: `${spacing[4]} ${spacing[5]}`, borderBottom: `1px solid ${colors.fill}` }}>
-                            <h2 style={{ margin: 0, fontSize: fonts.size.lg, fontWeight: 600, color: colors.fg.base }}>Configuración {year}</h2>
-                            <Button variant="plain" onClick={() => setShowSettingsModal(false)}>✕</Button>
+                            <h2 style={{ margin: 0, fontSize: fonts.size.lg, fontWeight: fonts.weight.semibold, color: colors.fg.base }}>Configuración {year}</h2>
+                            <ModalCloseButton onClick={() => setShowSettingsModal(false)} />
                         </div>
                         <div style={{ padding: `${spacing[4]} ${spacing[5]}`, overflowY: "auto", display: "flex", flexDirection: "column", gap: spacing[4] }}>
                             <div>
-                                <label style={{ fontSize: fonts.size.xs, color: colors.fg.dim, fontWeight: 500, marginBottom: spacing[2], display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>Capital Inicial (USD)</label>
+                                <label style={labelStyle}>Capital Inicial (USD)</label>
                                 <input value={cfgCapital} onChange={(e) => setCfgCapital(e.target.value)}
                                     placeholder="Ej: 10000000"
-                                    style={{ width: "100%", padding: `${spacing[2]} ${spacing[3]}`, backgroundColor: colors.bg.base, border: `1px solid ${colors.border}`, borderRadius: radius.md, color: colors.fg.base, fontSize: fonts.size.sm, height: "40px", boxSizing: "border-box", outline: "none" }} />
+                                    style={inputStyle} />
                             </div>
                             <div>
-                                <label style={{ fontSize: fonts.size.xs, color: colors.fg.dim, fontWeight: 500, marginBottom: spacing[2], display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>Tipo de Cambio USD/ARS</label>
+                                <label style={{ fontSize: fonts.size.xs, color: colors.fg.dim, fontWeight: fonts.weight.medium, marginBottom: spacing[2], display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>Tipo de Cambio USD/ARS</label>
                                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: spacing[2] }}>
                                     {MONTHS.map((m, i) => (
                                         <div key={m}>
                                             <label style={{ fontSize: "10px", color: colors.fg.dim, display: "block", marginBottom: "2px" }}>{m}</label>
                                             <input value={cfgRates[i]} onChange={(e) => setCfgRates((p) => { const n = [...p]; n[i] = e.target.value; return n; })}
                                                 placeholder="—"
-                                                style={{ width: "100%", padding: `${spacing[1]} ${spacing[2]}`, backgroundColor: colors.bg.base, border: `1px solid ${colors.border}`, borderRadius: radius.md, color: colors.fg.base, fontSize: fonts.size.xs, height: "32px", boxSizing: "border-box", outline: "none" }} />
+                                                style={inputStyle} />
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         </div>
                         <div style={{ display: "flex", gap: spacing[3], padding: `${spacing[3]} ${spacing[5]}`, borderTop: `1px solid ${colors.fill}` }}>
-                            <Button variant="secondary" type="button" onClick={() => setShowSettingsModal(false)}>Cancelar</Button>
-                            <Button variant="primary" type="submit" onClick={() => {
+                            <SubmitButton type="submit" onClick={() => {
                                 updateConfig.mutate({ year: String(year), data: { initial_capital: cfgCapital } });
                                 cfgRates.forEach((rate, i) => {
                                     if (!rate) return;
                                     const month = `${year}-${String(i + 1).padStart(2, "0")}`;
                                     const existing = existingRates?.find((r) => r.month === month);
+                                    const normalized = parseLocaleNumber(rate);
                                     if (existing) {
-                                        updateRate.mutate({ date: month, data: { exchange_rate: parseFloat(rate) } });
+                                        updateRate.mutate({ date: month, data: { exchange_rate: normalized } });
                                     } else {
-                                        createRate.mutate({ month, exchange_rate: parseFloat(rate) });
+                                        createRate.mutate({ month, exchange_rate: normalized });
                                     }
                                 });
                                 setShowSettingsModal(false);
                                 toast("Configuración guardada", "success");
-                            }} fullWidth>Guardar</Button>
+                            }} fullWidth>Guardar</SubmitButton>
                         </div>
                     </ModalContent>
                 </Modal>

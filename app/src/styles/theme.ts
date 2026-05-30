@@ -1,5 +1,4 @@
-import { colors, shadows as schemeShadows } from "./colors";
-import { fonts } from "./fonts";
+import { shadows as schemeShadows } from "./colors";
 
 export const spacing = {
     0: "0",
@@ -27,25 +26,6 @@ export const radius = {
 
 export const shadows = schemeShadows;
 
-export const breakpoints = {
-    sm: "640px",
-    md: "768px",
-    lg: "1024px",
-    xl: "1280px",
-    "2xl": "1536px",
-} as const;
-
-export const theme = {
-    colors,
-    fonts,
-    spacing,
-    radius,
-    shadows,
-    breakpoints,
-} as const;
-
-export type Theme = typeof theme;
 export type Spacing = typeof spacing;
 export type Radius = typeof radius;
 export type Shadows = typeof shadows;
-export type Breakpoints = typeof breakpoints;

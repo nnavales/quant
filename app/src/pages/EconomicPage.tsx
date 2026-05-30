@@ -10,13 +10,14 @@ import {
     InflationSection,
 } from "@/components/EconomicMetrics";
 import { EconomicComparatives } from "@/components/EconomicComparatives";
+import { flexColumn } from "@/styles/layout";
 
 export function EconomicPage() {
     return (
-        <div style={{ padding: spacing[3], display: "flex", flexDirection: "column", gap: spacing[4], animation: "fadeIn 0.2s ease-out" }}>
-            <div>
-                <h1 style={{ fontFamily: fonts.family.display, fontSize: fonts.size.xl, fontWeight: fonts.weight.semibold, color: colors.fg.base, margin: 0, marginBottom: spacing[1] }}>Datos Económicos</h1>
-                <p style={{ fontFamily: fonts.family.text, fontSize: fonts.size.sm, color: colors.fg.dim, margin: 0 }}>Dólar, inflación y más</p>
+        <div style={{ padding: spacing[3], ...flexColumn, gap: spacing[3], animation: "fadeIn 0.2s ease-out" }}>
+            <div style={{ flexShrink: 0, minHeight: "64px" }}>
+                <h1 style={{ fontFamily: fonts.family, fontSize: fonts.size.xl, fontWeight: fonts.weight.semibold, color: colors.fg.base, margin: 0, marginBottom: spacing[1] }}>Datos Económicos</h1>
+                <p style={{ fontFamily: fonts.family, fontSize: fonts.size.sm, color: colors.fg.dim, margin: 0 }}>Dólar, tasas y créditos</p>
             </div>
 
             <div

@@ -15,20 +15,25 @@ import {
     usePresets,
 } from "@/hooks";
 import { spacing, radius } from "@/styles/theme";
+import { inputStyle, labelStyle } from "@/styles/formStyles";
 import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { formatISODateInTimezone, getNowInTimezone } from "@/utils/date";
+import { parseLocaleNumber } from "@/utils/format";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Button } from "@/components/ui/Button";
-import { Modal, ModalContent } from "@/components/ui/Modal";
+import { SubmitButton } from "@/components/ui/SubmitButton";
+import { Modal, ModalContent, ModalCloseButton } from "@/components/ui/Modal";
+import { flexRow } from "@/styles/layout";
 
 interface TransactionModalProps {
     isOpen: boolean;
     onClose: () => void;
     type: "income" | "expense";
+    initialPreset?: Preset | null;
 }
 
 const modalStyle: React.CSSProperties = {
@@ -40,39 +45,17 @@ const modalStyle: React.CSSProperties = {
     overflow: "hidden",
     display: "flex",
     flexDirection: "column",
-    border: `1px solid ${colors.border}`,
-    outline: `1px solid ${colors.border}`,
+    border: `1px solid transparent`,
 };
 
-const inputStyle: React.CSSProperties = {
-    padding: `${spacing[2]} ${spacing[3]}`,
-    backgroundColor: colors.bg.base,
-    border: `1px solid ${colors.border}`,
-    borderRadius: radius.md,
-    color: colors.fg.base,
-    fontSize: fonts.size.sm,
-    width: "100%",
-    height: "40px",
-    boxSizing: "border-box",
-    outline: "none",
-    transition: "border-color 0.15s",
-};
-
-const labelStyle: React.CSSProperties = {
-    fontSize: fonts.size.xs,
-    color: colors.fg.dim,
-    fontWeight: 500,
-    marginBottom: spacing[2],
-    display: "block",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-};
-
-export function TransactionModal({ isOpen, onClose, type: initialType }: TransactionModalProps) {
+export function TransactionModal({ isOpen, onClose, type: initialType, initialPreset }: TransactionModalProps) {
     const { data: userConfig } = useUserConfig();
     const { data: dollarBanks } = useDollarBanks(undefined, false);
 
     const [selectedPresetId, setSelectedPresetId] = useState("");
+    const [exchangeRateInput, setExchangeRateInput] = useState<string>(
+        String(userConfig?.default_rate ? parseLocaleNumber(userConfig.default_rate) : 0)
+    );
 
     const [formData, setFormData] = useState<TransactionAggregateReq>({
         description: "",
@@ -82,7 +65,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
         installment_number: undefined,
         amount: "",
         currency: "ARS",
-        exchange_rate: userConfig?.default_rate ? parseFloat(userConfig.default_rate) : 0,
+        exchange_rate: userConfig?.default_rate ? parseLocaleNumber(userConfig.default_rate) : 0,
         category_id: "",
         subcategory_id: "",
         channel_id: "",
@@ -138,10 +121,15 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
 
     useEffect(() => {
         if (isOpen) {
-            setSelectedPresetId("");
             resetForm();
+            if (initialPreset) {
+                setSelectedPresetId(initialPreset.id);
+                applyPreset(initialPreset);
+            } else {
+                setSelectedPresetId("");
+            }
         }
-    }, [initialType, isOpen]);
+    }, [initialType, isOpen, initialPreset?.id]);
 
     useEffect(() => {
         if (isOpen && descRef.current) {
@@ -152,7 +140,9 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
     const { refreshRate } = useDollarRate(
         userConfig?.dollar_source,
         dollarBanks,
-        (rate) => setFormData((prev) => ({ ...prev, exchange_rate: rate })),
+        (rate) => {
+            setExchangeRateInput(String(rate));
+        },
         userConfig?.default_rate
     );
 
@@ -177,6 +167,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
     };
 
     const resetForm = () => {
+        const defaultRate = userConfig?.default_rate ? parseLocaleNumber(userConfig.default_rate) : 0;
         setFormData({
             description: "",
             date: formatISODateInTimezone(
@@ -188,19 +179,22 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
             installment_number: undefined,
             amount: "",
             currency: "ARS",
-            exchange_rate: userConfig?.default_rate ? parseFloat(userConfig.default_rate) : 0,
+        exchange_rate: defaultRate,
             category_id: "",
             subcategory_id: "",
             channel_id: "",
             account_id: "",
             is_paid: true,
         });
+        setExchangeRateInput(String(defaultRate));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const dataToSend = {
             ...formData,
+            amount: String(parseLocaleNumber(formData.amount)),
+            exchange_rate: parseLocaleNumber(exchangeRateInput) || 1,
             installment_number: formData.installment_number
                 ? parseInt(String(formData.installment_number))
                 : undefined,
@@ -237,7 +231,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                             style={{
                                 margin: 0,
                                 fontSize: fonts.size.lg,
-                                fontWeight: 600,
+                                fontWeight: fonts.weight.semibold,
                                 color: colors.fg.base,
                             }}
                         >
@@ -246,14 +240,15 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                         <p
                             style={{
                                 margin: `${spacing[1]} 0 0`,
-                                fontSize: fonts.size.xs,
+                                fontSize: fonts.size.xs3,
+                                letterSpacing: "0.2px",
                                 color: colors.fg.dim,
                             }}
                         >
                             {isExpense ? "Registrar egreso" : "Registrar ingreso"}
                         </p>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: spacing[3] }}>
+                    <div style={{ ...flexRow, gap: spacing[3] }}>
                         {/* Preset Selector in Header */}
                         {(() => {
                             const allPresets = presetsList.filter((p) => !p.deleted_at);
@@ -278,7 +273,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                                                 resetToDefaults();
                                             }
                                         }}
-                                        triggerStyle={{ height: "36px" }}
+                                        triggerStyle={inputStyle}
                                         searchable
                                         clearable
                                         clearLabel="Default"
@@ -287,9 +282,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                                 </div>
                             );
                         })()}
-                        <Button variant="plain" onClick={onClose}>
-                            ✕
-                        </Button>
+                        <ModalCloseButton onClick={onClose} />
                     </div>
                 </div>
 
@@ -308,8 +301,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                     <div
                         style={{
                             display: "flex",
-                            backgroundColor: colors.bg.base,
-                            border: `1px solid ${colors.border}`,
+                            backgroundColor: colors.bg.elevated,
                             borderRadius: radius.md,
                             padding: "2px",
                         }}
@@ -325,8 +317,10 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                             }}
                             fullWidth
                             iconLeft={<TrendingDown size={16} />}
+                            noHover
+                            style={{ borderRadius: radius.md }}
                         >
-                            Gasto
+                            Egreso
                         </Button>
                         <Button
                             type="button"
@@ -339,6 +333,8 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                             }}
                             fullWidth
                             iconLeft={<TrendingUp size={16} />}
+                            noHover
+                            style={{ borderRadius: radius.md }}
                         >
                             Ingreso
                         </Button>
@@ -351,14 +347,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                             <DatePicker
                                 value={formData.date}
                                 onChange={(value) => setFormData({ ...formData, date: value })}
-                                triggerStyle={{
-                                    backgroundColor: colors.bg.base,
-                                    border: `1px solid ${colors.border}`,
-                                    borderRadius: radius.md,
-                                    height: "40px",
-                                    fontSize: fonts.size.sm,
-                                    padding: `${spacing[2]} ${spacing[3]}`,
-                                }}
+                                triggerStyle={inputStyle}
                             />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -379,9 +368,8 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                             <label style={labelStyle}>Estado</label>
                             <div
                                 style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    height: "40px",
+                                    ...flexRow,
+                                    height: "34px",
                                     gap: spacing[2],
                                 }}
                             >
@@ -397,7 +385,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                                         border: "none",
                                         cursor: "pointer",
                                         backgroundColor: formData.is_paid
-                                            ? colors.accent.teal
+                                            ? colors.accent.cyan
                                             : colors.fill,
                                         position: "relative",
                                         transition: "background-color 0.2s",
@@ -434,13 +422,13 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                         <div style={{ flex: 1, minWidth: 0 }}>
                             <label style={labelStyle}>Monto</label>
                             <input
-                                type="number"
-                                step="0.01"
+                                type="text"
+                                inputMode="decimal"
                                 value={formData.amount}
                                 onChange={(e) =>
                                     setFormData({ ...formData, amount: e.target.value })
                                 }
-                                placeholder="0.00"
+                                placeholder="0,00"
                                 style={inputStyle}
                                 required
                             />
@@ -456,21 +444,17 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                                 onChange={(c) =>
                                     setFormData({ ...formData, currency: c as "ARS" | "USD" })
                                 }
-                                triggerStyle={{ height: "40px" }}
+                                triggerStyle={inputStyle}
                             />
                         </div>
                         <div style={{ width: "140px", flexShrink: 0, position: "relative" }}>
                             <label style={labelStyle}>Tipo de Cambio</label>
                             <div style={{ position: "relative" }}>
                                 <input
-                                    type="number"
-                                    value={formData.exchange_rate}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            exchange_rate: parseFloat(e.target.value) || 1,
-                                        })
-                                    }
+                                    type="text"
+                                    inputMode="decimal"
+                                    value={exchangeRateInput}
+                                    onChange={(e) => setExchangeRateInput(e.target.value)}
                                     style={{ ...inputStyle, paddingRight: "36px" }}
                                 />
                                 <Button
@@ -503,7 +487,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                                         frequency: f as "variable" | "fixed",
                                     })
                                 }
-                                triggerStyle={{ height: "40px" }}
+                                triggerStyle={inputStyle}
                             />
                         </div>
                         <div style={{ width: "85px", flexShrink: 0 }}>
@@ -541,6 +525,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                                 searchable
                                 fixPanelWidth
                                 panelStyle={{ maxWidth: "min(420px, 90vw)" }}
+                                triggerStyle={inputStyle}
                             />
                         </div>
                         <div>
@@ -553,6 +538,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                                 searchable
                                 fixPanelWidth
                                 panelStyle={{ maxWidth: "min(420px, 90vw)" }}
+                                triggerStyle={inputStyle}
                             />
                         </div>
                     </div>
@@ -567,11 +553,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                         borderTop: `1px solid ${colors.fill}`,
                     }}
                 >
-                    <Button variant="secondary" type="button" onClick={onClose}>
-                        Cancelar
-                    </Button>
-                    <Button
-                        variant="primary"
+                    <SubmitButton
                         type="submit"
                         onClick={handleSubmit}
                         disabled={
@@ -587,8 +569,8 @@ export function TransactionModal({ isOpen, onClose, type: initialType }: Transac
                             )
                         }
                     >
-                        Registrar {isExpense ? "Gasto" : "Ingreso"}
-                    </Button>
+                        Registrar {isExpense ? "Egreso" : "Ingreso"}
+                    </SubmitButton>
                 </div>
             </ModalContent>
             <style>{`

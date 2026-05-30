@@ -307,7 +307,7 @@ func NewHistoricalFilter(params FilterParams) (*Filter, error) {
 	}
 
 	if v, ok := params["sort"]; ok && v != "" {
-		if v != "month" && v != "income" && v != "expense" {
+		if v != "month" && v != "income" && v != "expense" && v != "savings" {
 			return nil, fmt.Errorf("invalid sort: %w", ErrInvalidFilter)
 		}
 		f.Sort = &v

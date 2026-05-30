@@ -92,10 +92,6 @@ export interface DatePreset {
     to: string;
 }
 
-export function formatISODate(date: Date): string {
-    return date.toISOString().split("T")[0];
-}
-
 export function formatShortDate(iso: string): string {
     const parts = iso.split("-");
     if (parts.length === 3) {
@@ -125,10 +121,6 @@ export function getTransactionDatePresets(timezone?: string): DatePreset[] {
     const lastMonthStartStr = `${lastMonthYear}-${String(lastMonthIndex).padStart(2, "0")}-01`;
     const lastMonthEndStr = formatISODateInTimezone(new Date(lastMonthYear, lastMonthIndex, 0), timezone);
 
-    const startOfYearStr = `${year}-01-01`;
-    const endOfYearStr = `${year}-12-31`;
-
-    const weekStartStr = formatISODateInTimezone(new Date(year, month - 1, day - 7), timezone);
     let threeMonthsAgoMonth = month - 3;
     let threeMonthsAgoYear = year;
     if (threeMonthsAgoMonth < 1) {
@@ -137,14 +129,25 @@ export function getTransactionDatePresets(timezone?: string): DatePreset[] {
     }
     const threeMonthsAgoStr = `${threeMonthsAgoYear}-${String(threeMonthsAgoMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
+    const nextMonth = month + 1;
+    const nextMonthYear = nextMonth > 12 ? year + 1 : year;
+    const nextMonthIndex = nextMonth > 12 ? 1 : nextMonth;
+    const nextMonthStartStr = `${nextMonthYear}-${String(nextMonthIndex).padStart(2, "0")}-01`;
+    const nextMonthEndStr = formatISODateInTimezone(new Date(nextMonthYear, nextMonthIndex, 0), timezone);
+
+    const threeMonthsEndMonth = month + 2;
+    const threeMonthsEndYear = threeMonthsEndMonth > 12 ? year + 1 : year;
+    const threeMonthsEndMonthIndex = threeMonthsEndMonth > 12 ? threeMonthsEndMonth - 12 : threeMonthsEndMonth;
+    const threeMonthsEndStr = formatISODateInTimezone(new Date(threeMonthsEndYear, threeMonthsEndMonthIndex, 0), timezone);
+
     return [
-        { label: "Hoy", from: todayStr, to: todayStr },
-        { label: "Esta semana", from: weekStartStr, to: todayStr },
         { label: "Este mes", from: startOfMonthStr, to: endOfMonthStr },
+        { label: "Desde este mes", from: startOfMonthStr, to: "" },
+        { label: "Próximo mes", from: nextMonthStartStr, to: nextMonthEndStr },
+        { label: "Próximos 3 meses", from: startOfMonthStr, to: threeMonthsEndStr },
         { label: "Mes anterior", from: lastMonthStartStr, to: lastMonthEndStr },
-        { label: "Este año", from: startOfYearStr, to: endOfYearStr },
         { label: "Últimos 3 meses", from: threeMonthsAgoStr, to: todayStr },
-    ].sort((a, b) => b.from.localeCompare(a.from));
+    ];
 }
 
 export function getHistoricalDatePresets(timezone?: string): DatePreset[] {
@@ -169,9 +172,14 @@ export function getHistoricalDatePresets(timezone?: string): DatePreset[] {
 
 /* ─── Timezone-aware helpers ─── */
 
-export function getPartsInTimezone(date: Date, timezone?: string) {
-    try {
-        const fmt = new Intl.DateTimeFormat("en-US", {
+// Cache one Intl.DateTimeFormat per timezone — construction is far costlier than formatToParts,
+// and this runs per calendar-day cell (DatePicker) and in same-day/today comparisons.
+const tzFormatters = new Map<string, Intl.DateTimeFormat>();
+function getTzFormatter(timezone?: string): Intl.DateTimeFormat {
+    const key = timezone || "";
+    let fmt = tzFormatters.get(key);
+    if (!fmt) {
+        fmt = new Intl.DateTimeFormat("en-US", {
             timeZone: timezone || undefined,
             year: "numeric",
             month: "numeric",
@@ -181,6 +189,14 @@ export function getPartsInTimezone(date: Date, timezone?: string) {
             second: "numeric",
             hour12: false,
         });
+        tzFormatters.set(key, fmt);
+    }
+    return fmt;
+}
+
+export function getPartsInTimezone(date: Date, timezone?: string) {
+    try {
+        const fmt = getTzFormatter(timezone);
         const parts = fmt.formatToParts(date);
         const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
         return {

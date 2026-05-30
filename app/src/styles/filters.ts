@@ -6,9 +6,10 @@ export const filterContainerStyle: React.CSSProperties = {
     display: "flex",
     flexWrap: "wrap",
     gap: spacing[3],
-    marginBottom: spacing[3],
     alignItems: "center",
 };
+
+
 
 export const filterWrapperStyle: React.CSSProperties = {
     position: "relative",
@@ -17,7 +18,7 @@ export const filterWrapperStyle: React.CSSProperties = {
 export const dropdownItemStyle: React.CSSProperties = {
     padding: `${spacing[1]} ${spacing[2]}`,
     cursor: "pointer",
-    borderRadius: "8px",
+    borderRadius: radius.lg,
     fontSize: fonts.size.sm,
     color: colors.fg.base,
     transition: "background-color 0.1s",
@@ -34,42 +35,26 @@ export const clearButtonStyle: React.CSSProperties = {
     backgroundColor: colors.fill,
     color: colors.accent.red,
     cursor: "pointer",
-    borderRadius: "8px",
+    borderRadius: radius.lg,
     transition: "all 0.15s ease",
     border: "none",
 };
-
-export const paginationButtonStyle = (disabled: boolean): React.CSSProperties => ({
-    height: "28px",
-    padding: "0 10px",
-    backgroundColor: "transparent",
-    border: `1px solid ${disabled ? colors.overlay.white06 : colors.border}`,
-    borderRadius: radius.md,
-    color: colors.fg.dim,
-    cursor: disabled ? "not-allowed" : "pointer",
-    opacity: disabled ? 0.5 : 1,
-    boxSizing: "border-box",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    transition: "all 0.15s ease",
-});
 
 /* ─── Filter chip trigger style ─── */
 export const chipTriggerStyle = (isActive: boolean): React.CSSProperties => ({
     height: "26px",
     padding: "0 12px",
     fontSize: fonts.size.sm,
-    fontWeight: 500,
-    fontFamily: fonts.family.text,
+    fontWeight: fonts.weight.medium,
+    fontFamily: fonts.family,
     color: isActive ? colors.fg.base : colors.fg.dim,
     backgroundColor: colors.fill,
-    borderRadius: "8px",
+    borderRadius: radius.lg,
     cursor: "pointer",
     boxSizing: "border-box",
     display: "flex",
     alignItems: "center",
-    gap: "4px",
+    gap: spacing[1],
     whiteSpace: "nowrap",
     border: "none",
     outline: "none",

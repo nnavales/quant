@@ -5,24 +5,12 @@ import type { Channel, ChannelReq } from "@/api_client/types";
 import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { colors } from "@/styles/colors";
-import { spacing, radius } from "@/styles/theme";
+import { spacing } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
-import { cardStyle, rowStyle } from "@/styles/layout";
+import { rowStyle, inputStyle, flexColumn } from "@/styles/layout";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { Button } from "@/components/ui/Button";
-
-const inputStyle: React.CSSProperties = {
-    height: "28px",
-    padding: `0 ${spacing[3]}`,
-    backgroundColor: colors.bg.surface,
-    border: `1px solid ${colors.fill}`,
-    borderRadius: radius.md,
-    color: colors.fg.base,
-    fontSize: fonts.size.sm,
-    outline: "none",
-    boxSizing: "border-box",
-    flex: 1,
-};
+import { SettingsCard } from "@/components/SettingsCard";
 
 export function ChannelList() {
     const [items, setItems] = useState<Channel[]>([]);
@@ -85,21 +73,23 @@ export function ChannelList() {
             </div>
 
             {showForm && (
-                <form onSubmit={handleSubmit} style={{ ...cardStyle, marginBottom: spacing[4], display: "flex", gap: spacing[2] }}>
-                    <input
-                        type="text"
-                        placeholder="Nombre del canal"
-                        value={formData.name || ""}
-                        onChange={(e) => setFormData({ name: e.target.value })}
-                        style={inputStyle}
-                    />
-                    <Button type="submit" variant="primary">
-                        Guardar
-                    </Button>
+                <form onSubmit={handleSubmit} style={{ marginBottom: spacing[4] }}>
+                    <SettingsCard style={{ display: "flex", gap: spacing[2] }}>
+                        <input
+                            type="text"
+                            placeholder="Nombre del canal"
+                            value={formData.name || ""}
+                            onChange={(e) => setFormData({ name: e.target.value })}
+                            style={{ ...inputStyle, flex: 1 }}
+                        />
+                        <Button type="submit" variant="primary">
+                            Guardar
+                        </Button>
+                    </SettingsCard>
                 </form>
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
+            <div style={{ ...flexColumn, gap: spacing[2] }}>
                 {items.map((channel) => (
                     <div
                         key={channel.id}

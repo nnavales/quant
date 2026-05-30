@@ -5,25 +5,13 @@ import type { Subcategory, SubcategoryReq, Category } from "@/api_client/types";
 import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { colors } from "@/styles/colors";
-import { spacing, radius } from "@/styles/theme";
+import { spacing } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
-import { cardStyle, rowStyle } from "@/styles/layout";
+import { rowStyle, inputStyle, flexColumn } from "@/styles/layout";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { Dropdown } from "./ui/Dropdown";
 import { Button } from "@/components/ui/Button";
-
-const inputStyle: React.CSSProperties = {
-    height: "28px",
-    padding: `0 ${spacing[3]}`,
-    backgroundColor: colors.bg.surface,
-    border: `1px solid ${colors.fill}`,
-    borderRadius: radius.md,
-    color: colors.fg.base,
-    fontSize: fonts.size.sm,
-    outline: "none",
-    boxSizing: "border-box",
-    flex: 1,
-};
+import { SettingsCard } from "@/components/SettingsCard";
 
 export function SubcategoryList() {
     const [items, setItems] = useState<Subcategory[]>([]);
@@ -91,28 +79,29 @@ export function SubcategoryList() {
             </div>
 
             {showForm && (
-                <form onSubmit={handleSubmit} style={{ ...cardStyle, marginBottom: spacing[4], display: "flex", gap: spacing[2], flexWrap: "wrap" }}>
-                    <input
-                        type="text"
-                        placeholder="Nombre"
-                        value={formData.name || ""}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        style={{ ...inputStyle, minWidth: "150px" }}
-                    />
-                    <Dropdown
-                        options={categoriesList.map((c) => ({ id: c.id, label: c.name }))}
-                        value={formData.category_id || ""}
-                        onChange={(id) => setFormData({ ...formData, category_id: id })}
-                        placeholder="Categoría"
-                        triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                    />
-                    <Button type="submit" variant="primary">
-                        Guardar
-                    </Button>
+                <form onSubmit={handleSubmit} style={{ marginBottom: spacing[4] }}>
+                    <SettingsCard style={{ display: "flex", gap: spacing[2], flexWrap: "wrap" }}>
+                        <input
+                            type="text"
+                            placeholder="Nombre"
+                            value={formData.name || ""}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            style={{ ...inputStyle, flex: 1, minWidth: "150px" }}
+                        />
+                        <Dropdown
+                            options={categoriesList.map((c) => ({ id: c.id, label: c.name }))}
+                            value={formData.category_id || ""}
+                            onChange={(id) => setFormData({ ...formData, category_id: id })}
+                            placeholder="Categoría"
+                        />
+                        <Button type="submit" variant="primary">
+                            Guardar
+                        </Button>
+                    </SettingsCard>
                 </form>
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
+            <div style={{ ...flexColumn, gap: spacing[2] }}>
                 {items.map((subcategory) => (
                     <div
                         key={subcategory.id}
@@ -121,7 +110,7 @@ export function SubcategoryList() {
                         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.bg.base; }}
                     >
                         <div>
-                            <div style={{ fontSize: fonts.size.sm, fontWeight: 500, color: colors.fg.base }}>{subcategory.name}</div>
+                            <div style={{ fontSize: fonts.size.sm, fontWeight: fonts.weight.medium, color: colors.fg.base }}>{subcategory.name}</div>
                             <div style={{ fontSize: fonts.size.xs, color: colors.fg.dim }}>{getCategoryName(subcategory.category_id)}</div>
                         </div>
                         <Button

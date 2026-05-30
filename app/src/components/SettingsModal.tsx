@@ -1,16 +1,17 @@
 import { useState } from "react";
-import { X, CreditCard, Tag, User, Layers, Database, RefreshCw } from "lucide-react";
+import { CreditCard, Tag, User, Layers, Database, RefreshCw } from "lucide-react";
 import { ChannelAccountManager } from "@/components/ChannelAccountManager";
 import { CategoryManager } from "@/components/CategoryManager";
 import { UserSettings } from "@/components/UserSettings";
 import { PresetManager } from "@/components/PresetManager";
 import { BackupManager } from "@/components/BackupManager";
 import { UpdateChecker } from "@/components/UpdateChecker";
-import { Modal, ModalContent } from "@/components/ui/Modal";
+import { Modal, ModalContent, ModalCloseButton } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
+import { flexColumn } from "@/styles/layout";
 
 type SettingsTab = "user" | "channels" | "categories" | "presets" | "backup" | "updates";
 
@@ -41,23 +42,20 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                     maxWidth: "900px",
                     height: "80vh",
                     display: "flex",
-                    border: `1px solid ${colors.border}`,
+                    border: `1px solid transparent`,
                     overflow: "hidden",
                 }}
             >
                 <div
                     style={{
                         width: "200px",
-                        borderRight: `1px solid ${colors.border}`,
-                        display: "flex",
-                        flexDirection: "column",
-                        backgroundColor: colors.bg.surface,
+                        ...flexColumn,
+                        backgroundColor: colors.bg.elevated,
                     }}
                 >
                     <div
                         style={{
                             padding: `${spacing[3]} ${spacing[4]}`,
-                            borderBottom: `1px solid ${colors.border}`,
                             display: "flex",
                             alignItems: "center",
                             height: "44px",
@@ -76,7 +74,13 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                             Opciones
                         </h3>
                     </div>
-                    <div style={{ padding: spacing[2], display: "flex", flexDirection: "column", gap: spacing[1] }}>
+                    <div
+                        style={{
+                            padding: spacing[2],
+                            ...flexColumn,
+                            gap: spacing[1],
+                        }}
+                    >
                         {tabs.map((tab) => {
                             const isActive = activeTab === tab.id;
                             return (
@@ -87,22 +91,25 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                                         display: "flex",
                                         alignItems: "center",
                                         gap: spacing[3],
-                        padding: `${spacing[3]} ${spacing[4]}`,
+                                        padding: `${spacing[3]} ${spacing[4]}`,
                                         backgroundColor: isActive ? colors.fill : "transparent",
                                         border: "none",
                                         borderRadius: radius.md,
                                         color: isActive ? colors.fg.base : colors.fg.dim,
                                         fontSize: fonts.size.sm,
-                                        fontWeight: isActive ? 600 : 500,
+                                        fontWeight: isActive
+                                            ? fonts.weight.semibold
+                                            : fonts.weight.medium,
                                         cursor: "pointer",
                                         transition: "all 0.15s",
-                                        fontFamily: fonts.family.text,
+                                        fontFamily: fonts.family,
                                         textAlign: "left",
                                         width: "100%",
                                     }}
                                     onMouseEnter={(e) => {
                                         if (!isActive) {
-                                            e.currentTarget.style.backgroundColor = colors.fill + "80";
+                                            e.currentTarget.style.backgroundColor =
+                                                colors.fill + "80";
                                             e.currentTarget.style.color = colors.fg.base;
                                         }
                                     }}
@@ -113,7 +120,13 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                                         }
                                     }}
                                 >
-                                    <tab.icon size={16} style={{ flexShrink: 0, color: isActive ? colors.accent.cyan : colors.fg.dim }} />
+                                    <tab.icon
+                                        size={16}
+                                        style={{
+                                            flexShrink: 0,
+                                            color: isActive ? colors.accent.cyan : colors.fg.dim,
+                                        }}
+                                    />
                                     {tab.label}
                                 </button>
                             );
@@ -124,8 +137,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                 <div
                     style={{
                         flex: 1,
-                        display: "flex",
-                        flexDirection: "column",
+                        ...flexColumn,
                         overflow: "hidden",
                     }}
                 >
@@ -137,12 +149,9 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                             padding: `${spacing[3]} ${spacing[5]}`,
                             height: "44px",
                             boxSizing: "border-box",
-                            borderBottom: `1px solid ${colors.border}`,
                         }}
                     >
-                        <Button variant="icon" onClick={onClose}>
-                            <X size={20} />
-                        </Button>
+                        <ModalCloseButton onClick={onClose} />
                     </div>
 
                     <div

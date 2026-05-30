@@ -7,12 +7,13 @@ import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { formatNumber } from "@/utils/format";
+import { flexRow } from "@/styles/layout";
 
 const cardStyle: React.CSSProperties = {
     backgroundColor: colors.bg.surface,
     borderRadius: radius.lg,
     padding: spacing[3],
-    border: `1px solid ${colors.border}`,
+    border: `1px solid transparent`,
     display: "flex",
     flexDirection: "column",
     minHeight: 130,
@@ -26,8 +27,8 @@ const titleRowStyle: React.CSSProperties = {
 };
 
 const titleStyle: React.CSSProperties = {
-    fontSize: "12px",
-    fontWeight: 600,
+    fontSize: fonts.size.xs3,
+    fontWeight: fonts.weight.semibold,
     color: colors.fg.dim,
     textTransform: "uppercase",
     letterSpacing: "0.5px",
@@ -35,8 +36,8 @@ const titleStyle: React.CSSProperties = {
 
 const valueStyle: React.CSSProperties = {
     fontSize: "25px",
-    fontWeight: 700,
-    fontFamily: fonts.family.display,
+    fontWeight: fonts.weight.bold,
+    fontFamily: fonts.family,
     color: colors.fg.base,
     marginTop: spacing[1],
 };
@@ -45,7 +46,7 @@ const deltaWrap: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
     gap: "4px",
-    fontSize: "11.5px",
+    fontSize: fonts.size.xs2,
     minHeight: 24,
 };
 
@@ -112,9 +113,9 @@ export function MetricCard({ title, loading, error, onRefresh, children, delta, 
             {children}
             <div className="selectable" style={deltaWrap}>
                 {delta != null && delta !== 0 && (
-                    <div style={{ display: "flex", alignItems: "center", gap: "4px", color: positive !== inverseTrend ? colors.accent.green : colors.accent.red }}>
+                    <div style={{ ...flexRow, gap: "4px", color: positive !== inverseTrend ? colors.accent.green : colors.accent.red }}>
                         {positive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                        <span className="selectable" style={{ fontWeight: 500 }}>{positive ? "+" : ""}{formatNumber(delta)}%</span>
+                        <span className="selectable" style={{ fontWeight: fonts.weight.medium }}>{positive ? "+" : ""}{formatNumber(delta)}%</span>
                     </div>
                 )}
             </div>

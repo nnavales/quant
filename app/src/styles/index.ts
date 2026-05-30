@@ -1,7 +1,9 @@
 export { colors, applyCssVars } from "./colors";
 export { fonts } from "./fonts";
-export { theme, spacing, radius, shadows, breakpoints } from "./theme";
+export { spacing, radius, shadows } from "./theme";
+export { flexRow, flexColumn, flexBetween, truncate, ghostButton, cardStyle, rowStyle } from "./layout";
 
-import type { Theme, Spacing, Radius, Shadows, Breakpoints } from "./theme";
+import type { Spacing, Radius, Shadows } from "./theme";
+import type { Fonts } from "./fonts";
 
-export type { Theme, Spacing, Radius, Shadows, Breakpoints };
+export type { Spacing, Radius, Shadows, Fonts };

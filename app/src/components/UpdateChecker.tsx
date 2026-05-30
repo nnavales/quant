@@ -4,14 +4,17 @@ import { open } from "@tauri-apps/plugin-shell";
 import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
-import { Button } from "@/components/ui/Button";
+import { SettingsCard } from "@/components/SettingsCard";
+import { flexColumn, flexRow } from "@/styles/layout";
 
 const CURRENT_VERSION = "0.7.0";
 const UPDATE_CHECK_URL = "https://api.github.com/repos/nnavales/quant/releases?per_page=1";
 
 export function UpdateChecker() {
     const [checking, setChecking] = useState(false);
-    const [updateStatus, setUpdateStatus] = useState<"none" | "available" | "error" | "up-to-date">("none");
+    const [updateStatus, setUpdateStatus] = useState<"none" | "available" | "error" | "up-to-date">(
+        "none"
+    );
     const [latestVersion, setLatestVersion] = useState("");
 
     const checkForUpdates = async () => {
@@ -33,10 +36,8 @@ export function UpdateChecker() {
             }
 
             const data = await response.json();
-            console.log("GitHub response:", data);
-            const latest = Array.isArray(data) && data.length > 0 
-                ? data[0].tag_name?.replace("v", "") 
-                : "";
+            const latest =
+                Array.isArray(data) && data.length > 0 ? data[0].tag_name?.replace("v", "") : "";
 
             setLatestVersion(latest);
 
@@ -54,25 +55,22 @@ export function UpdateChecker() {
     };
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: spacing[4] }}>
-            <div>
-                <h3 style={{ fontSize: fonts.size.lg, fontWeight: 600, color: colors.fg.base, margin: 0 }}>
-                    Verificar actualizaciones
-                </h3>
-                <p style={{ fontSize: fonts.size.sm, color: colors.fg.dim, margin: `${spacing[1]} 0 0` }}>
+        <div style={{ ...flexColumn, gap: spacing[4] }}>
+            <SettingsCard title="Verificar actualizaciones">
+                <p
+                    style={{
+                        fontSize: fonts.size.sm,
+                        color: colors.fg.dim,
+                        marginBottom: spacing[3],
+                    }}
+                >
                     Versión actual: {CURRENT_VERSION}
                 </p>
-            </div>
 
-            <div style={{
-                backgroundColor: colors.bg.base,
-                border: `1px solid ${colors.border}`,
-                borderRadius: radius.md,
-                padding: spacing[4],
-            }}>
                 {updateStatus === "none" && (
                     <p style={{ color: colors.fg.dim, fontSize: fonts.size.sm, margin: 0 }}>
-                        Haz clic en "Buscar actualizaciones" para verificar si hay una nueva versión disponible.
+                        Haz clic en "Buscar actualizaciones" para verificar si hay una nueva versión
+                        disponible.
                     </p>
                 )}
 
@@ -83,55 +81,129 @@ export function UpdateChecker() {
                 )}
 
                 {updateStatus === "available" && (
-                    <div style={{ display: "flex", alignItems: "center", gap: spacing[3] }}>
-                        <p style={{ color: colors.accent.orange, fontSize: fonts.size.sm, margin: 0 }}>
+                    <div style={{ ...flexRow, gap: spacing[3] }}>
+                        <p
+                            style={{
+                                color: colors.accent.orange,
+                                fontSize: fonts.size.sm,
+                                margin: 0,
+                            }}
+                        >
                             Nueva versión disponible: {latestVersion}
                         </p>
-                        <Button
-                            variant="primary"
-                            size="sm"
-                            iconLeft={<Download size={14} />}
+                        <button
                             onClick={() => open("https://github.com/nnavales/quant/releases")}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.color = colors.fg.base;
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.color = colors.fg.dim;
+                            }}
+                            style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: spacing[1],
+                                backgroundColor: colors.bg.surface,
+                                border: "none",
+                                borderRadius: radius.md,
+                                height: "28px",
+                                padding: `0 ${spacing[2]}`,
+                                color: colors.fg.dim,
+                                fontSize: fonts.size.sm,
+                                fontFamily: fonts.family,
+                                fontWeight: fonts.weight.medium,
+                                cursor: "pointer",
+                                transition: "color 0.15s",
+                                whiteSpace: "nowrap",
+                            }}
                         >
+                            <Download size={14} />
                             Descargar
-                        </Button>
+                        </button>
                     </div>
                 )}
 
                 {updateStatus === "error" && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
+                    <div style={{ ...flexColumn, gap: spacing[2] }}>
                         <p style={{ color: colors.accent.red, fontSize: fonts.size.sm, margin: 0 }}>
-                            Error al verificar actualizaciones. Podés verificar manualmente en GitHub.
+                            Error al verificar actualizaciones. Podés verificar manualmente en
+                            GitHub.
                         </p>
-                        <Button
-                            variant="secondary"
-                            size="sm"
+                        <button
                             onClick={() => open("https://github.com/nnavales/quant/releases")}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.color = colors.fg.base;
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.color = colors.fg.dim;
+                            }}
+                            style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: spacing[1],
+                                backgroundColor: colors.bg.surface,
+                                border: "none",
+                                borderRadius: radius.md,
+                                height: "28px",
+                                padding: `0 ${spacing[2]}`,
+                                color: colors.fg.dim,
+                                fontSize: fonts.size.sm,
+                                fontFamily: fonts.family,
+                                fontWeight: fonts.weight.medium,
+                                cursor: "pointer",
+                                transition: "color 0.15s",
+                                whiteSpace: "nowrap",
+                            }}
                         >
                             Ver releases en GitHub
-                        </Button>
+                        </button>
                     </div>
                 )}
-            </div>
 
-            <Button
-                variant="secondary"
-                iconLeft={<RefreshCw size={14} className={checking ? "spin" : ""} />}
-                onClick={checkForUpdates}
-                disabled={checking}
-            >
-                {checking ? "Buscando..." : "Buscar actualizaciones"}
-            </Button>
+                <button
+                    onClick={checkForUpdates}
+                    disabled={checking}
+                    onMouseEnter={(e) => {
+                        if (!checking) e.currentTarget.style.color = colors.fg.base;
+                    }}
+                    onMouseLeave={(e) => {
+                        if (!checking) e.currentTarget.style.color = colors.fg.dim;
+                    }}
+                    style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: spacing[2],
+                        backgroundColor: colors.bg.surface,
+                        border: "none",
+                        borderRadius: radius.md,
+                        height: "32px",
+                        padding: `0 ${spacing[3]}`,
+                        color: colors.fg.dim,
+                        fontSize: fonts.size.sm,
+                        fontFamily: fonts.family,
+                        fontWeight: fonts.weight.medium,
+                        cursor: checking ? "not-allowed" : "pointer",
+                        opacity: checking ? 0.5 : 1,
+                        transition: "color 0.15s",
+                        whiteSpace: "nowrap",
+                        marginTop: spacing[3],
+                    }}
+                >
+                    <RefreshCw
+                        size={14}
+                        style={checking ? { animation: "spin 1s linear infinite" } : undefined}
+                    />
+                    {checking ? "Buscando..." : "Buscar actualizaciones"}
+                </button>
+            </SettingsCard>
 
             <style>{`
                 @keyframes spin {
                     from { transform: rotate(0deg); }
                     to { transform: rotate(360deg); }
                 }
-                .spin {
-                    animation: spin 1s linear infinite;
-                }
             `}</style>
         </div>
     );
 }
+

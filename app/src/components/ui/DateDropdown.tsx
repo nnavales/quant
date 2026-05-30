@@ -1,9 +1,10 @@
 import { useRef } from "react";
 import { ChevronDown } from "lucide-react";
 import { colors } from "@/styles/colors";
-import { spacing, radius } from "@/styles/theme";
+import { spacing, radius, shadows } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
 import { useClickOutside, useDropdownPosition } from "@/hooks";
+import { truncate } from "@/styles/layout";
 
 export interface DateDropdownProps {
     label: string | null;
@@ -27,7 +28,7 @@ const PANEL_BASE: React.CSSProperties = {
     gap: spacing[1],
     minWidth: "160px",
     maxWidth: "280px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06)",
+    boxShadow: shadows.md,
 };
 
 export function DateDropdown({
@@ -67,9 +68,9 @@ export function DateDropdown({
                     justifyContent: "space-between",
                     gap: spacing[2],
                     padding: `0 ${spacing[2]}`,
-                    height: "40px",
-                    backgroundColor: colors.bg.base,
-                    border: `1px solid ${colors.fill}`,
+                    height: "34px",
+                    backgroundColor: colors.fill,
+                    border: "none",
                     borderRadius: radius.md,
                     color: label ? colors.fg.base : colors.fg.dim,
                     cursor: disabled ? "not-allowed" : "pointer",
@@ -82,12 +83,7 @@ export function DateDropdown({
 
             >
                 <span
-                    style={{
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        fontWeight: label ? 500 : 400,
-                    }}
+                    style={{...truncate, fontWeight: label ? fonts.weight.medium : fonts.weight.regular}}
                 >
                     {label || placeholder}
                 </span>

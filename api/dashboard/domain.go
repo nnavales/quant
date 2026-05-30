@@ -368,7 +368,10 @@ func BuildKPIs(rows []MonthlyData) KPIResponse {
 	}
 
 	if currentCapital > 0 {
-		kpis.CapitalGrowthRateYTD = totalSavings / currentCapital
+		startingCapital := currentCapital - totalSavings
+		if startingCapital > 0 {
+			kpis.CapitalGrowthRateYTD = totalSavings / startingCapital
+		}
 	}
 
 	if kpis.CoreBurnRate > 0 {

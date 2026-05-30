@@ -284,6 +284,8 @@ func BuildListHistoricalEntriesQuery(filter *Filter) (string, []any) {
 			sortField = "income"
 		case "expense":
 			sortField = "expense"
+		case "savings":
+			sortField = "savings"
 		}
 	}
 

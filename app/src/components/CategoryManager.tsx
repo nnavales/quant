@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { X, Check, ChevronRight, Plus, RotateCcw, Trash2, Pencil } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { X, Check, ChevronRight, Plus, RotateCcw, Pencil, Trash2 } from "lucide-react";
 import type { Category, Subcategory } from "@/api_client/types";
 import {
     useGroupedCategories,
@@ -19,25 +18,23 @@ import {
     useHardDeleteSubcategory,
 } from "@/hooks";
 import { InputGroup } from "./ui/InputGroup";
+import { Button } from "@/components/ui/Button";
 import { toast } from "@/utils/toast";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
-import { cardStyle, rowStyle } from "@/styles/layout";
-
-const inputStyle: React.CSSProperties = {
-    height: "28px",
-    padding: `0 ${spacing[3]}`,
-    backgroundColor: colors.bg.surface,
-    border: `1px solid ${colors.fill}`,
-    borderRadius: radius.md,
-    color: colors.fg.base,
-    fontSize: fonts.size.sm,
-    outline: "none",
-    boxSizing: "border-box",
-};
+import {
+    cardStyle,
+    rowStyle,
+    inputStyle,
+    flexBetween,
+    flexColumn,
+    flexRow,
+    truncate,
+} from "@/styles/layout";
+import { SettingsCard } from "@/components/SettingsCard";
 
 export function CategoryManager() {
     const queryClient = useQueryClient();
@@ -59,15 +56,21 @@ export function CategoryManager() {
 
     const [newCategoryName, setNewCategoryName] = useState("");
     const [newSubcategoryName, setNewSubcategoryName] = useState("");
-    const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
     const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
     const [editingCategoryName, setEditingCategoryName] = useState("");
     const [editingSubcategoryId, setEditingSubcategoryId] = useState<string | null>(null);
     const [editingSubcategoryName, setEditingSubcategoryName] = useState("");
 
-    const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; type: "category" | "subcategory" } | null>(null);
-    const [hardDeleteConfirm, setHardDeleteConfirm] = useState<{ id: string; type: "category" | "subcategory" } | null>(null);
+    const [showSubcategoryForm, setShowSubcategoryForm] = useState<string | null>(null);
+    const [deleteConfirm, setDeleteConfirm] = useState<{
+        id: string;
+        type: "category" | "subcategory";
+    } | null>(null);
+    const [hardDeleteConfirm, setHardDeleteConfirm] = useState<{
+        id: string;
+        type: "category" | "subcategory";
+    } | null>(null);
     const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
     const toggleExpandCategory = (id: string) => {
@@ -87,7 +90,9 @@ export function CategoryManager() {
     const handleAddCategory = () => {
         const name = newCategoryName.trim();
         if (!name) return;
-        const exists = categoryGroups.some((g) => g.category.name.toLowerCase() === name.toLowerCase());
+        const exists = categoryGroups.some(
+            (g) => g.category.name.toLowerCase() === name.toLowerCase()
+        );
         if (exists) {
             toast(`La categoría "${name}" ya existe`);
             return;
@@ -105,21 +110,23 @@ export function CategoryManager() {
         );
     };
 
-    const handleAddSubcategory = () => {
+    const handleAddSubcategory = (categoryId: string) => {
         const name = newSubcategoryName.trim();
-        if (!name || !selectedCategoryId) return;
-        const group = categoryGroups.find((g) => g.category.id === selectedCategoryId);
-        const exists = group?.subcategories.some((s) => s.name.toLowerCase() === name.toLowerCase());
+        if (!name) return;
+        const group = categoryGroups.find((g) => g.category.id === categoryId);
+        const exists = group?.subcategories.some(
+            (s) => s.name.toLowerCase() === name.toLowerCase()
+        );
         if (exists) {
             toast(`La subcategoría "${name}" ya existe`);
             return;
         }
         createSubcategoryMutation.mutate(
-            { name, category_id: selectedCategoryId },
+            { name, category_id: categoryId },
             {
                 onSuccess: () => {
                     setNewSubcategoryName("");
-                    setSelectedCategoryId(null);
+                    setShowSubcategoryForm(null);
                     refetch();
                     toast("Subcategoría creada", "success");
                 },
@@ -215,14 +222,18 @@ export function CategoryManager() {
             setEditingCategoryId(null);
             return;
         }
-        const originalCat = categoryGroups.find((g) => g.category.id === editingCategoryId)?.category;
+        const originalCat = categoryGroups.find(
+            (g) => g.category.id === editingCategoryId
+        )?.category;
         if (originalCat && originalCat.name === name) {
             setEditingCategoryId(null);
             setEditingCategoryName("");
             return;
         }
         const exists = categoryGroups.some(
-            (g) => g.category.id !== editingCategoryId && g.category.name.toLowerCase() === name.toLowerCase()
+            (g) =>
+                g.category.id !== editingCategoryId &&
+                g.category.name.toLowerCase() === name.toLowerCase()
         );
         if (exists) {
             toast(`La categoría "${name}" ya existe`);
@@ -260,7 +271,9 @@ export function CategoryManager() {
             setEditingSubcategoryName("");
             return;
         }
-        const parentGroup = categoryGroups.find((g) => g.subcategories.some((s) => s.id === editingSubcategoryId));
+        const parentGroup = categoryGroups.find((g) =>
+            g.subcategories.some((s) => s.id === editingSubcategoryId)
+        );
         const exists = parentGroup?.subcategories.some(
             (s) => s.id !== editingSubcategoryId && s.name.toLowerCase() === name.toLowerCase()
         );
@@ -282,62 +295,112 @@ export function CategoryManager() {
         );
     };
 
-    if (isLoading) return <div style={{ color: colors.fg.dim, textAlign: "center", padding: spacing[8] }}>Cargando...</div>;
+    if (isLoading)
+        return (
+            <div style={{ color: colors.fg.dim, textAlign: "center", padding: spacing[8] }}>
+                Cargando...
+            </div>
+        );
 
     const activeGroups = categoryGroups.filter((g) => !g.category.deleted_at);
     const deletedGroups = categoryGroups.filter((g) => g.category.deleted_at);
 
     return (
-        <div>
-            <InputGroup
-                placeholder="Nueva categoría..."
-                value={newCategoryName}
-                onChange={setNewCategoryName}
-                onSubmit={handleAddCategory}
-                buttonLabel="Agregar"
-            />
+        <div style={{ ...flexColumn, gap: spacing[4] }}>
+            <SettingsCard>
+                <InputGroup
+                    placeholder="Nueva categoría..."
+                    value={newCategoryName}
+                    onChange={setNewCategoryName}
+                    onSubmit={handleAddCategory}
+                    buttonLabel="Agregar"
+                />
+            </SettingsCard>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: spacing[3] }}>
+            <div style={{ ...flexColumn, gap: spacing[3] }}>
                 {activeGroups.map((group) => (
                     <div
                         key={group.category.id}
-                        style={cardStyle}
+                        style={{ ...cardStyle, backgroundColor: colors.bg.elevated }}
                     >
                         {editingCategoryId === group.category.id ? (
-                            <div style={{ display: "flex", gap: spacing[2], alignItems: "center" }}>
-                                <input
-                                    type="text"
-                                    value={editingCategoryName}
-                                    onChange={(e) => setEditingCategoryName(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") saveEditCategory();
-                                        if (e.key === "Escape") setEditingCategoryId(null);
-                                    }}
-                                    onBlur={saveEditCategory}
-                                    autoFocus
-                                    style={{ ...inputStyle, flex: 1 }}
-                                />
-                                <Button variant="icon" onClick={saveEditCategory}>
-                                    <Check size={14} />
-                                </Button>
-                                <Button variant="icon" onClick={() => setEditingCategoryId(null)}>
-                                    <X size={14} />
-                                </Button>
+                            <div style={{ ...flexBetween, gap: spacing[5] }}>
+                                <div style={{ ...flexRow, gap: spacing[2], flex: 1, minWidth: 0 }}>
+                                    <ChevronRight
+                                        size={16}
+                                        style={{
+                                            color: colors.fg.dim,
+                                            flexShrink: 0,
+                                            transition: "transform 0.15s",
+                                            transform: expandedCategories.has(group.category.id)
+                                                ? "rotate(90deg)"
+                                                : "rotate(0deg)",
+                                            cursor: "pointer",
+                                        }}
+                                        onClick={() => toggleExpandCategory(group.category.id)}
+                                    />
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            gap: spacing[2],
+                                            alignItems: "center",
+                                            flex: 1,
+                                            padding: spacing[1],
+                                            backgroundColor: colors.bg.surface,
+                                            borderRadius: radius.md,
+                                            overflow: "hidden",
+                                            height: "32px",
+                                        }}
+                                    >
+                                        <input
+                                            type="text"
+                                            value={editingCategoryName}
+                                            onChange={(e) => setEditingCategoryName(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") saveEditCategory();
+                                                if (e.key === "Escape") setEditingCategoryId(null);
+                                            }}
+                                            onBlur={saveEditCategory}
+                                            autoFocus
+                                            style={{
+                                                ...inputStyle,
+                                                flex: 1,
+                                                border: "none",
+                                                minWidth: 0,
+                                            }}
+                                        />
+                                        {group.category.id !== "__uncategorized__" && (
+                                            <span
+                                                style={{
+                                                    display: "flex",
+                                                    gap: spacing[1],
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                <Button variant="icon" onClick={saveEditCategory}>
+                                                    <Check size={14} />
+                                                </Button>
+                                                <Button
+                                                    variant="icon"
+                                                    onClick={() => setEditingCategoryId(null)}
+                                                >
+                                                    <X size={14} />
+                                                </Button>
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         ) : (
                             <div
                                 style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
+                                    ...flexBetween,
                                     gap: spacing[5],
-                                    marginBottom: expandedCategories.has(group.category.id) ? spacing[3] : 0,
                                 }}
                             >
                                 <div
                                     style={{
-                                        display: "flex",
-                                        alignItems: "center",
+                                        ...flexRow,
                                         gap: spacing[2],
                                         cursor: "pointer",
                                         flex: 1,
@@ -351,29 +414,40 @@ export function CategoryManager() {
                                             color: colors.fg.dim,
                                             flexShrink: 0,
                                             transition: "transform 0.15s",
-                                            transform: expandedCategories.has(group.category.id) ? "rotate(90deg)" : "rotate(0deg)",
+                                            transform: expandedCategories.has(group.category.id)
+                                                ? "rotate(90deg)"
+                                                : "rotate(0deg)",
                                         }}
                                     />
-                                    <span style={{
-                                        fontWeight: 600,
-                                        color: colors.fg.base,
-                                        fontSize: fonts.size.sm,
-                                        flex: 1,
-                                        minWidth: 0,
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                        paddingRight: spacing[2],
-                                    }}>
+                                    <span
+                                        style={{
+                                            ...truncate,
+                                            fontWeight: fonts.weight.semibold,
+                                            color: colors.fg.base,
+                                            fontSize: fonts.size.sm,
+                                            flex: 1,
+                                            minWidth: 0,
+                                            paddingRight: spacing[2],
+                                        }}
+                                    >
                                         {group.category.name}
                                     </span>
                                 </div>
                                 {group.category.id !== "__uncategorized__" && (
-                                    <span style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
-                                        <Button variant="icon" onClick={() => startEditCategory(group.category)} title="Editar">
+                                    <span
+                                        style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}
+                                    >
+                                        <Button
+                                            variant="icon"
+                                            onClick={() => startEditCategory(group.category)}
+                                            title="Editar"
+                                        >
                                             <Pencil size={14} />
                                         </Button>
-                                        <Button variant="icon" onClick={() => handleDeleteCategory(group.category.id)}>
+                                        <Button
+                                            variant="icon"
+                                            onClick={() => handleDeleteCategory(group.category.id)}
+                                        >
                                             <Trash2 size={14} />
                                         </Button>
                                     </span>
@@ -382,123 +456,285 @@ export function CategoryManager() {
                         )}
 
                         {expandedCategories.has(group.category.id) && (
-                            <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
-                                {group.subcategories.filter(s => !s.deleted_at).map((sub) =>
-                                    editingSubcategoryId === sub.id ? (
-                                        <div key={sub.id} style={{ display: "flex", gap: spacing[2], alignItems: "center" }}>
-                                            <input
-                                                type="text"
-                                                value={editingSubcategoryName}
-                                                onChange={(e) => setEditingSubcategoryName(e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === "Enter") saveEditSubcategory();
-                                                    if (e.key === "Escape") setEditingSubcategoryId(null);
-                                                }}
-                                                onBlur={saveEditSubcategory}
-                                                autoFocus
-                                                style={{ ...inputStyle, flex: 1 }}
-                                            />
-                                            <Button variant="icon" onClick={saveEditSubcategory}>
-                                                <Check size={12} />
-                                            </Button>
-                                            <Button variant="icon" onClick={() => setEditingSubcategoryId(null)}>
-                                                <X size={12} />
-                                            </Button>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: spacing[1],
+                                    marginTop: spacing[3],
+                                    paddingLeft: spacing[6],
+                                    borderLeft: `1px solid ${colors.fill}`,
+                                }}
+                            >
+                                {group.subcategories
+                                    .filter((s) => !s.deleted_at)
+                                    .map((sub) => (
+                                        <div key={sub.id}>
+                                            {editingSubcategoryId === sub.id ? (
+                                                <div
+                                                    style={{
+                                                        display: "flex",
+                                                        gap: spacing[2],
+                                                        alignItems: "center",
+                                                        padding: spacing[1],
+                                                        backgroundColor: colors.bg.surface,
+                                                        borderRadius: radius.md,
+                                                        overflow: "hidden",
+                                                        height: "32px",
+                                                    }}
+                                                >
+                                                    <input
+                                                        type="text"
+                                                        value={editingSubcategoryName}
+                                                        onChange={(e) =>
+                                                            setEditingSubcategoryName(
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === "Enter")
+                                                                saveEditSubcategory();
+                                                            if (e.key === "Escape")
+                                                                setEditingSubcategoryId(null);
+                                                        }}
+                                                        autoFocus
+                                                        placeholder="Nombre"
+                                                        style={{
+                                                            ...inputStyle,
+                                                            flex: 1,
+                                                            minWidth: 0,
+                                                            border: "none",
+                                                        }}
+                                                    />
+                                                    <div
+                                                        style={{
+                                                            display: "flex",
+                                                            gap: spacing[1],
+                                                            flexShrink: 0,
+                                                        }}
+                                                    >
+                                                        <Button
+                                                            variant="icon"
+                                                            onClick={saveEditSubcategory}
+                                                        >
+                                                            <Check size={14} />
+                                                        </Button>
+                                                        <Button
+                                                            variant="icon"
+                                                            onClick={() =>
+                                                                setEditingSubcategoryId(null)
+                                                            }
+                                                        >
+                                                            <X size={14} />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div
+                                                    style={{
+                                                        ...rowStyle,
+                                                        paddingRight: 0,
+                                                        gap: spacing[5],
+                                                    }}
+                                                >
+                                                    <div
+                                                        style={{
+                                                            ...flexRow,
+                                                            gap: spacing[2],
+                                                            flex: 1,
+                                                            minWidth: 0,
+                                                            overflow: "hidden",
+                                                        }}
+                                                    >
+                                                        <span
+                                                            style={{
+                                                                ...truncate,
+                                                                fontSize: fonts.size.sm,
+                                                                color: colors.fg.base,
+                                                            }}
+                                                        >
+                                                            {sub.name}
+                                                        </span>
+                                                    </div>
+                                                    <div
+                                                        style={{
+                                                            display: "flex",
+                                                            gap: spacing[1],
+                                                            flexShrink: 0,
+                                                        }}
+                                                    >
+                                                        <Button
+                                                            variant="icon"
+                                                            title="Editar"
+                                                            onClick={() =>
+                                                                startEditSubcategory(sub)
+                                                            }
+                                                        >
+                                                            <Pencil size={12} />
+                                                        </Button>
+                                                        <Button
+                                                            variant="icon"
+                                                            title="Eliminar"
+                                                            onClick={() =>
+                                                                handleDeleteSubcategory(sub.id)
+                                                            }
+                                                        >
+                                                            <Trash2 size={12} />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    ) : (
+                                    ))}
+
+                                {group.subcategories
+                                    .filter((s) => s.deleted_at)
+                                    .map((sub) => (
                                         <div
                                             key={sub.id}
-                                            style={{ ...rowStyle, gap: spacing[5] }}
+                                            style={{
+                                                ...rowStyle,
+                                                opacity: 0.6,
+                                                backgroundColor: colors.bg.surface,
+                                                paddingRight: 0,
+                                                gap: spacing[5],
+                                            }}
                                         >
-                                            <span style={{
-                                                overflow: "hidden",
-                                                textOverflow: "ellipsis",
-                                                whiteSpace: "nowrap",
-                                                fontSize: fonts.size.sm,
-                                                color: colors.fg.base,
-                                            }}>
-                                                {sub.name}
-                                            </span>
-                                            <span style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
-                                                <Button variant="icon" onClick={() => startEditSubcategory(sub)} title="Editar">
-                                                    <Pencil size={12} />
+                                            <div
+                                                style={{
+                                                    ...flexRow,
+                                                    gap: spacing[2],
+                                                    flex: 1,
+                                                    minWidth: 0,
+                                                    overflow: "hidden",
+                                                }}
+                                            >
+                                                <span
+                                                    style={{
+                                                        ...truncate,
+                                                        fontSize: fonts.size.sm,
+                                                        color: colors.fg.dim,
+                                                    }}
+                                                >
+                                                    {sub.name}
+                                                </span>
+                                            </div>
+                                            <span
+                                                style={{
+                                                    display: "flex",
+                                                    gap: spacing[1],
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                <Button
+                                                    variant="icon"
+                                                    onClick={() => handleRestoreSubcategory(sub.id)}
+                                                    title="Restaurar"
+                                                >
+                                                    <RotateCcw size={12} />
                                                 </Button>
                                                 <Button
                                                     variant="icon"
-                                                    onClick={() => handleDeleteSubcategory(sub.id)}
+                                                    onClick={() =>
+                                                        setHardDeleteConfirm({
+                                                            id: sub.id,
+                                                            type: "subcategory",
+                                                        })
+                                                    }
+                                                    title="Eliminar permanentemente"
                                                 >
-                                                    <Trash2 size={12} />
+                                                    <Trash2
+                                                        size={12}
+                                                        style={{ color: colors.accent.red }}
+                                                    />
                                                 </Button>
                                             </span>
                                         </div>
-                                    )
-                                )}
+                                    ))}
 
-                                {group.subcategories.filter(s => s.deleted_at).map((sub) => (
-                                    <div key={sub.id} style={{ ...rowStyle, opacity: 0.6, backgroundColor: colors.bg.surface, gap: spacing[5] }}>
-                                        <span style={{
+                                {showSubcategoryForm === group.category.id ? (
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            gap: spacing[2],
+                                            alignItems: "center",
+                                            padding: spacing[1],
+                                            backgroundColor: colors.bg.surface,
+                                            borderRadius: radius.md,
                                             overflow: "hidden",
-                                            textOverflow: "ellipsis",
-                                            whiteSpace: "nowrap",
-                                            fontSize: fonts.size.sm,
-                                            color: colors.fg.dim,
-                                        }}>
-                                            {sub.name}
-                                        </span>
-                                        <span style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
-                                            <Button variant="icon" onClick={() => handleRestoreSubcategory(sub.id)} title="Restaurar">
-                                                <RotateCcw size={12} />
-                                            </Button>
-                                            <Button variant="icon" onClick={() => setHardDeleteConfirm({ id: sub.id, type: "subcategory" })} title="Eliminar permanentemente">
-                                                <Trash2 size={12} style={{ color: colors.accent.red }} />
-                                            </Button>
-                                        </span>
-                                    </div>
-                                ))}
-
-                                {selectedCategoryId === group.category.id ? (
-                                    <div style={{ display: "flex", gap: spacing[2], alignItems: "center", padding: spacing[2], backgroundColor: colors.fill, borderRadius: radius.md, border: `1px solid ${colors.border}` }}>
+                                            height: "32px",
+                                        }}
+                                    >
                                         <input
                                             type="text"
                                             placeholder="Nombre..."
                                             value={newSubcategoryName}
                                             onChange={(e) => setNewSubcategoryName(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter") handleAddSubcategory();
-                                                if (e.key === "Escape") { setSelectedCategoryId(null); setNewSubcategoryName(""); }
+                                            onKeyDown={(e) =>
+                                                e.key === "Enter" &&
+                                                handleAddSubcategory(group.category.id)
+                                            }
+                                            style={{
+                                                ...inputStyle,
+                                                flex: 1,
+                                                minWidth: 0,
+                                                border: "none",
                                             }}
                                             autoFocus
-                                            style={{ ...inputStyle, flex: 1, height: "28px" }}
                                         />
-                                        <Button variant="icon" onClick={handleAddSubcategory} disabled={!newSubcategoryName.trim()} title="Guardar">
-                                            <Check size={12} />
-                                        </Button>
-                                        <Button variant="icon" onClick={() => { setSelectedCategoryId(null); setNewSubcategoryName(""); }} title="Cancelar">
-                                            <X size={12} />
-                                        </Button>
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                gap: spacing[1],
+                                                flexShrink: 0,
+                                            }}
+                                        >
+                                            <Button
+                                                variant="icon"
+                                                onClick={() =>
+                                                    handleAddSubcategory(group.category.id)
+                                                }
+                                            >
+                                                <Check size={14} />
+                                            </Button>
+                                            <Button
+                                                variant="icon"
+                                                onClick={() => setShowSubcategoryForm(null)}
+                                            >
+                                                <X size={14} />
+                                            </Button>
+                                        </div>
                                     </div>
                                 ) : (
                                     group.category.id !== "__uncategorized__" && (
                                         <button
                                             type="button"
-                                            onClick={() => setSelectedCategoryId(group.category.id)}
+                                            onClick={() =>
+                                                setShowSubcategoryForm(group.category.id)
+                                            }
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.color = colors.fg.base;
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.color = colors.fg.dim;
+                                            }}
                                             style={{
                                                 display: "inline-flex",
                                                 alignItems: "center",
                                                 gap: spacing[1],
                                                 padding: `${spacing[1]} ${spacing[2]}`,
-                                                fontSize: fonts.size.xs,
+                                                fontSize: fonts.size.sm,
                                                 backgroundColor: "transparent",
                                                 border: "none",
                                                 color: colors.fg.dim,
                                                 cursor: "pointer",
-                                                fontWeight: 500,
-                                                fontFamily: fonts.family.text,
+                                                fontWeight: fonts.weight.medium,
+                                                fontFamily: fonts.family,
                                                 whiteSpace: "nowrap",
                                             }}
                                         >
-                                            <Plus size={12} />
-                                            Agregar
+                                            <Plus size={14} />
+                                            Agregar subcategoría
                                         </button>
                                     )
                                 )}
@@ -510,10 +746,17 @@ export function CategoryManager() {
 
             {deletedGroups.length > 0 && (
                 <div style={{ marginTop: spacing[6] }}>
-                    <h4 style={{ color: colors.fg.dim, fontSize: fonts.size.sm, marginBottom: spacing[3], fontWeight: 500 }}>
+                    <h4
+                        style={{
+                            color: colors.fg.dim,
+                            fontSize: fonts.size.sm,
+                            marginBottom: spacing[3],
+                            fontWeight: fonts.weight.medium,
+                        }}
+                    >
                         Categorías borradas
                     </h4>
-                    <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
+                    <div style={{ ...flexColumn, gap: spacing[2] }}>
                         {deletedGroups.map((group) => (
                             <div
                                 key={group.category.id}
@@ -528,7 +771,9 @@ export function CategoryManager() {
                                     opacity: 0.6,
                                 }}
                             >
-                                <span style={{ fontSize: fonts.size.sm }}>{group.category.name}</span>
+                                <span style={{ fontSize: fonts.size.sm }}>
+                                    {group.category.name}
+                                </span>
                                 <span style={{ display: "flex", gap: 0 }}>
                                     <Button
                                         variant="icon"
@@ -539,7 +784,12 @@ export function CategoryManager() {
                                     </Button>
                                     <Button
                                         variant="icon"
-                                        onClick={() => setHardDeleteConfirm({ id: group.category.id, type: "category" })}
+                                        onClick={() =>
+                                            setHardDeleteConfirm({
+                                                id: group.category.id,
+                                                type: "category",
+                                            })
+                                        }
                                         title="Eliminar permanentemente"
                                     >
                                         <Trash2 size={14} style={{ color: colors.accent.red }} />
@@ -554,16 +804,28 @@ export function CategoryManager() {
             <ConfirmDialog
                 isOpen={!!deleteConfirm}
                 onClose={() => setDeleteConfirm(null)}
-                onConfirm={deleteConfirm?.type === "category" ? confirmDeleteCategory : confirmDeleteSubcategory}
-                title={deleteConfirm?.type === "category" ? "Confirmar eliminación" : "Confirmar eliminación"}
-                description={deleteConfirm?.type === "category" ? "¿Eliminar categoría y todas sus subcategorías?" : "¿Eliminar subcategoría?"}
+                onConfirm={
+                    deleteConfirm?.type === "category"
+                        ? confirmDeleteCategory
+                        : confirmDeleteSubcategory
+                }
+                title="Confirmar eliminación"
+                description={
+                    deleteConfirm?.type === "category"
+                        ? "¿Eliminar categoría y todas sus subcategorías?"
+                        : "¿Eliminar subcategoría?"
+                }
                 isLoading={deleteCategoryMutation.isPending || deleteSubcategoryMutation.isPending}
             />
 
             <ConfirmDialog
                 isOpen={!!hardDeleteConfirm}
                 onClose={() => setHardDeleteConfirm(null)}
-                onConfirm={hardDeleteConfirm?.type === "category" ? handleHardDeleteCategory : handleHardDeleteSubcategory}
+                onConfirm={
+                    hardDeleteConfirm?.type === "category"
+                        ? handleHardDeleteCategory
+                        : handleHardDeleteSubcategory
+                }
                 title="Eliminar permanentemente"
                 description={
                     hardDeleteConfirm?.type === "category"
@@ -571,7 +833,9 @@ export function CategoryManager() {
                         : "¿Eliminar permanentemente esta subcategoría y todas sus transacciones asociadas? No se puede deshacer."
                 }
                 confirmLabel="Eliminar permanentemente"
-                isLoading={hardDeleteCategoryMutation.isPending || hardDeleteSubcategoryMutation.isPending}
+                isLoading={
+                    hardDeleteCategoryMutation.isPending || hardDeleteSubcategoryMutation.isPending
+                }
                 destructive
                 requireHold
             />

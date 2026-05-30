@@ -1,55 +1,25 @@
 export const fonts = {
-    family: {
-        text: '"Inter", system-ui, sans-serif',
-        display: '"Inter", system-ui, sans-serif',
-    },
+    family: '"Inter", system-ui, sans-serif',
+    monoFamily: '"monospace"',
     size: {
-        "2xs": "9px",
         xs: "11px",
+        xs2: "11.5px",
+        xs3: "12px",
+        xs4: "12.5px",
         sm: "13px",
+        sm2: "13.3px",
+        sm3: "13.5px",
         base: "15px",
         lg: "17px",
         xl: "20px",
-        "2xl": "24px",
-        "3xl": "28px",
-        "4xl": "34px",
-        "5xl": "48px",
+        xl2: "24px",
+        xl3: "28px",
     },
     weight: {
         regular: 400,
         medium: 500,
         semibold: 600,
-    },
-    lineHeight: {
-        tighter: 1.1,
-        tight: 1.25,
-        normal: 1.4,
-        relaxed: 1.6,
-    },
-    table: {
-        principal: {
-            badge: "11.5px",
-            header: "12px",
-            body: "12.5px",
-            meta: "11px",
-            date: "13.3px",
-        },
-        // Column headers
-        header: "12px",
-        // Compact table text (metrics table)
-        sm: "13px",
-        // Main text in rows (names, descriptions)
-        body: "13.5px",
-        // Money amounts in transaction rows
-        amount: "13.5px",
-        // Badges (EGRESO/INGRESO, ARS/USD)
-        badge: "12px",
-        // Secondary metadata (dates, categories, subcategories)
-        meta: "12.5px",
-        // Prominent amounts (Net Worth list)
-        lg: "14px",
-        // Large KPI values
-        xl: "20px",
+        bold: 700,
     },
 } as const;
 

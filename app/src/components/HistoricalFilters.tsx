@@ -10,13 +10,15 @@ import { DatePicker } from "@/components/ui/DatePicker";
 import { DateDropdown } from "@/components/ui/DateDropdown";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { getHistoricalDatePresets, formatShortDate } from "@/utils/date";
+import { flexColumn, flexRow } from "@/styles/layout";
 
 interface HistoricalFiltersProps {
     filters: HistoricalFilters;
     onChange: (filters: HistoricalFilters) => void;
+    noMargin?: boolean;
 }
 
-export function HistoricalFiltersComponent({ filters, onChange }: HistoricalFiltersProps) {
+export function HistoricalFiltersComponent({ filters, onChange, noMargin }: HistoricalFiltersProps) {
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const [dateFrom, setDateFrom] = useState("");
     const [dateTo, setDateTo] = useState("");
@@ -63,7 +65,7 @@ export function HistoricalFiltersComponent({ filters, onChange }: HistoricalFilt
 
     return (
         <div>
-            <div style={filterContainerStyle} ref={dropdownRef}>
+            <div style={{ ...filterContainerStyle, marginBottom: noMargin ? 0 : spacing[3] }} ref={dropdownRef}>
                 {/* Date range dropdown */}
                 <div style={filterWrapperStyle}>
                     <DateDropdown
@@ -103,8 +105,7 @@ export function HistoricalFiltersComponent({ filters, onChange }: HistoricalFilt
                         ))}
                         <div
                             style={{
-                                display: "flex",
-                                flexDirection: "column",
+                                ...flexColumn,
                                 gap: spacing[2],
                             }}
                         >
@@ -137,15 +138,14 @@ export function HistoricalFiltersComponent({ filters, onChange }: HistoricalFilt
                                 }}
                                 style={{
                                     marginTop: spacing[1],
-                                    display: "flex",
-                                    alignItems: "center",
+                                    ...flexRow,
                                     justifyContent: "center",
                                     gap: spacing[1],
                                     padding: 0,
                                     lineHeight: 1,
                                     cursor: "pointer",
                                     fontSize: fonts.size.xs,
-                                    fontWeight: 400,
+                                    fontWeight: fonts.weight.regular,
                                     color: colors.fg.dim,
                                     transition: "color 0.15s",
                                     flexShrink: 0,

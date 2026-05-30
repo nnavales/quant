@@ -2,22 +2,23 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useDashboard } from "@/hooks";
 import { dashboard as dashboardApi } from "@/api_client/endpoints";
-import { spacing, radius, shadows } from "@/styles/theme";
+import { spacing, radius } from "@/styles/theme";
+import { formatNumber } from "@/utils/format";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
-import { Modal, ModalContent } from "@/components/ui/Modal";
+import { Modal, ModalContent, ModalCloseButton } from "@/components/ui/Modal";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { chipTriggerStyle } from "@/styles/filters";
-import { X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import ReactECharts from "echarts-for-react";
 import type { KPI, MetricCell } from "@/api_client/types";
+import { flexBetween, flexColumn, flexRow } from "@/styles/layout";
 
 /* ──────────── Full Line Chart Modal ──────────── */
 
 const KPI_MODAL_KPIS: Record<string, KPI> = {
     "Ingresos YTD": "income_ytd",
-    "Gastos YTD": "expenses_ytd",
+    "Egresos YTD": "expenses_ytd",
     "Ahorro Neto YTD": "net_savings_ytd",
     "Balance Total": "total_capital",
     "Patrimonio Neto": "total_capital",
@@ -90,9 +91,11 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
                         backgroundColor: colors.bg.surface,
                         borderRadius: radius.lg,
                         padding: spacing[5],
-                        boxShadow: shadows.modal,
                     }}
                 >
+                    <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: spacing[2] }}>
+                        <ModalCloseButton onClick={onClose} />
+                    </div>
                     <div style={{ color: colors.fg.dim, textAlign: "center" }}>Cargando...</div>
                 </ModalContent>
             </Modal>
@@ -106,9 +109,11 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
                         backgroundColor: colors.bg.surface,
                         borderRadius: radius.lg,
                         padding: spacing[5],
-                        boxShadow: shadows.modal,
                     }}
                 >
+                    <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: spacing[2] }}>
+                        <ModalCloseButton onClick={onClose} />
+                    </div>
                     <div style={{ color: colors.accent.red, textAlign: "center" }}>Error al cargar</div>
                 </ModalContent>
             </Modal>
@@ -116,13 +121,13 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
     if (!dashboardData?.monthlySeries) return null;
 
     const config = KPI_MODAL_KPIS[kpi]
-        ? { key: KPI_MODAL_KPIS[kpi], color: colors.accent.cyan }
+        ? { key: KPI_MODAL_KPIS[kpi], color: colors.accent.blue }
         : { key: "income", color: colors.accent.green };
     const colorMap: Record<string, string> = {
         income_ytd: colors.accent.green,
         expenses_ytd: colors.accent.red,
-        net_savings_ytd: colors.accent.green,
-        total_capital: colors.accent.cyan,
+        net_savings_ytd: colors.accent.cyan,
+        total_capital: colors.accent.blue,
     };
 
     const keyMap: Record<string, string> = {
@@ -205,7 +210,7 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
 
     const titleMap: Record<string, string> = {
         "Ingresos YTD": "Ingresos",
-        "Gastos YTD": "Gastos",
+        "Egresos YTD": "Egresos",
         "Ahorro Neto YTD": "Ahorro Neto",
         "Balance Total": "Balance",
         "Capital": "Evolución de Capital",
@@ -217,7 +222,7 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
 
     const descMap: Record<string, string> = {
         "Ingresos YTD": "Evolución de ingresos período a período",
-        "Gastos YTD": "Evolución de gastos período a período",
+        "Egresos YTD": "Evolución de egresos período a período",
         "Ahorro Neto YTD": "Evolución del ahorro neto período a período",
         "Balance Total": "Evolución del balance total período a período",
         "Patrimonio Neto": "Evolución del patrimonio neto período a período",
@@ -242,10 +247,8 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
                     borderRadius: radius.lg,
                     width: "1140px",
                     height: "650px",
-                    display: "flex",
-                    flexDirection: "column",
+                    ...flexColumn,
                     overflow: "hidden",
-                    boxShadow: shadows.modal,
                 }}
             >
                 <div style={{
@@ -259,13 +262,11 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
                 }}>
                     <div
                         style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
+                            ...flexBetween,
                             gap: spacing[2],
                         }}
                     >
-                        <h2 style={{ fontSize: fonts.size.lg, fontWeight: 600, color: colors.fg.base, margin: 0 }}>
+                        <h2 style={{ fontSize: fonts.size.lg, fontWeight: fonts.weight.semibold, color: colors.fg.base, margin: 0 }}>
                             {title}
                         </h2>
                         {!isMultiSeries && isIncomeOrExpense && viewMode === "current_year" && (
@@ -280,52 +281,35 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
                                 triggerStyle={{ ...chipTriggerStyle(true), width: "auto", minWidth: 0, height: "24px" }}
                             />
                         )}
-                        <div style={{ display: "flex", alignItems: "center", gap: spacing[2], marginLeft: "auto" }}>
+                        <div style={{ ...flexRow, gap: spacing[2], marginLeft: "auto" }}>
                             {!isMultiSeries && (
                                 <>
                                 <div style={{
-                                    position: "relative",
-                                    display: "flex",
-                                    borderRadius: "8px",
+                                    ...flexRow,
+                                    gap: 2,
+                                    borderRadius: "6px",
                                     background: colors.fill,
                                     overflow: "hidden",
-                                    cursor: "pointer",
-                                    userSelect: "none",
+                                    flexShrink: 0,
                                 }}>
-                                    <div style={{
-                                        position: "absolute",
-                                        top: 0,
-                                        left: `calc(${["current_year", "ytd", "monthly"].indexOf(viewMode)} * (100% / 3))`,
-                                        width: "calc(100% / 3)",
-                                        height: "100%",
-                                        borderRadius: "7px",
-                                        background: colors.bg.surface,
-                                        boxShadow: "0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)",
-                                        transition: "left 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                                        pointerEvents: "none",
-                                    }} />
                                     {[
                                         { key: "current_year", label: "YTD" },
-                                        { key: "ytd", label: "YoY" },
-                                        { key: "monthly", label: "MoM" },
+                                        { key: "monthly", label: "Mensual" },
+                                        { key: "ytd", label: "Anual" },
                                     ].map((m) => (
                                         <div
                                             key={m.key}
                                             onClick={() => setViewMode(m.key as ViewMode)}
                                             style={{
-                                                position: "relative",
-                                                zIndex: 1,
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                flex: 1,
-                                                padding: "3px 10px",
-                                                whiteSpace: "nowrap",
+                                                padding: "2px 8px",
                                                 fontSize: fonts.size.xs,
-                                                fontWeight: 500,
+                                                fontWeight: fonts.weight.medium,
                                                 color: viewMode === m.key ? colors.fg.base : colors.fg.dim,
-                                                transition: "color 0.2s",
-                                                lineHeight: "18px",
+                                                background: viewMode === m.key ? colors.bg.surface : "transparent",
+                                                borderRadius: "5px",
+                                                cursor: "pointer",
+                                                transition: "all 0.15s",
+                                                lineHeight: "20px",
                                             }}
                                         >
                                             {m.label}
@@ -334,15 +318,13 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
                                 </div>
                                 </>
                             )}
-                            <Button variant="plain" onClick={onClose}>
-                                <X size={20} />
-                            </Button>
+                            <ModalCloseButton onClick={onClose} />
                         </div>
                     </div>
 
                     {(desc || isMultiSeries) && (
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing[2], flexWrap: "wrap" }}>
-                            <span style={{ fontSize: fonts.size.xs, fontWeight: 400, color: colors.fg.dim }}>{desc}</span>
+                        <div style={{ ...flexBetween, gap: spacing[2], flexWrap: "wrap" }}>
+                            <span style={{ fontSize: fonts.size.xs, fontWeight: fonts.weight.regular, color: colors.fg.dim }}>{desc}</span>
                             {isMultiSeries && (
                                 <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap", alignItems: "center", paddingRight: spacing[1] }}>
                                     {(["Real", "FCST", "Plan", "LY"] as const).map((name) => {
@@ -352,8 +334,7 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
                                                 key={name}
                                                 onClick={() => toggleSeries(name)}
                                                 style={{
-                                                    display: "flex",
-                                                    alignItems: "center",
+                                                    ...flexRow,
                                                     gap: 3,
                                                     cursor: "pointer",
                                                     fontSize: fonts.size.sm,
@@ -408,20 +389,22 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
                             },
                             tooltip: {
                                 trigger: "axis",
-                                backgroundColor: colors.bg.surface,
-                                borderColor: colors.fill,
+                                backgroundColor: colors.bg.elevated,
+                                borderColor: colors.border,
+                                borderWidth: 2,
+                                borderRadius: 8,
                                 textStyle: { color: colors.fg.base },
                                 formatter: (params: Array<{ seriesName: string; value: number; name: string; color: string }>) => {
                                     if (isMultiSeries) {
                                         let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0].name)}</div>`;
                                         params.forEach((p) => {
                                             if (p.value === null || p.value === undefined) return;
-                                            html += `<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-weight:600">${p.seriesName}: ${Math.round(p.value).toLocaleString("es-AR")}</span></div>`;
+                                            html += `<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-weight:600">${p.seriesName}: ${formatNumber(Math.round(p.value), { decimals: 0 })}</span></div>`;
                                         });
                                         return html;
                                     }
                                     const p = params[0];
-                                    return `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(p.name)}</div><div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-weight:600">${Math.round(p.value).toLocaleString("es-AR")}</span></div>`;
+                                    return `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(p.name)}</div><div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-weight:600">${formatNumber(Math.round(p.value), { decimals: 0 })}</span></div>`;
                                 },
                             },
                             series: isMultiSeries

@@ -1,9 +1,9 @@
 import { useRef } from "react";
 import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/Button";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
+import { inputStyle as layoutInputStyle } from "@/styles/layout";
 
 interface InputGroupProps {
     placeholder: string;
@@ -20,21 +20,6 @@ interface InputGroupProps {
 const containerStyle: React.CSSProperties = {
     display: "flex",
     gap: spacing[2],
-    marginBottom: spacing[4],
-};
-
-const inputStyle: React.CSSProperties = {
-    flex: 1,
-    height: "32px",
-    padding: `0 ${spacing[3]}`,
-    backgroundColor: colors.bg.surface,
-    border: `1px solid ${colors.fill}`,
-    borderRadius: radius.md,
-    color: colors.fg.base,
-    fontSize: fonts.size.sm,
-    outline: "none",
-    boxSizing: "border-box",
-    transition: "border-color 0.15s",
 };
 
 export function InputGroup({ placeholder, value, onChange, onSubmit, buttonLabel = "Agregar", autoFocus, containerStyle: containerStyleOverride, inputStyle: inputStyleOverride, onKeyDown }: InputGroupProps) {
@@ -53,18 +38,37 @@ export function InputGroup({ placeholder, value, onChange, onSubmit, buttonLabel
                     onKeyDown?.(e);
                 }}
                 autoFocus={autoFocus}
-                style={{ ...inputStyle, ...inputStyleOverride }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = colors.border)}
-                onBlur={(e) => (e.currentTarget.style.borderColor = colors.fill)}
+                style={{ ...layoutInputStyle, flex: 1, border: "none", ...inputStyleOverride }}
             />
-            <Button
+            <button
+                type="button"
                 onClick={onSubmit}
                 disabled={!value.trim()}
-                variant="primary"
-                iconLeft={<Plus size={16} />}
+                onMouseEnter={(e) => { e.currentTarget.style.color = colors.fg.base; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = colors.fg.dim; }}
+                style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: spacing[1],
+                    height: "32px",
+                    padding: `0 ${spacing[3]}`,
+                    backgroundColor: colors.bg.surface,
+                    border: "none",
+                    borderRadius: radius.md,
+                    color: colors.fg.dim,
+                    cursor: value.trim() ? "pointer" : "not-allowed",
+                    fontSize: fonts.size.sm,
+                    fontFamily: fonts.family,
+                    fontWeight: fonts.weight.medium,
+                    whiteSpace: "nowrap",
+                    boxSizing: "border-box",
+                    opacity: value.trim() ? 1 : 0.5,
+                }}
             >
+                <Plus size={16} />
                 {buttonLabel}
-            </Button>
+            </button>
         </div>
     );
 }

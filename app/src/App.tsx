@@ -8,10 +8,11 @@ import { AnalysisPage } from "@/pages/AnalysisPage";
 import { PlanningPage } from "@/pages/PlanningPage";
 import { MetricsComparisonPage } from "@/pages/MetricsComparisonPage";
 import { EvolutionPage } from "@/pages/EvolutionPage";
+import { HistoricalPage } from "@/pages/HistoricalPage";
 import { ToastContainer } from "@/components/ui/Toast";
 import { WifiOff } from "lucide-react";
 import { api } from "@/api_client/client";
-import { colors, radius } from "@/styles";
+import { colors, radius, flexColumn, flexRow } from "@/styles";
 import { fonts } from "@/styles/fonts";
 
 function ApiUnavailable({ onRetry }: { onRetry: () => void }) {
@@ -19,22 +20,20 @@ function ApiUnavailable({ onRetry }: { onRetry: () => void }) {
         <div
             style={{
                 flex: 1,
-                display: "flex",
-                alignItems: "center",
+                ...flexRow,
                 justifyContent: "center",
             }}
         >
             <div
                 style={{
-                    display: "flex",
-                    flexDirection: "column",
+                    ...flexColumn,
                     alignItems: "center",
                     gap: "24px",
                 }}
             >
                 <span
                     style={{
-                        fontFamily: fonts.family.display,
+                        fontFamily: fonts.family,
                         fontSize: fonts.size.xl,
                         fontWeight: fonts.weight.semibold,
                         color: colors.fg.base,
@@ -60,8 +59,7 @@ function ApiUnavailable({ onRetry }: { onRetry: () => void }) {
 
                 <div
                     style={{
-                        display: "flex",
-                        flexDirection: "column",
+                        ...flexColumn,
                         alignItems: "center",
                         gap: "6px",
                     }}
@@ -120,22 +118,20 @@ function ApiStarting() {
         <div
             style={{
                 flex: 1,
-                display: "flex",
-                alignItems: "center",
+                ...flexRow,
                 justifyContent: "center",
             }}
         >
             <div
                 style={{
-                    display: "flex",
-                    flexDirection: "column",
+                    ...flexColumn,
                     alignItems: "center",
                     gap: "24px",
                 }}
             >
                 <span
                     style={{
-                        fontFamily: fonts.family.display,
+                        fontFamily: fonts.family,
                         fontSize: fonts.size.xl,
                         fontWeight: fonts.weight.semibold,
                         color: colors.fg.base,
@@ -179,7 +175,9 @@ function ApiStarting() {
 function App() {
     const [activeTab, setActiveTab] = useState("analysis");
     const [showSettings, setShowSettings] = useState(false);
-    const [apiStatus, setApiStatus] = useState<"loading" | "starting" | "ready" | "error">("loading");
+    const [apiStatus, setApiStatus] = useState<"loading" | "starting" | "ready" | "error">(
+        "loading"
+    );
     const retryCount = useRef(0);
     const apiStatusRef = useRef(apiStatus);
     apiStatusRef.current = apiStatus;
@@ -217,16 +215,22 @@ function App() {
 
     // React faster when Tauri sidecar emits api-ready event
     useEffect(() => {
+        let cancelled = false;
         let unlisten: (() => void) | undefined;
-        import("@tauri-apps/api/event").then(({ listen }) => {
-            listen("api-ready", async () => {
+        (async () => {
+            const { listen } = await import("@tauri-apps/api/event");
+            if (cancelled) return;
+            unlisten = await listen("api-ready", async () => {
                 if (apiStatusRef.current === "starting" || apiStatusRef.current === "loading") {
                     const ok = await doHealthCheck();
                     if (ok) setApiStatus("ready");
                 }
-            }).then((fn) => { unlisten = fn; });
-        });
-        return () => { unlisten?.(); };
+            });
+        })();
+        return () => {
+            cancelled = true;
+            unlisten?.();
+        };
     }, [doHealthCheck]);
 
     useEffect(() => {
@@ -248,23 +252,68 @@ function App() {
                     onOpenSettings={() => setShowSettings(true)}
                     onCloseSettings={() => setShowSettings(false)}
                 >
-                    <div style={{ display: activeTab === "analysis" ? "" : "none", height: "100%", boxSizing: "border-box" }}>
+                    <div
+                        style={{
+                            display: activeTab === "analysis" ? "" : "none",
+                            height: "100%",
+                            boxSizing: "border-box",
+                        }}
+                    >
                         <AnalysisPage />
                     </div>
-                    <div style={{ display: activeTab === "transactions" ? undefined : "none", height: "100%", boxSizing: "border-box" }}>
+                    <div
+                        style={{
+                            display: activeTab === "transactions" ? undefined : "none",
+                            height: "100%",
+                            boxSizing: "border-box",
+                        }}
+                    >
                         <TransactionsPage />
                     </div>
-                    <div style={{ display: activeTab === "economic" ? "" : "none", height: "100%", boxSizing: "border-box" }}>
+                    <div
+                        style={{
+                            display: activeTab === "economic" ? "" : "none",
+                            height: "100%",
+                            boxSizing: "border-box",
+                        }}
+                    >
                         <EconomicPage />
                     </div>
-                    <div style={{ display: activeTab === "planning" ? "" : "none", height: "100%", boxSizing: "border-box" }}>
+                    <div
+                        style={{
+                            display: activeTab === "planning" ? "" : "none",
+                            height: "100%",
+                            boxSizing: "border-box",
+                        }}
+                    >
                         <PlanningPage />
                     </div>
-                    <div style={{ display: activeTab === "metrics" ? "" : "none", height: "100%", boxSizing: "border-box" }}>
+                    <div
+                        style={{
+                            display: activeTab === "metrics" ? "" : "none",
+                            height: "100%",
+                            boxSizing: "border-box",
+                        }}
+                    >
                         <MetricsComparisonPage />
                     </div>
-                    <div style={{ display: activeTab === "evolution" ? "" : "none", height: "100%", boxSizing: "border-box" }}>
+                    <div
+                        style={{
+                            display: activeTab === "evolution" ? "" : "none",
+                            height: "100%",
+                            boxSizing: "border-box",
+                        }}
+                    >
                         <EvolutionPage />
+                    </div>
+                    <div
+                        style={{
+                            display: activeTab === "historical" ? "" : "none",
+                            height: "100%",
+                            boxSizing: "border-box",
+                        }}
+                    >
+                        <HistoricalPage />
                     </div>
                 </Layout>
                 <ToastContainer />
@@ -275,8 +324,7 @@ function App() {
     return (
         <div
             style={{
-                display: "flex",
-                flexDirection: "column",
+                ...flexColumn,
                 height: "100vh",
                 backgroundColor: colors.bg.base,
                 color: colors.fg.base,

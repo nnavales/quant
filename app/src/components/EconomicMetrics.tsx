@@ -3,11 +3,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { MetricCard, shared } from "@/components/ui/MetricCard";
 import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
+import { fonts } from "@/styles/fonts";
 import { formatNumber } from "@/utils/format";
 import { formatDateStr, getDateFormat } from "@/utils/date";
 import { economic } from "@/api_client";
 import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
+import { flexRow } from "@/styles/layout";
 import {
     useInflation,
     useDollarHistoric,
@@ -85,14 +87,14 @@ export function DollarSection({ onRefresh: _ }: { onRefresh?: () => void }) {
 
     return (
         <MetricCard title="Dólar Oficial (BNA)" loading={false} onRefresh={handleRefresh} delta={activeDelta?.pct} points={activeData?.series?.points} footer={activeData?.last?.date ? `Fecha: ${formatDateStr(activeData.last.date, userDateFormat)}` : null}>
-            <div style={{ display: "flex", alignItems: "center", gap: spacing[2], flexWrap: "wrap" }}>
+            <div style={{ ...flexRow, gap: spacing[2], flexWrap: "wrap" }}>
                 <div style={shared.valueStyle}>${formatNumber(activeValue)}</div>
                 <div style={{ display: "flex", gap: spacing[1] }}>
                     {(["buy", "sell"] as const).map((v) => {
                         const isActive = activeView === v;
                         const label = v === "buy" ? "COMPRA" : "VENTA";
                         return (
-                            <div key={v} onClick={() => setActiveView(v)} style={{ cursor: "pointer", padding: "0 6px", height: 16, display: "inline-flex", alignItems: "center", borderRadius: radius.full, fontSize: "9px", fontWeight: 600, letterSpacing: "0.2px", transition: "all 0.15s", backgroundColor: isActive ? colors.accent.cyan + "20" : "transparent", color: isActive ? colors.accent.cyan : colors.fg.dim, border: `1px solid ${isActive ? colors.accent.cyan : colors.border}` }}>
+                            <div key={v} onClick={() => setActiveView(v)} style={{ cursor: "pointer", padding: "0 6px", height: 16, display: "inline-flex", alignItems: "center", borderRadius: radius.full, fontSize: fonts.size.xs, fontWeight: fonts.weight.semibold, letterSpacing: "0.2px", transition: "all 0.15s", backgroundColor: isActive ? colors.accent.cyan + "20" : "transparent", color: isActive ? colors.accent.cyan : colors.fg.dim, border: `1px solid ${isActive ? colors.accent.cyan : colors.border}` }}>
                                 {label}
                             </div>
                         );

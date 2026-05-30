@@ -19,69 +19,39 @@ export interface ColorScheme {
     fg: {
         base: string;
         dim: string;
-        white: string;
     };
     bg: {
         base: string;
         surface: string;
-        header: string;
+        elevated: string;
         hover: string;
         selected: string;
     };
     border: string;
     fill: string;
-    interactive: {
-        hoverBg: string;
-        hoverBorder: string;
-    };
+    hoverFill: string;
     variant: {
         green: VariantState;
         red: VariantState;
         cyan: VariantState;
         blue: VariantState;
         orange: VariantState;
-        teal: VariantState;
     };
     shadows: {
         sm: string;
-        base: string;
         md: string;
         lg: string;
         xl: string;
-        modal: string;
-        tooltip: string;
-        toast: string;
-        card: string;
-        dialog: string;
-        dropdown: string;
-        calendar: string;
-        button: string;
-        tab: string;
     };
     heatmap: {
         green: { low: string; mid: string; high: string };
         red: { low: string; mid: string; high: string };
     };
     overlay: {
-        white06: string;
-        white08: string;
         black30: string;
         black55: string;
     };
-    widget: {
-        cyanBg: string;
-        cyanBorder: string;
-        purpleBg: string;
-        purpleBorder: string;
-    };
-    badge: {
-        income: string;
-        expense: string;
-        destructive: string;
-    };
 }
-
-export { presets } from "./presets";
 
 import { presets as allPresets } from "./presets";
 
@@ -89,7 +59,7 @@ const themeKey = localStorage.getItem("theme") || "dark";
 const initial = allPresets[themeKey] ?? allPresets.dark;
 
 export const colors: ColorScheme = { ...initial };
-export const shadows = initial.shadows;
+export const shadows: ColorScheme["shadows"] = initial.shadows;
 
 export function applyCssVars() {
     const root = document.documentElement;
@@ -99,7 +69,7 @@ export function applyCssVars() {
 
     set("--bg-base", s.bg.base);
     set("--bg-surface", s.bg.surface);
-    set("--bg-header", s.bg.header);
+    set("--bg-elevated", s.bg.elevated);
     set("--bg-hover", s.bg.hover);
     set("--bg-selected", s.bg.selected);
     set("--fg-base", s.fg.base);
@@ -117,10 +87,7 @@ export function applyCssVars() {
     set("--accent-green", s.accent.green);
 
     set("--shadow-sm", s.shadows.sm);
-    set("--shadow-base", s.shadows.base);
     set("--shadow-md", s.shadows.md);
-    set("--shadow-lg", s.shadows.lg);
-    set("--shadow-xl", s.shadows.xl);
 
     set("--color-scheme", themeKey === "light" ? "light" : "dark");
 }

@@ -2,6 +2,7 @@ package finance
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/nnavales/quant/api/entries"
@@ -350,7 +351,13 @@ func (s *Service) UpdateTransactionAggregate(ctx context.Context, id string, req
 		return nil, fmt.Errorf("failed to update transaction aggregate: %w", err)
 	}
 
-	return s.repo.GetTransactionAggregate(ctx, id)
+	result, err := s.repo.GetTransactionAggregate(ctx, id)
+	if errors.Is(err, ErrNotFound) {
+		// The edited transaction was removed because the installment count was reduced
+		// below its position. The update was committed successfully.
+		return nil, nil
+	}
+	return result, err
 }
 
 func (s *Service) CancelInstallments(ctx context.Context, req CancelInstallmentsReq) error {

@@ -2,36 +2,16 @@ import { useState, useEffect } from "react";
 import { useUserConfig, useUpdateUserConfig, useDollarBanks } from "@/hooks";
 import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
+import { formatForInput, parseLocaleNumber } from "@/utils/format";
 import { Dropdown, type DropdownOption } from "@/components/ui/Dropdown";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { colors, presets } from "@/styles/colors";
+import { colors } from "@/styles/colors";
+import { presets } from "@/styles/presets";
 import { spacing, radius } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
-import { cardStyle } from "@/styles/layout";
-
-const sectionHeaderStyle: React.CSSProperties = {
-    fontSize: fonts.size.xs,
-    fontWeight: 600,
-    color: colors.fg.dim,
-    textTransform: "uppercase",
-    letterSpacing: "0.05em",
-    marginBottom: spacing[3],
-};
-
-const inputStyle: React.CSSProperties = {
-    width: "100%",
-    height: "32px",
-    padding: `0 ${spacing[3]}`,
-    backgroundColor: colors.bg.surface,
-    border: `1px solid ${colors.border}`,
-    borderRadius: radius.md,
-    color: colors.fg.base,
-    fontSize: fonts.size.sm,
-    outline: "none",
-    boxSizing: "border-box",
-    transition: "border-color 0.15s",
-};
+import { inputStyle, flexColumn } from "@/styles/layout";
+import { SettingsCard } from "@/components/SettingsCard";
 
 const timezoneOptions: DropdownOption[] = [
     { id: "America/Argentina/Buenos_Aires", label: "Argentina (UTC-3)" },
@@ -76,7 +56,7 @@ export function UserSettings() {
             setDollarSource(config.dollar_source ?? "");
             setTimezone(config.timezone ?? "America/Argentina/Buenos_Aires");
             setDateFormat(config.date_format ?? "DD/MM/YYYY");
-            setDefaultRate(config.default_rate ?? "");
+            setDefaultRate(config.default_rate ? formatForInput(config.default_rate) : "");
             setTheme(config.theme ?? "dark");
         }
     }, [config]);
@@ -105,7 +85,7 @@ export function UserSettings() {
     }
 
     const isUsernameDirty = username !== (config?.username ?? "");
-    const isDefaultRateDirty = defaultRate !== (config?.default_rate ?? "");
+    const isDefaultRateDirty = defaultRate !== (config?.default_rate ? formatForInput(config.default_rate) : "");
 
     const saveUsername = () => {
         autoSave(getSaveData());
@@ -116,31 +96,31 @@ export function UserSettings() {
     };
 
     const saveDefaultRate = () => {
-        autoSave(getSaveData());
+        const rate = parseLocaleNumber(defaultRate);
+        autoSave(getSaveData({ default_rate: !defaultRate || isNaN(rate) ? "" : String(rate) }));
     };
 
     const cancelDefaultRate = () => {
-        setDefaultRate(config?.default_rate ?? "");
+        setDefaultRate(config?.default_rate ? formatForInput(config.default_rate) : "");
     };
 
     if (isLoading) return <div style={{ color: colors.fg.dim, textAlign: "center", padding: spacing[8] }}>Cargando...</div>;
     if (isError) return <div style={{ color: colors.accent.red, textAlign: "center", padding: spacing[8] }}>Error al cargar configuracion</div>;
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: spacing[4] }}>
-            <div style={cardStyle}>
-                <h3 style={sectionHeaderStyle}>Usuario</h3>
-                <div style={{ display: "flex", gap: spacing[2], alignItems: "center" }}>
+        <div style={{ ...flexColumn, gap: spacing[4] }}>
+            <SettingsCard title="Usuario">
+                <div style={{ display: "flex", gap: spacing[2], alignItems: "center", backgroundColor: colors.bg.surface, borderRadius: radius.md, overflow: "hidden" }}>
                     <input
                         type="text"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") saveUsername(); if (e.key === "Escape") cancelUsername(); }}
-                        style={{ ...inputStyle, flex: 1 }}
+                        style={{ ...inputStyle, flex: 1, fontSize: fonts.size.sm, border: "none", minWidth: 0 }}
                         placeholder="Tu nombre"
                     />
                     {isUsernameDirty && (
-                        <div style={{ display: "flex", gap: spacing[1] }}>
+                        <div style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
                             <Button variant="icon" onClick={saveUsername}>
                                 <Check size={14} />
                             </Button>
@@ -150,10 +130,9 @@ export function UserSettings() {
                         </div>
                     )}
                 </div>
-            </div>
+            </SettingsCard>
 
-            <div style={cardStyle}>
-                <h3 style={sectionHeaderStyle}>Fuente del dolar</h3>
+            <SettingsCard title="Fuente del dolar">
                 <Dropdown
                     value={dollarSource}
                     onChange={(id) => {
@@ -162,23 +141,22 @@ export function UserSettings() {
                     }}
                     options={dollarSourceOptions}
                     placeholder="Seleccionar..."
-                    triggerStyle={{ height: "32px", fontSize: fonts.size.sm }}
                 />
-            </div>
+            </SettingsCard>
 
-            <div style={cardStyle}>
-                <h3 style={sectionHeaderStyle}>Tipo de cambio default</h3>
-                <div style={{ display: "flex", gap: spacing[2], alignItems: "center" }}>
+            <SettingsCard title="Tipo de cambio default">
+                <div style={{ display: "flex", gap: spacing[2], alignItems: "center", backgroundColor: colors.bg.surface, borderRadius: radius.md, overflow: "hidden" }}>
                     <input
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         value={defaultRate}
                         onChange={(e) => setDefaultRate(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") saveDefaultRate(); if (e.key === "Escape") cancelDefaultRate(); }}
-                        style={{ ...inputStyle, flex: 1 }}
+                        style={{ ...inputStyle, flex: 1, fontSize: fonts.size.sm, border: "none", minWidth: 0 }}
                         placeholder="1400"
                     />
                     {isDefaultRateDirty && (
-                        <div style={{ display: "flex", gap: spacing[1] }}>
+                        <div style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
                             <Button variant="icon" onClick={saveDefaultRate}>
                                 <Check size={14} />
                             </Button>
@@ -188,10 +166,9 @@ export function UserSettings() {
                         </div>
                     )}
                 </div>
-            </div>
+            </SettingsCard>
 
-            <div style={cardStyle}>
-                <h3 style={sectionHeaderStyle}>Zona horaria</h3>
+            <SettingsCard title="Zona horaria">
                 <Dropdown
                     value={timezone}
                     onChange={(id) => {
@@ -200,12 +177,10 @@ export function UserSettings() {
                     }}
                     options={timezoneOptions}
                     placeholder="Seleccionar..."
-                    triggerStyle={{ height: "32px", fontSize: fonts.size.sm }}
                 />
-            </div>
+            </SettingsCard>
 
-            <div style={cardStyle}>
-                <h3 style={sectionHeaderStyle}>Formato de fecha</h3>
+            <SettingsCard title="Formato de fecha">
                 <Dropdown
                     value={dateFormat}
                     onChange={(id) => {
@@ -214,12 +189,10 @@ export function UserSettings() {
                     }}
                     options={dateFormatOptions}
                     placeholder="Seleccionar..."
-                    triggerStyle={{ height: "32px", fontSize: fonts.size.sm }}
                 />
-            </div>
+            </SettingsCard>
 
-            <div style={cardStyle}>
-                <h3 style={sectionHeaderStyle}>Tema</h3>
+            <SettingsCard title="Tema">
                 <Dropdown
                     value={theme}
                     onChange={(id) => {
@@ -231,9 +204,8 @@ export function UserSettings() {
                     options={themeOptions}
                     placeholder="Seleccionar..."
                     searchable
-                    triggerStyle={{ height: "32px", fontSize: fonts.size.sm }}
                 />
-            </div>
+            </SettingsCard>
         </div>
     );
 }

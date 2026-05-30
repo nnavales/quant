@@ -3,6 +3,7 @@ import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { formatCurrency } from "@/utils/format";
+import { flexColumn, flexRow } from "@/styles/layout";
 
 interface MetricCardProps {
     title: string;
@@ -26,31 +27,30 @@ export function MetricCard({ title, icon: Icon, iconColor, real, fcst, plan, ly,
             style={{
                 backgroundColor: colors.bg.surface,
                 borderRadius: radius.lg,
-                border: `1px solid ${colors.border}`,
+                border: `1px solid transparent`,
                 padding: compact ? spacing[3] : spacing[4],
-                display: "flex",
-                flexDirection: "column",
+                ...flexColumn,
                 gap: compact ? spacing[1] : spacing[3],
                 minHeight: compact ? "auto" : 140,
                 animation: "fadeIn 0.3s ease-out",
             }}
         >
-            <div style={{ display: "flex", alignItems: "center", gap: spacing[2] }}>
+            <div style={{ ...flexRow, gap: spacing[2] }}>
                 <Icon size={compact ? 14 : 18} color={iconColor} />
-                <span style={{ fontSize: compact ? fonts.size.xs : fonts.size.sm, color: colors.fg.dim, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.3px" }}>
+                <span style={{ fontSize: compact ? fonts.size.xs : fonts.size.sm, color: colors.fg.dim, fontWeight: fonts.weight.medium, textTransform: "uppercase", letterSpacing: "0.3px" }}>
                     {title}
                 </span>
             </div>
 
             <div className="selectable" style={{
-                fontSize: compact ? fonts.size.xl : fonts.size["3xl"],
-                fontWeight: 700,
-                fontFamily: fonts.family.display,
+                fontSize: compact ? fonts.size.xl : fonts.size.xl3,
+                fontWeight: fonts.weight.bold,
+                fontFamily: fonts.family,
                 color: colors.fg.base,
                 lineHeight: 1.1,
             }}>
                 {formatCurrency(real ?? 0, { decimals: 0 })}
-                {unit && <span style={{ fontSize: compact ? fonts.size.sm : fonts.size.lg, color: colors.fg.dim, fontWeight: 400, marginLeft: spacing[1] }}>{unit}</span>}
+                {unit && <span style={{ fontSize: compact ? fonts.size.sm : fonts.size.lg, color: colors.fg.dim, fontWeight: fonts.weight.regular, marginLeft: spacing[1] }}>{unit}</span>}
             </div>
 
             <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap" }}>

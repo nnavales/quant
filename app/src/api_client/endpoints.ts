@@ -1,4 +1,14 @@
 import { api } from "./client";
+
+function buildQuery(obj: Record<string, string | number | boolean | undefined | null>): string {
+    const p = new URLSearchParams();
+    for (const [k, v] of Object.entries(obj)) {
+        if (v !== undefined && v !== null && v !== "") p.set(k, String(v));
+    }
+    const q = p.toString();
+    return q ? `?${q}` : "";
+}
+
 import type {
      NetWorth,
      Asset,
@@ -122,27 +132,25 @@ interface TransactionListResponse {
 
 export const transactionAggregates = {
     list: (filters?: TransactionFilters) => {
-        const params = new URLSearchParams();
-        if (filters) {
-            if (filters.page) params.set("page", String(filters.page));
-            if (filters.limit) params.set("limit", String(filters.limit));
-            if (filters.sort) params.set("sort", filters.sort);
-            if (filters.order) params.set("order", filters.order);
-            if (filters.search) params.set("search", filters.search);
-            if (filters.type) params.set("type", filters.type);
-            if (filters.currency) params.set("currency", filters.currency);
-            if (filters.frequency) params.set("frequency", filters.frequency);
-            if (filters.installments !== undefined) params.set("installment", String(filters.installments));
-            if (filters.category) params.set("category", filters.category);
-            if (filters.subcategory) params.set("subcategory", filters.subcategory);
-            if (filters.channel) params.set("channel", filters.channel);
-            if (filters.account) params.set("account", filters.account);
-            if (filters.date_from) params.set("date_from", filters.date_from);
-            if (filters.date_to) params.set("date_to", filters.date_to);
-            if (filters.is_paid !== undefined) params.set("is_paid", String(filters.is_paid));
-        }
-        const query = params.toString();
-        return api.get<TransactionListResponse>(`/transaction-aggregates${query ? `?${query}` : ""}`).then((response) => ({
+        const qs = filters ? buildQuery({
+            page: filters.page,
+            limit: filters.limit,
+            sort: filters.sort,
+            order: filters.order,
+            search: filters.search,
+            type: filters.type,
+            currency: filters.currency,
+            frequency: filters.frequency,
+            installment: filters.installments,
+            category: filters.category,
+            subcategory: filters.subcategory,
+            channel: filters.channel,
+            account: filters.account,
+            date_from: filters.date_from,
+            date_to: filters.date_to,
+            is_paid: filters.is_paid,
+        }) : "";
+        return api.get<TransactionListResponse>(`/transaction-aggregates${qs}`).then((response) => ({
             data: response.data || [],
             total: response.total_count || 0,
             page: filters?.page || 1,
@@ -159,23 +167,21 @@ export const transactionAggregates = {
     cancelInstallments: (data: CancelInstallmentsReq) =>
         api.post<void>("/transaction-aggregates/cancel-installments", data),
     listIds: (filters?: TransactionFilters) => {
-        const params = new URLSearchParams();
-        if (filters) {
-            if (filters.search) params.set("search", filters.search);
-            if (filters.type) params.set("type", filters.type);
-            if (filters.currency) params.set("currency", filters.currency);
-            if (filters.frequency) params.set("frequency", filters.frequency);
-            if (filters.installments !== undefined) params.set("installment", String(filters.installments));
-            if (filters.category) params.set("category", filters.category);
-            if (filters.subcategory) params.set("subcategory", filters.subcategory);
-            if (filters.channel) params.set("channel", filters.channel);
-            if (filters.account) params.set("account", filters.account);
-            if (filters.date_from) params.set("date_from", filters.date_from);
-            if (filters.date_to) params.set("date_to", filters.date_to);
-            if (filters.is_paid !== undefined) params.set("is_paid", String(filters.is_paid));
-        }
-        const query = params.toString();
-        return api.get<TransactionIDAmount[]>(`/transaction-aggregates/ids${query ? `?${query}` : ""}`);
+        const qs = filters ? buildQuery({
+            search: filters.search,
+            type: filters.type,
+            currency: filters.currency,
+            frequency: filters.frequency,
+            installment: filters.installments,
+            category: filters.category,
+            subcategory: filters.subcategory,
+            channel: filters.channel,
+            account: filters.account,
+            date_from: filters.date_from,
+            date_to: filters.date_to,
+            is_paid: filters.is_paid,
+        }) : "";
+        return api.get<TransactionIDAmount[]>(`/transaction-aggregates/ids${qs}`);
     },
 };
 
@@ -185,57 +191,22 @@ export const transactionAggregates = {
 
 export const economic = {
     getIPC: () => api.get<EconomicSeriesResponse>("/economic/ipc"),
-    getInflation: (refresh?: boolean) => {
-        const params = new URLSearchParams();
-        if (refresh) params.set("refresh", "true");
-        const query = params.toString();
-        return api.get<EconomicSeriesResponse>(`/economic/inflation${query ? `?${query}` : ""}`);
-    },
-    getDollarHistoric: (quotation?: string, refresh?: boolean) => {
-        const params = new URLSearchParams();
-        if (quotation) params.set("quotation", quotation);
-        if (refresh) params.set("refresh", "true");
-        const query = params.toString();
-        return api.get<EconomicSeriesResponse>(`/economic/dollar${query ? `?${query}` : ""}`);
-    },
-    getDollarBanks: (quotation?: string, refresh?: boolean) => {
-        const params = new URLSearchParams();
-        if (quotation) params.set("quotation", quotation);
-        if (refresh) params.set("refresh", "true");
-        const query = params.toString();
-        return api.get<DollarMap>(`/economic/dollar/banks${query ? `?${query}` : ""}`);
-    },
-    getCrypto: (symbol?: string, refresh?: boolean) => {
-        const params = new URLSearchParams();
-        if (symbol) params.set("symbol", symbol);
-        if (refresh) params.set("refresh", "true");
-        const query = params.toString();
-        return api.get<EconomicSeriesResponse>(`/economic/crypto${query ? `?${query}` : ""}`);
-    },
-    getCountryRisk: (refresh?: boolean) => {
-        const params = new URLSearchParams();
-        if (refresh) params.set("refresh", "true");
-        const query = params.toString();
-        return api.get<CountryRiskValue>(`/economic/country-risk${query ? `?${query}` : ""}`);
-    },
-    getFixedDeposits: (refresh?: boolean) => {
-        const params = new URLSearchParams();
-        if (refresh) params.set("refresh", "true");
-        const query = params.toString();
-        return api.get<FixedDepositsMap>(`/economic/fixed-deposits${query ? `?${query}` : ""}`);
-    },
-    getYieldAccounts: (refresh?: boolean) => {
-        const params = new URLSearchParams();
-        if (refresh) params.set("refresh", "true");
-        const query = params.toString();
-        return api.get<YieldMap>(`/economic/yield-accounts${query ? `?${query}` : ""}`);
-    },
-    getLoans: (refresh?: boolean) => {
-        const params = new URLSearchParams();
-        if (refresh) params.set("refresh", "true");
-        const query = params.toString();
-        return api.get<LoanMap>(`/economic/loans${query ? `?${query}` : ""}`);
-    },
+    getInflation: (refresh?: boolean) =>
+        api.get<EconomicSeriesResponse>(`/economic/inflation${buildQuery({ refresh: refresh || undefined })}`),
+    getDollarHistoric: (quotation?: string, refresh?: boolean) =>
+        api.get<EconomicSeriesResponse>(`/economic/dollar${buildQuery({ quotation, refresh: refresh || undefined })}`),
+    getDollarBanks: (quotation?: string, refresh?: boolean) =>
+        api.get<DollarMap>(`/economic/dollar/banks${buildQuery({ quotation, refresh: refresh || undefined })}`),
+    getCrypto: (symbol?: string, refresh?: boolean) =>
+        api.get<EconomicSeriesResponse>(`/economic/crypto${buildQuery({ symbol, refresh: refresh || undefined })}`),
+    getCountryRisk: (refresh?: boolean) =>
+        api.get<CountryRiskValue>(`/economic/country-risk${buildQuery({ refresh: refresh || undefined })}`),
+    getFixedDeposits: (refresh?: boolean) =>
+        api.get<FixedDepositsMap>(`/economic/fixed-deposits${buildQuery({ refresh: refresh || undefined })}`),
+    getYieldAccounts: (refresh?: boolean) =>
+        api.get<YieldMap>(`/economic/yield-accounts${buildQuery({ refresh: refresh || undefined })}`),
+    getLoans: (refresh?: boolean) =>
+        api.get<LoanMap>(`/economic/loans${buildQuery({ refresh: refresh || undefined })}`),
 };
 
 // ============================================
@@ -273,7 +244,7 @@ export const dashboard = {
 export interface HistoricalFilters {
     page?: number;
     limit?: number;
-    sort?: "month" | "income" | "expense";
+    sort?: "month" | "income" | "expense" | "savings";
     order?: "asc" | "desc";
     date_from?: string;
     date_to?: string;
@@ -288,18 +259,16 @@ function normalizeMonth(month: string): string {
 
 export const historical = {
     list: (filters?: HistoricalFilters) => {
-        const params = new URLSearchParams();
-        if (filters) {
-            if (filters.page) params.set("page", String(filters.page));
-            if (filters.limit) params.set("limit", String(filters.limit));
-            if (filters.sort) params.set("sort", filters.sort);
-            if (filters.order) params.set("order", filters.order);
-            if (filters.date_from) params.set("date_from", filters.date_from);
-            if (filters.date_to) params.set("date_to", filters.date_to);
-            if (filters.source) params.set("source", filters.source);
-        }
-        const query = params.toString();
-        return api.get<HistoricalEntryResponse>(`/historical-entries${query ? `?${query}` : ""}`).then((response) => ({
+        const qs = filters ? buildQuery({
+            page: filters.page,
+            limit: filters.limit,
+            sort: filters.sort,
+            order: filters.order,
+            date_from: filters.date_from,
+            date_to: filters.date_to,
+            source: filters.source,
+        }) : "";
+        return api.get<HistoricalEntryResponse>(`/historical-entries${qs}`).then((response) => ({
             data: response.data || [],
             total: response.total_count || 0,
             page: filters?.page || 1,

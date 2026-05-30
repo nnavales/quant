@@ -5,6 +5,7 @@ import { SettingsModal } from "./SettingsModal";
 import { colors } from "@/styles/colors";
 import { spacing } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
+import { flexColumn } from "@/styles/layout";
 
 interface LayoutProps {
     children: ReactNode;
@@ -15,7 +16,14 @@ interface LayoutProps {
     onCloseSettings: () => void;
 }
 
-export function Layout({ children, activeTab, onTabChange, showSettings, onOpenSettings, onCloseSettings }: LayoutProps) {
+export function Layout({
+    children,
+    activeTab,
+    onTabChange,
+    showSettings,
+    onOpenSettings,
+    onCloseSettings,
+}: LayoutProps) {
     return (
         <div
             style={{
@@ -24,16 +32,23 @@ export function Layout({ children, activeTab, onTabChange, showSettings, onOpenS
                 overflow: "hidden",
                 backgroundColor: colors.bg.base,
                 color: colors.fg.base,
-                fontFamily: fonts.family.text,
+                fontFamily: fonts.family,
             }}
         >
-            <Sidebar activeTab={activeTab} onTabChange={onTabChange} onOpenSettings={onOpenSettings} />
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+            <Sidebar
+                activeTab={activeTab}
+                onTabChange={onTabChange}
+                onOpenSettings={onOpenSettings}
+            />
+            <div style={{ flex: 1, ...flexColumn, minWidth: 0 }}>
                 <TitleBar />
                 <main
                     style={{
                         padding: spacing[6],
                         flex: 1,
+                        minHeight: 0,
+                        overflow: "hidden",
+                        ...flexColumn,
                     }}
                 >
                     {children}

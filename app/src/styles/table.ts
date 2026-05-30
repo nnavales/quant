@@ -7,12 +7,12 @@ export const tableStyle: React.CSSProperties = {
     tableLayout: "fixed",
     borderCollapse: "separate",
     borderSpacing: 0,
-    fontSize: fonts.table.body,
+    fontSize: fonts.size.sm3,
     backgroundColor: colors.bg.surface,
 };
 
 export const theadStyle: React.CSSProperties = {
-    backgroundColor: colors.bg.header,
+    backgroundColor: colors.bg.elevated,
 };
 
 export const thStyle = (
@@ -22,10 +22,10 @@ export const thStyle = (
 ): React.CSSProperties => ({
     padding: `${spacing[2]} ${spacing[3]}`,
     textAlign: align,
-    fontWeight: 500,
+    fontWeight: fonts.weight.medium,
     color: active ? colors.fg.base : colors.fg.dim,
     textTransform: "uppercase",
-    fontSize: fonts.table.header,
+    fontSize: fonts.size.xs2,
     letterSpacing: "0.05em",
     whiteSpace: "nowrap",
     cursor: sortable ? "pointer" : "default",
@@ -42,7 +42,7 @@ export const sortableThStyle: React.CSSProperties = {
 };
 
 export const iconStyle: React.CSSProperties = {
-    fontSize: "11px",
+    fontSize: fonts.size.xs,
     marginLeft: spacing[1],
     lineHeight: 1,
 };

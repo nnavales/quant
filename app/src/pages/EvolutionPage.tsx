@@ -1,13 +1,17 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { spacing, radius, shadows } from "@/styles/theme";
+import { useState, useMemo } from "react";
+import { spacing, radius } from "@/styles/theme";
+import { formatNumber } from "@/utils/format";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { useDashboard, useDashboardMetrics, useDimensionSeries } from "@/hooks";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Button } from "@/components/ui/Button";
-import { Maximize2, X, BarChart3, GitCompare, PieChart } from "lucide-react";
+import { ModalCloseButton } from "@/components/ui/Modal";
+import { Maximize2, BarChart3, GitCompare, PieChart } from "lucide-react";
+import { chipTriggerStyle } from "@/styles/filters";
 import ReactECharts from "echarts-for-react";
 import type { MetricCell, MonthlyData } from "@/api_client/types";
+import { flexBetween, flexColumn, flexRow } from "@/styles/layout";
 
 type ViewMode = "current_year" | "ytd" | "monthly";
 
@@ -18,6 +22,15 @@ interface TooltipParam {
     color: string;
 }
 
+interface ChartSeries {
+    type: string;
+    name?: string;
+    data: (number | null)[];
+    [key: string]: unknown;
+}
+
+type ChartPoint = Pick<MonthlyData, "income" | "expense" | "capital" | "savings">;
+
 function trimData(months: string[], ...series: (number | null)[][]) {
     const start = months.findIndex((_, i) => series.some((s) => (s[i] ?? 0) !== 0));
     const idx = start >= 0 ? start : months.length;
@@ -27,13 +40,13 @@ function trimData(months: string[], ...series: (number | null)[][]) {
     };
 }
 
-const formatValue = (v: number) => v.toLocaleString("es-AR", { minimumFractionDigits: 0, maximumFractionDigits: 2, useGrouping: true });
+const formatValue = (v: number) => formatNumber(v, { trim: true });
 
 const formatCompact = (v: number) => {
     const abs = Math.abs(v);
     if (abs >= 1_000_000) return `${(v / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
     if (abs >= 1_000) return `${(v / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
-    return Math.round(v).toLocaleString("es-AR");
+    return formatNumber(Math.round(v), { decimals: 0 });
 };
 
 const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
@@ -51,7 +64,7 @@ const formatX = (v: string, mode?: ViewMode) => {
 
 function EvoChart({ xData, series, tooltipFormatter, yFormatter, yMax, gridTop, hiddenSeries, chartKey, viewMode }: {
     xData: string[];
-    series: any[];
+    series: ChartSeries[];
     tooltipFormatter: (params: TooltipParam[]) => string;
     yFormatter?: (v: number) => string;
     yMax?: number;
@@ -62,7 +75,7 @@ function EvoChart({ xData, series, tooltipFormatter, yFormatter, yMax, gridTop, 
 }) {
     const dense = xData.length > 14;
     const labelInterval = dense ? Math.ceil(xData.length / 14) : 0;
-    const visibleSeries = hiddenSeries?.length ? series.filter((s) => !hiddenSeries.includes(s.name)) : series;
+    const visibleSeries = hiddenSeries?.length ? series.filter((s) => !hiddenSeries.includes(s.name ?? "")) : series;
     return (
         <ReactECharts
             key={chartKey}
@@ -86,13 +99,13 @@ function EvoChart({ xData, series, tooltipFormatter, yFormatter, yMax, gridTop, 
                 },
                 tooltip: {
                     trigger: "axis",
-                    backgroundColor: colors.bg.header,
+                    backgroundColor: colors.bg.elevated,
                     borderColor: colors.border,
+                    borderWidth: 2,
                     borderRadius: 8,
                     padding: [6, 10],
-                    textStyle: { color: colors.fg.base, fontSize: fonts.size["2xs"] },
+                    textStyle: { color: colors.fg.base, fontSize: fonts.size.xs },
                     formatter: tooltipFormatter,
-                    extraCssText: `outline:1px solid ${colors.fill};border-radius:8px;box-shadow:none;`,
                 },
                 series: visibleSeries,
             }}
@@ -107,9 +120,9 @@ const groups = [
         id: "cashflow-capital",
         label: "Cash Flow & Capital",
         charts: [
-            { id: "cashflow", title: "Cash Flow", desc: "Ingresos vs gastos.", legend: [{ label: "Ingresos", color: colors.accent.green }, { label: "Gastos", color: colors.accent.red }] },
+            { id: "cashflow", title: "Cash Flow", desc: "Ingresos vs egresos.", legend: [{ label: "Ingresos", color: colors.accent.green }, { label: "Egresos", color: colors.accent.red }] },
             { id: "savings-rate", title: "Savings Rate", desc: "Porcentaje ahorrado.", legend: [{ label: "50%", color: colors.fg.dim, style: "line" as const }] },
-            { id: "annual-area", title: "Acumulado", desc: "Tendencia acumulada.", legend: [{ label: "Ingresos", color: colors.accent.green }, { label: "Gastos", color: colors.accent.red }, { label: "Ahorro", color: colors.accent.cyan }] },
+            { id: "annual-area", title: "Acumulado", desc: "Tendencia acumulada.", legend: [{ label: "Ingresos", color: colors.accent.green }, { label: "Egresos", color: colors.accent.red }, { label: "Ahorro", color: colors.accent.cyan }] },
             { id: "capital-growth", title: "Evolución del Capital", desc: "Patrimonio neto acumulado." },
         ],
     },
@@ -120,17 +133,17 @@ const groups = [
             { id: "real-vs-plan-capital", title: "Capital", desc: "Real vs plan vs forecast vs LY.", legend: [{ label: "Real", color: colors.accent.blue }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
             { id: "real-vs-plan-savings", title: "Ahorro", desc: "Real vs plan vs forecast vs LY.", legend: [{ label: "Real", color: colors.accent.cyan }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
             { id: "real-vs-plan-income", title: "Ingresos", desc: "Real vs plan vs forecast vs LY.", legend: [{ label: "Real", color: colors.accent.green }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
-            { id: "real-vs-plan-expense", title: "Gastos", desc: "Real vs plan vs forecast vs LY.", legend: [{ label: "Real", color: colors.accent.red }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
+            { id: "real-vs-plan-expense", title: "Egresos", desc: "Real vs plan vs forecast vs LY.", legend: [{ label: "Real", color: colors.accent.red }, { label: "FCST", color: colors.accent.orange }, { label: "Plan", color: colors.accent.purple }, { label: "LY", color: colors.fg.dim }] },
         ],
     },
     {
         id: "composition-detail",
         label: "Composición & Detalle",
         charts: [
-            { id: "expense-fixed-vs-variable", title: "Gasto Fijo vs Variable", desc: "Composición del gasto.", legend: [{ label: "Fijo", color: `${colors.accent.orange}B3` }, { label: "Variable", color: `${colors.accent.yellow}B3` }] },
+            { id: "expense-fixed-vs-variable", title: "Egreso Fijo vs Variable", desc: "Composición del egreso.", legend: [{ label: "Fijo", color: `${colors.accent.red}` }, { label: "Variable", color: `${colors.accent.red}66` }] },
             { id: "income-fixed-vs-variable", title: "Ingreso Fijo vs Variable", desc: "Composición del ingreso.", legend: [{ label: "Fijo", color: `${colors.accent.green}B3` }, { label: "Variable", color: `${colors.accent.green}50` }] },
-            { id: "expense-by-category", title: "Distribución por Categoría", desc: "Gastos agrupados por categoría y subcategoría." },
-            { id: "expense-by-channel", title: "Distribución por Canal", desc: "Gastos agrupados por canal y cuenta." },
+            { id: "expense-by-category", title: "Distribución por Categoría", desc: "Egresos agrupados por categoría y subcategoría." },
+            { id: "expense-by-channel", title: "Distribución por Canal", desc: "Egresos agrupados por canal y cuenta." },
         ],
     },
 ];
@@ -143,27 +156,12 @@ export function EvolutionPage() {
     const { data: expenseByCategory } = useDimensionSeries("category", dimParams);
     const { data: expenseByChannel } = useDimensionSeries("channel", dimParams);
     const [groupIdx, setGroupIdx] = useState(0);
-    const tabRefs = useRef<(HTMLDivElement | null)[]>([]);
-    const [tabPill, setTabPill] = useState({ left: 0, width: 0 });
-    const measureTabs = useCallback(() => {
-        const el = tabRefs.current[groupIdx];
-        if (el?.parentElement) {
-            setTabPill({ left: el.offsetLeft, width: el.offsetWidth });
-        }
-    }, [groupIdx]);
-    useEffect(() => { measureTabs(); }, [measureTabs, groups.length]);
     const [hiddenSeries, setHiddenSeries] = useState<Record<string, string[]>>({});
     const [modalHiddenSeries, setModalHiddenSeries] = useState<Record<string, string[]>>({});
     const [modalViewMode, setModalViewMode] = useState<ViewMode>("current_year");
     const [modalExpenseYear, setModalExpenseYear] = useState(String(new Date().getFullYear()));
     const [modalExpenseMonth, setModalExpenseMonth] = useState("all");
     const [modalChartId, setModalChartId] = useState<string | null>(null);
-    useEffect(() => {
-        if (!modalChartId) return;
-        const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setModalChartId(null); };
-        window.addEventListener("keydown", onKey);
-        return () => window.removeEventListener("keydown", onKey);
-    }, [modalChartId]);
     const toggleSeries = (chartId: string, name: string) => {
         setHiddenSeries((prev) => {
             const current = prev[chartId] ?? [];
@@ -212,44 +210,44 @@ export function EvolutionPage() {
             month: y, income: yearAgg.income[i], expense: yearAgg.expense[i],
             capital: yearAgg.capital[i], savings: yearAgg.savings[i],
         }))).findIndex(
-            (m: any) => m.income !== 0 || m.expense !== 0 || m.capital !== 0 || m.savings !== 0,
+            (m: ChartPoint) => m.income !== 0 || m.expense !== 0 || m.capital !== 0 || m.savings !== 0,
         );
         const startIdx = dStart >= 0 ? dStart : 0;
 
         const mons: string[] = isMonth
-            ? filSeries.slice(startIdx).map((m: any) => m.month)
+            ? filSeries.slice(startIdx).map((m: MonthlyData) => m.month)
             : yearAgg.months.slice(startIdx);
 
         const inc: number[] = isMonth
-            ? filSeries.slice(startIdx).map((m: any) => m.income)
+            ? filSeries.slice(startIdx).map((m: MonthlyData) => m.income)
             : yearAgg.income.slice(startIdx);
 
         const exp: number[] = isMonth
-            ? filSeries.slice(startIdx).map((m: any) => m.expense)
+            ? filSeries.slice(startIdx).map((m: MonthlyData) => m.expense)
             : yearAgg.expense.slice(startIdx);
 
         const cap: number[] = isMonth
-            ? filSeries.slice(startIdx).map((m: any) => m.capital)
+            ? filSeries.slice(startIdx).map((m: MonthlyData) => m.capital)
             : yearAgg.capital.slice(startIdx);
 
         const svgs: number[] = isMonth
-            ? filSeries.slice(startIdx).map((m: any) => m.savings)
+            ? filSeries.slice(startIdx).map((m: MonthlyData) => m.savings)
             : yearAgg.savings.slice(startIdx);
 
         const expFix: number[] = isMonth
-            ? filSeries.slice(startIdx).map((m: any) => m.expenseFixed)
+            ? filSeries.slice(startIdx).map((m: MonthlyData) => m.expenseFixed)
             : yearAgg.expenseFixed.slice(startIdx);
 
         const expVar: number[] = isMonth
-            ? filSeries.slice(startIdx).map((m: any) => m.expenseVariable)
+            ? filSeries.slice(startIdx).map((m: MonthlyData) => m.expenseVariable)
             : yearAgg.expenseVariable.slice(startIdx);
 
         const incFix: number[] = isMonth
-            ? filSeries.slice(startIdx).map((m: any) => m.incomeFixed)
+            ? filSeries.slice(startIdx).map((m: MonthlyData) => m.incomeFixed)
             : yearAgg.incomeFixed.slice(startIdx);
 
         const incVar: number[] = isMonth
-            ? filSeries.slice(startIdx).map((m: any) => m.incomeVariable)
+            ? filSeries.slice(startIdx).map((m: MonthlyData) => m.incomeVariable)
             : yearAgg.incomeVariable.slice(startIdx);
 
         const MIN_INCOME = 100;
@@ -301,14 +299,14 @@ export function EvolutionPage() {
     const card: React.CSSProperties = {
         backgroundColor: colors.bg.surface,
         borderRadius: radius.lg,
-        border: `1px solid ${colors.border}`,
+        border: `1px solid transparent`,
         display: "flex",
         flexDirection: "column",
     };
 
     const chartHeader: React.CSSProperties = {
         fontSize: fonts.size.sm,
-        fontWeight: 600,
+        fontWeight: fonts.weight.semibold,
         color: colors.fg.base,
         padding: `${spacing[2]} ${spacing[3]}`,
         borderBottom: `1px solid ${colors.border}`,
@@ -352,7 +350,7 @@ export function EvolutionPage() {
         const effIsMonthly = chartOpts?.isMonthly ?? true;
 
         const emptyMsg = (msg: string) => (
-            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: spacing[4] }}>
+            <div style={{ flex: 1, ...flexRow, justifyContent: "center", padding: spacing[4] }}>
                 <span style={{ fontSize: fonts.size.sm, color: colors.fg.dim, textAlign: "center" }}>{msg}</span>
             </div>
         );
@@ -367,19 +365,17 @@ export function EvolutionPage() {
                     <EvoChart
                         xData={effMonths}
                         series={[
-                            { type: "bar", data: effIncome, name: "Ingresos", stack: "a", itemStyle: { color: `${colors.accent.green}B3`, borderRadius: [4, 4, 0, 0] }, barMaxWidth: 16, barGap: "30%", animationDuration: 600, animationEasing: "cubicOut" },
-                            { type: "bar", data: effExpense.map((v) => -v), name: "Gastos", stack: "a", itemStyle: { color: `${colors.accent.red}B3`, borderRadius: [0, 0, 4, 4] }, barMaxWidth: 16, barGap: "30%", animationDuration: 600, animationEasing: "cubicOut" },
+                            { type: "bar", data: effIncome, name: "Ingresos", itemStyle: { color: colors.accent.green, borderRadius: [7, 7, 7, 7] }, barMaxWidth: 28, barGap: "12%", barCategoryGap: "42%", animationDuration: 600, animationEasing: "cubicOut" },
+                            { type: "bar", data: effExpense, name: "Egresos", itemStyle: { color: colors.accent.red, borderRadius: [7, 7, 7, 7] }, barMaxWidth: 28, barGap: "12%", barCategoryGap: "42%", animationDuration: 600, animationEasing: "cubicOut" },
                         ]}
                         tooltipFormatter={(params) => {
                             const inc = params.find((p) => p.seriesName === "Ingresos")?.value ?? 0;
-                            const exp = params.find((p) => p.seriesName === "Gastos")?.value ?? 0;
-                            const net = inc - exp;
-                            const ahorro = inc + exp;
+                            const exp = params.find((p) => p.seriesName === "Egresos")?.value ?? 0;
+                            const ahorro = inc - exp;
                             return `
                                 <div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0]?.name ?? "", effViewMode)}</div>
                                 <div style="display:flex;align-items:center;gap:4px;margin-top:2px;font-size:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${colors.accent.green}"></span>Ingresos: <b>${formatCompact(inc)}</b></div>
-                                <div style="display:flex;align-items:center;gap:4px;margin-top:2px;font-size:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${colors.accent.red}"></span>Gastos: <b>${formatCompact(exp)}</b></div>
-                                <div style="display:flex;align-items:center;gap:4px;margin-top:2px;font-size:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${colors.accent.purple}"></span>Neto: <b>${formatCompact(net)}</b></div>
+                                <div style="display:flex;align-items:center;gap:4px;margin-top:2px;font-size:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${colors.accent.red}"></span>Egresos: <b>${formatCompact(exp)}</b></div>
                                 <div style="display:flex;align-items:center;gap:4px;margin-top:2px;font-size:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${colors.accent.cyan}"></span>Ahorro: <b>${formatCompact(ahorro)}</b></div>
                             `;
                         }}
@@ -446,8 +442,8 @@ export function EvolutionPage() {
                     <EvoChart
                         xData={expMonths}
                         series={[
-                            { type: "bar", data: expFix, name: "Fijo", stack: "exp", itemStyle: { color: `${colors.accent.orange}B3` }, barMaxWidth: 16, barGap: "30%", animationDuration: 600, animationEasing: "cubicOut" },
-                            { type: "bar", data: expVar, name: "Variable", stack: "exp", itemStyle: { color: `${colors.accent.yellow}B3` }, barMaxWidth: 16, barGap: "30%", animationDuration: 600, animationEasing: "cubicOut" },
+                            { type: "bar", data: expFix, name: "Fijo", itemStyle: { color: colors.accent.red, borderRadius: [7, 7, 7, 7] }, barMaxWidth: 28, barGap: "12%", barCategoryGap: "42%", animationDuration: 600, animationEasing: "cubicOut" },
+                            { type: "bar", data: expVar, name: "Variable", itemStyle: { color: `${colors.accent.red}66`, borderRadius: [7, 7, 7, 7] }, barMaxWidth: 28, barGap: "12%", barCategoryGap: "42%", animationDuration: 600, animationEasing: "cubicOut" },
                         ]}
                         tooltipFormatter={(params) => {
                             let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0]?.name ?? "", effViewMode)}</div>`;
@@ -469,8 +465,8 @@ export function EvolutionPage() {
                     <EvoChart
                         xData={incMonths}
                         series={[
-                            { type: "bar", data: incFix, name: "Fijo", stack: "inc", itemStyle: { color: `${colors.accent.green}B3` }, barMaxWidth: 16, barGap: "30%", animationDuration: 600, animationEasing: "cubicOut" },
-                            { type: "bar", data: incVar, name: "Variable", stack: "inc", itemStyle: { color: `${colors.accent.green}50` }, barMaxWidth: 16, barGap: "30%", animationDuration: 600, animationEasing: "cubicOut" },
+                            { type: "bar", data: incFix, name: "Fijo", itemStyle: { color: `${colors.accent.green}B3`, borderRadius: [7, 7, 7, 7] }, barMaxWidth: 28, barGap: "12%", barCategoryGap: "42%", animationDuration: 600, animationEasing: "cubicOut" },
+                            { type: "bar", data: incVar, name: "Variable", itemStyle: { color: `${colors.accent.green}50`, borderRadius: [7, 7, 7, 7] }, barMaxWidth: 28, barGap: "12%", barCategoryGap: "42%", animationDuration: 600, animationEasing: "cubicOut" },
                         ]}
                         tooltipFormatter={(params) => {
                             let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0]?.name ?? "", effViewMode)}</div>`;
@@ -491,7 +487,7 @@ export function EvolutionPage() {
                 if (!m) return null;
                 const multi = mkMultiSeries(m, colors.accent.blue);
                 if (multi.every((s) => s.data.every((d: number | null) => d === null))) return null;
-                const labels = m.map((_, i) => { const d = new Date(); d.setMonth(i); return d.toLocaleDateString("es-AR", { month: "short" }).replace(".", ""); });
+                const labels = m.map((_, i) => { const d = new Date(); d.setMonth(i); const name = d.toLocaleDateString("es-AR", { month: "short" }).replace(".", ""); return name.charAt(0).toUpperCase() + name.slice(1); });
                 return (
                     <EvoChart
                         xData={labels}
@@ -507,7 +503,7 @@ export function EvolutionPage() {
                             let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0].name, effViewMode)}</div>`;
                             params.forEach((p) => {
                                 if (p.value === null || p.value === undefined) return;
-                                html += `<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-size:12px;font-weight:600">${p.seriesName}: ${Math.round(p.value).toLocaleString("es-AR")}</span></div>`;
+                                html += `<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-size:12px;font-weight:600">${p.seriesName}: ${formatNumber(Math.round(p.value), { decimals: 0 })}</span></div>`;
                             });
                             return html;
                         }}
@@ -523,7 +519,7 @@ export function EvolutionPage() {
                 if (!m) return null;
                 const multi = mkMultiSeries(m, colors.accent.cyan);
                 if (multi.every((s) => s.data.every((d: number | null) => d === null))) return null;
-                const labels = m.map((_, i) => { const d = new Date(); d.setMonth(i); return d.toLocaleDateString("es-AR", { month: "short" }).replace(".", ""); });
+                const labels = m.map((_, i) => { const d = new Date(); d.setMonth(i); const name = d.toLocaleDateString("es-AR", { month: "short" }).replace(".", ""); return name.charAt(0).toUpperCase() + name.slice(1); });
                 return (
                     <EvoChart
                         xData={labels}
@@ -539,7 +535,7 @@ export function EvolutionPage() {
                             let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0].name, effViewMode)}</div>`;
                             params.forEach((p) => {
                                 if (p.value === null || p.value === undefined) return;
-                                html += `<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-size:12px;font-weight:600">${p.seriesName}: ${Math.round(p.value).toLocaleString("es-AR")}</span></div>`;
+                                html += `<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-size:12px;font-weight:600">${p.seriesName}: ${formatNumber(Math.round(p.value), { decimals: 0 })}</span></div>`;
                             });
                             return html;
                         }}
@@ -555,7 +551,7 @@ export function EvolutionPage() {
                 if (!m) return null;
                 const multi = mkMultiSeries(m, colors.accent.green);
                 if (multi.every((s) => s.data.every((d: number | null) => d === null))) return null;
-                const labels = m.map((_, i) => { const d = new Date(); d.setMonth(i); return d.toLocaleDateString("es-AR", { month: "short" }).replace(".", ""); });
+                const labels = m.map((_, i) => { const d = new Date(); d.setMonth(i); const name = d.toLocaleDateString("es-AR", { month: "short" }).replace(".", ""); return name.charAt(0).toUpperCase() + name.slice(1); });
                 return (
                     <EvoChart
                         xData={labels}
@@ -571,7 +567,7 @@ export function EvolutionPage() {
                             let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0].name, effViewMode)}</div>`;
                             params.forEach((p) => {
                                 if (p.value === null || p.value === undefined) return;
-                                html += `<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-size:12px;font-weight:600">${p.seriesName}: ${Math.round(p.value).toLocaleString("es-AR")}</span></div>`;
+                                html += `<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-size:12px;font-weight:600">${p.seriesName}: ${formatNumber(Math.round(p.value), { decimals: 0 })}</span></div>`;
                             });
                             return html;
                         }}
@@ -587,7 +583,7 @@ export function EvolutionPage() {
                 if (!m) return null;
                 const multi = mkMultiSeries(m, colors.accent.red);
                 if (multi.every((s) => s.data.every((d: number | null) => d === null))) return null;
-                const labels = m.map((_, i) => { const d = new Date(); d.setMonth(i); return d.toLocaleDateString("es-AR", { month: "short" }).replace(".", ""); });
+                const labels = m.map((_, i) => { const d = new Date(); d.setMonth(i); const name = d.toLocaleDateString("es-AR", { month: "short" }).replace(".", ""); return name.charAt(0).toUpperCase() + name.slice(1); });
                 return (
                     <EvoChart
                         xData={labels}
@@ -603,7 +599,7 @@ export function EvolutionPage() {
                             let html = `<div style="font-size:${fonts.size.xs};color:${colors.fg.dim};margin-bottom:4px">${formatX(params[0].name, effViewMode)}</div>`;
                             params.forEach((p) => {
                                 if (p.value === null || p.value === undefined) return;
-                                html += `<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-size:12px;font-weight:600">${p.seriesName}: ${Math.round(p.value).toLocaleString("es-AR")}</span></div>`;
+                                html += `<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span><span style="font-size:12px;font-weight:600">${p.seriesName}: ${formatNumber(Math.round(p.value), { decimals: 0 })}</span></div>`;
                             });
                             return html;
                         }}
@@ -620,7 +616,7 @@ export function EvolutionPage() {
                         xData={effMonths}
                         series={[
                             { type: "line", data: effCumulativeIncome, name: "Ingresos", smooth: true, symbol: "circle", symbolSize: 4, showSymbol: false, emphasis: { showSymbol: true, scale: 1.5 }, animationDuration: 600, animationEasing: "cubicOut", lineStyle: { color: colors.accent.green, width: 2 }, itemStyle: { color: colors.accent.green }, areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: `${colors.accent.green}30` }, { offset: 1, color: `${colors.accent.green}00` }] } } },
-                            { type: "line", data: effCumulativeExpense, name: "Gastos", smooth: true, symbol: "circle", symbolSize: 4, showSymbol: false, emphasis: { showSymbol: true, scale: 1.5 }, animationDuration: 600, animationEasing: "cubicOut", lineStyle: { color: colors.accent.red, width: 2 }, itemStyle: { color: colors.accent.red }, areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: `${colors.accent.red}30` }, { offset: 1, color: `${colors.accent.red}00` }] } } },
+                            { type: "line", data: effCumulativeExpense, name: "Egresos", smooth: true, symbol: "circle", symbolSize: 4, showSymbol: false, emphasis: { showSymbol: true, scale: 1.5 }, animationDuration: 600, animationEasing: "cubicOut", lineStyle: { color: colors.accent.red, width: 2 }, itemStyle: { color: colors.accent.red }, areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: `${colors.accent.red}30` }, { offset: 1, color: `${colors.accent.red}00` }] } } },
                             { type: "line", data: effCumulativeSavings, name: "Ahorro", smooth: true, symbol: "circle", symbolSize: 4, showSymbol: false, emphasis: { showSymbol: true, scale: 1.5 }, animationDuration: 600, animationEasing: "cubicOut", lineStyle: { color: colors.accent.cyan, width: 2 }, itemStyle: { color: colors.accent.cyan }, areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: `${colors.accent.cyan}30` }, { offset: 1, color: `${colors.accent.cyan}00` }] } } },
                         ]}
                         tooltipFormatter={(params) => {
@@ -676,30 +672,33 @@ export function EvolutionPage() {
                     const si = siblings.indexOf(k);
                     subColor[k] = shade(base, 0.45 + (si / Math.max(siblings.length - 1, 1)) * 0.55);
                 });
-                const series = subKeys.map((name) => ({
-                    name,
+                const series = [{
                     type: "bar",
-                    stack: "total",
-                    data: items.map((g) => g.composition[name] ?? 0),
-                    itemStyle: { color: subColor[name], borderRadius: 0 },
+                    barMaxWidth: 28,
+                    barCategoryGap: "42%",
+                    data: items.map((g, i) => ({
+                        value: g.total,
+                        itemStyle: { color: catBase[i % catBase.length], borderRadius: [0, 7, 7, 0] },
+                    })),
                     label: { show: false },
-                    emphasis: { itemStyle: { color: subColor[name] }, label: { show: false } },
-                }));
+                    emphasis: { label: { show: false } },
+                }];
                 return (
                     <ReactECharts
                         option={{
                             backgroundColor: "transparent",
-                            grid: { top: 6, right: 80, bottom: 8, left: 100, containLabel: true },
+                            grid: { top: 6, right: 16, bottom: 8, left: 8, containLabel: true },
                             xAxis: { type: "value", axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { color: colors.fill, type: "dashed" } }, axisLabel: { color: colors.fg.dim, fontSize: fonts.size.xs, formatter: (v: number) => formatCompact(v) } },
                             yAxis: { type: "category", data: items.map((g) => g.name), axisLine: { lineStyle: { color: colors.fill } }, axisTick: { show: false }, axisLabel: { color: colors.fg.base, fontSize: fonts.size.xs } },
                             tooltip: {
                                 trigger: "axis",
                                 axisPointer: { type: "shadow" },
-                                backgroundColor: colors.bg.header,
+                                backgroundColor: colors.bg.elevated,
                                 borderColor: colors.border,
+                                borderWidth: 2,
                                 borderRadius: 8,
                                 padding: [6, 10],
-                                textStyle: { color: colors.fg.base, fontSize: fonts.size["2xs"] },
+                                textStyle: { color: colors.fg.base, fontSize: fonts.size.xs },
                                 formatter: (params: TooltipParam[]) => {
                                     const cat = params[0].name;
                                     const entry = items.find((g) => g.name === cat);
@@ -714,7 +713,6 @@ export function EvolutionPage() {
                                     html += `<div style="display:flex;align-items:center;gap:4px;margin-top:4px;padding-top:4px;border-top:1px solid ${colors.fill};font-size:12px">Total: <b>${formatCompact(entry.total)}</b></div>`;
                                     return html;
                                 },
-                                extraCssText: `outline:1px solid ${colors.fill};border-radius:8px;box-shadow:none;`,
                             },
                             series,
                         }}
@@ -734,8 +732,7 @@ export function EvolutionPage() {
         <div
             style={{
                 padding: spacing[3],
-                display: "flex",
-                flexDirection: "column",
+                ...flexColumn,
                 gap: spacing[3],
                 maxHeight: "calc(100vh - 80px)",
                 boxSizing: "border-box",
@@ -743,10 +740,10 @@ export function EvolutionPage() {
                 animation: "fadeIn 0.2s ease-out",
             }}
         >
-            <div style={{ display: "flex", flexDirection: "column", gap: spacing[3], flexShrink: 0 }}>
+            <div style={{ ...flexColumn, gap: spacing[2], flexShrink: 0, minHeight: "64px" }}>
                 <h1
                     style={{
-                        fontFamily: fonts.family.display,
+                        fontFamily: fonts.family,
                         fontSize: fonts.size.xl,
                         fontWeight: fonts.weight.semibold,
                         color: colors.fg.base,
@@ -756,7 +753,6 @@ export function EvolutionPage() {
                     Evolución
                 </h1>
                 <div style={{
-                    position: "relative",
                     display: "inline-flex",
                     borderRadius: "8px",
                     background: colors.fill,
@@ -766,35 +762,21 @@ export function EvolutionPage() {
                     flexShrink: 0,
                     alignSelf: "flex-start",
                 }}>
-                    <div style={{
-                        position: "absolute",
-                        top: 0,
-                        left: tabPill.left,
-                        width: tabPill.width,
-                        height: "100%",
-                        borderRadius: "7px",
-                        background: colors.bg.surface,
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)",
-                        transition: "left 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                        pointerEvents: "none",
-                    }} />
                     {groups.map((g, i) => (
                         <div
                             key={g.id}
-                            ref={(el) => { tabRefs.current[i] = el; }}
-                            onClick={() => { setGroupIdx(i); }}
+                            onClick={() => setGroupIdx(i)}
                             style={{
-                                position: "relative",
-                                zIndex: 1,
-                                display: "flex",
-                                alignItems: "center",
+                                ...flexRow,
                                 justifyContent: "center",
-                                padding: "5px 14px",
+                                padding: "4px 14px",
                                 whiteSpace: "nowrap",
                                 fontSize: fonts.size.sm,
-                                fontWeight: 500,
+                                fontWeight: fonts.weight.medium,
                                 color: groupIdx === i ? colors.fg.base : colors.fg.dim,
-                                transition: "color 0.2s",
+                                borderRadius: "7px",
+                                background: groupIdx === i ? colors.bg.surface : "transparent",
+                                transition: "background 0.15s ease, color 0.2s",
                                 lineHeight: "18px",
                                 gap: "5px",
                             }}
@@ -809,21 +791,21 @@ export function EvolutionPage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: spacing[3], flex: 1, minHeight: 0 }}>
                 {groups[groupIdx].charts.map((ch: { id: string; title: string; desc?: string; legend?: { label: string; color: string }[] }) => (
                     <div key={ch.id} style={card}>
-                        <div style={{ ...chartHeader, display: "flex", flexDirection: "column", gap: 2 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: spacing[2] }}>
+                        <div style={{ ...chartHeader, ...flexColumn, gap: 2 }}>
+                            <div style={{ ...flexBetween, gap: spacing[2] }}>
                                 <span>{ch.title}</span>
                                 <Button variant="plain" onClick={() => { setModalChartId(ch.id); setModalHiddenSeries({}); }} title="Expandir">
                                     <Maximize2 size={14} />
                                 </Button>
                             </div>
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing[2], flexWrap: "wrap" }}>
-                                {ch.desc && <span style={{ fontSize: fonts.size.xs, fontWeight: 400, color: colors.fg.dim }}>{ch.desc}</span>}
+                            <div style={{ ...flexBetween, gap: spacing[2], flexWrap: "wrap" }}>
+                                {ch.desc && <span style={{ fontSize: fonts.size.xs4, fontWeight: fonts.weight.medium, color: colors.fg.dim }}>{ch.desc}</span>}
                                 {ch.legend && (
                                     <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap", justifyContent: "flex-end", paddingRight: spacing[1] }}>
                                         {ch.legend.map((l: { label: string; color: string; style?: "line" }) => {
                                             const isHidden = hiddenSeries[ch.id]?.includes(l.label);
                                             return (
-                                                <div key={l.label} onClick={l.style === "line" ? undefined : () => toggleSeries(ch.id, l.label)} style={{ display: "flex", alignItems: "center", gap: 3, fontSize: fonts.size.xs, color: isHidden ? colors.fg.dim : undefined, cursor: l.style === "line" ? "default" : "pointer", opacity: isHidden ? 0.45 : 1, transition: "opacity 0.15s" }}>
+                                                <div key={l.label} onClick={l.style === "line" ? undefined : () => toggleSeries(ch.id, l.label)} style={{ ...flexRow, gap: 3, fontSize: fonts.size.xs, color: isHidden ? colors.fg.dim : undefined, cursor: l.style === "line" ? "default" : "pointer", opacity: isHidden ? 0.45 : 1, transition: "opacity 0.15s" }}>
                                                     {l.style === "line" ? (
                                                         <span style={{ display: "inline-block", width: 18, height: 3, borderRadius: 2, background: l.color, flexShrink: 0 }} />
                                                     ) : (
@@ -837,7 +819,7 @@ export function EvolutionPage() {
                                 )}
                             </div>
                         </div>
-                        <div style={{ height: "312px", flexShrink: 0 }}>
+                        <div style={{ height: "320px", flexShrink: 0 }}>
                             {renderChart(ch.id, hiddenSeries[ch.id] ?? [])}
                         </div>
                     </div>
@@ -855,21 +837,18 @@ export function EvolutionPage() {
                         inset: 0,
                         zIndex: 1000,
                         backgroundColor: "rgba(0,0,0,0.5)",
-                        display: "flex",
-                        alignItems: "center",
+                        ...flexRow,
                         justifyContent: "center",
                     }}
                 >
-                    <div
-                        onClick={(e) => e.stopPropagation()}
-                        style={{
-                            backgroundColor: colors.bg.surface,
-                            borderRadius: radius.lg,
-                            boxShadow: shadows.modal,
-                            width: "1140px",
+                        <div
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                                backgroundColor: colors.bg.surface,
+                                borderRadius: radius.lg,
+                                width: "1140px",
                             height: "650px",
-                            display: "flex",
-                            flexDirection: "column",
+                            ...flexColumn,
                             overflow: "hidden",
                         }}
                     >
@@ -882,15 +861,14 @@ export function EvolutionPage() {
                             borderBottom: `1px solid ${colors.fill}`,
                             flexShrink: 0,
                         }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <h2 style={{ fontSize: fonts.size.lg, fontWeight: 600, color: colors.fg.base, margin: 0 }}>
+                            <div style={{ ...flexBetween }}>
+                                <h2 style={{ fontSize: fonts.size.lg, fontWeight: fonts.weight.semibold, color: colors.fg.base, margin: 0 }}>
                                     {chart.title}
                                 </h2>
-                                <div style={{ display: "flex", alignItems: "center", gap: spacing[2] }}>
+                                <div style={{ ...flexRow, gap: spacing[2] }}>
                                     {!["expense-by-category", "expense-by-channel"].includes(modalChartId) && !modalChartId.startsWith("real-vs-plan") && (
                                         <div style={{
-                                            display: "flex",
-                                            alignItems: "center",
+                                            ...flexRow,
                                             gap: 2,
                                             borderRadius: "6px",
                                             background: colors.fill,
@@ -899,8 +877,8 @@ export function EvolutionPage() {
                                         }}>
                                             {[
                                                 { key: "current_year" as ViewMode, label: "YTD" },
-                                                { key: "ytd" as ViewMode, label: "YoY" },
-                                                { key: "monthly" as ViewMode, label: "MoM" },
+                                                { key: "monthly" as ViewMode, label: "Mensual" },
+                                                { key: "ytd" as ViewMode, label: "Anual" },
                                             ].map((m) => (
                                                 <div
                                                     key={m.key}
@@ -908,7 +886,7 @@ export function EvolutionPage() {
                                                     style={{
                                                         padding: "2px 8px",
                                                         fontSize: fonts.size.xs,
-                                                        fontWeight: 500,
+                                                        fontWeight: fonts.weight.medium,
                                                         color: modalViewMode === m.key ? colors.fg.base : colors.fg.dim,
                                                         background: modalViewMode === m.key ? colors.bg.surface : "transparent",
                                                         borderRadius: "5px",
@@ -922,30 +900,28 @@ export function EvolutionPage() {
                                             ))}
                                         </div>
                                     )}
-                                    <Button variant="plain" onClick={() => setModalChartId(null)}>
-                                        <X size={20} />
-                                    </Button>
-                                </div>
-                            </div>
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing[2], flexWrap: "wrap" }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: spacing[2] }}>
-                                    {chart.desc && <span style={{ fontSize: fonts.size.xs, fontWeight: 400, color: colors.fg.dim }}>{chart.desc}</span>}
                                     {["expense-by-category", "expense-by-channel"].includes(modalChartId) && (
                                         <>
                                         <Dropdown
                                             value={modalExpenseYear}
                                             onChange={setModalExpenseYear}
                                             options={expenseByCategory ? [...new Set(expenseByCategory.data.flatMap((s) => s.data.map((d) => d.month.split("-")[0])))].sort().reverse().map((y) => ({ id: y, label: y })) : []}
-                                            triggerStyle={{ height: "28px", width: "80px", fontSize: fonts.size.xs } as React.CSSProperties}
+                                            triggerStyle={{ ...chipTriggerStyle(true), width: "80px" }}
                                         />
                                         <Dropdown
                                             value={modalExpenseMonth}
                                             onChange={setModalExpenseMonth}
                                             options={[{ id: "all", label: "Todo el año" }, ...["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"].map((name, i) => ({ id: String(i + 1).padStart(2, "0"), label: name }))]}
-                                            triggerStyle={{ height: "28px", width: "130px", fontSize: fonts.size.xs } as React.CSSProperties}
+                                            triggerStyle={{ ...chipTriggerStyle(true), width: "130px" }}
                                         />
                                         </>
                                     )}
+                                    <ModalCloseButton onClick={() => setModalChartId(null)} />
+                                </div>
+                            </div>
+                            <div style={{ ...flexBetween, gap: spacing[2], flexWrap: "wrap" }}>
+                                <div style={{ ...flexRow, gap: spacing[2] }}>
+                                    {chart.desc && <span style={{ fontSize: fonts.size.sm, fontWeight: fonts.weight.medium, color: colors.fg.dim }}>{chart.desc}</span>}
                                 </div>
                                 {chart.legend && (
                                     <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap", alignItems: "center", paddingRight: spacing[1] }}>
@@ -956,8 +932,7 @@ export function EvolutionPage() {
                                                     key={l.label}
                                                     onClick={l.style === "line" ? undefined : () => toggleModalSeries(modalChartId, l.label)}
                                                     style={{
-                                                        display: "flex",
-                                                        alignItems: "center",
+                                                        ...flexRow,
                                                         gap: 3,
                                                         fontSize: fonts.size.sm,
                                                         fontWeight: fonts.weight.medium,

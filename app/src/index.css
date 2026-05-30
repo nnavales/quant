@@ -26,7 +26,6 @@
     /* Fonts — static, same across themes */
     --font-sans: "Inter", system-ui, sans-serif;
     --font-display: "Inter", system-ui, sans-serif;
-    --font-mono: "JetBrains Mono", monospace;
 
     --font-size-xs: 11px;
     --font-size-sm: 13px;
@@ -48,12 +47,16 @@
     padding: 0;
 }
 
-html, body, #root {
+html,
+body,
+#root {
     -webkit-user-select: none;
     user-select: none;
 }
 
-input, textarea, select,
+input,
+textarea,
+select,
 .selectable {
     -webkit-user-select: text;
     user-select: text;
@@ -95,16 +98,6 @@ a {
         border-color 0.15s ease,
         color 0.15s ease,
         outline-color 0.15s ease;
-}
-
-.tab-title {
-    text-decoration: none;
-    border-bottom: 1px solid transparent;
-    transition: border-color 0.15s ease;
-}
-
-.tab-title:hover {
-    border-bottom-color: currentColor;
 }
 
 /* ─── Animations ─── */

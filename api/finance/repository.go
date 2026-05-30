@@ -1070,6 +1070,7 @@ func (r *SQLiteRepo) BulkDeleteTransactionAggregate(ctx context.Context, ids []s
 	}
 
 	defer tx.Rollback()
+	seenGroups := make(map[string]bool)
 	for _, id := range ids {
 		t, err := getTransactionByID(ctx, tx, id)
 		if err != nil {
@@ -1077,6 +1078,10 @@ func (r *SQLiteRepo) BulkDeleteTransactionAggregate(ctx context.Context, ids []s
 		}
 
 		if t.InstallmentGroupID != nil {
+			if seenGroups[*t.InstallmentGroupID] {
+				continue
+			}
+			seenGroups[*t.InstallmentGroupID] = true
 			if err := deleteInstallmentGroup(ctx, tx, *t.InstallmentGroupID); err != nil {
 				return mapDBError(err)
 			}

@@ -20,24 +20,11 @@ import { Button } from "@/components/ui/Button";
 import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
-import { cardStyle } from "@/styles/layout";
+import { inputStyle, flexBetween, flexColumn, flexRow, truncate } from "@/styles/layout";
 import { toast } from "@/utils/toast";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { getApiErrorMessage } from "@/utils/apiErrors";
-
-const inputStyle: React.CSSProperties = {
-    padding: `${spacing[2]} ${spacing[3]}`,
-    backgroundColor: colors.bg.base,
-    border: `1px solid ${colors.border}`,
-    borderRadius: radius.md,
-    color: colors.fg.base,
-    fontSize: fonts.size.sm,
-    width: "100%",
-    height: "32px",
-    boxSizing: "border-box",
-    outline: "none",
-    transition: "border-color 0.15s",
-};
+import { SettingsCard } from "@/components/SettingsCard";
 
 const fieldRowStyle: React.CSSProperties = {
     display: "flex",
@@ -64,7 +51,7 @@ const fieldValueStyle: React.CSSProperties = {
 const fieldLabelAbove: React.CSSProperties = {
     fontSize: fonts.size.xs,
     color: colors.fg.dim,
-    fontWeight: 500,
+    fontWeight: fonts.weight.medium,
     marginBottom: spacing[1],
     display: "block",
 };
@@ -81,7 +68,7 @@ function TypeToggle({
             style={{
                 display: "flex",
                 backgroundColor: colors.bg.base,
-                border: `1px solid ${colors.border}`,
+
                 borderRadius: radius.md,
                 padding: "2px",
                 height: "32px",
@@ -98,7 +85,7 @@ function TypeToggle({
                 iconLeft={<TrendingDown size={14} />}
                 style={{ fontSize: fonts.size.sm }}
             >
-                Gasto
+                Egreso
             </Button>
             <Button
                 type="button"
@@ -353,36 +340,38 @@ export function PresetManager() {
     const deletedPresets = presetsList?.filter((p) => p.deleted_at) ?? [];
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: spacing[4] }}>
+        <div style={{ ...flexColumn, gap: spacing[4] }}>
             {/* ── Create button ── */}
             {!showCreateForm && (
                 <button
                     type="button"
                     onClick={openCreateForm}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = colors.fg.base; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = colors.fg.dim; }}
                     style={{
                         display: "inline-flex",
                         alignItems: "center",
                         justifyContent: "center",
                         gap: spacing[1],
                         padding: `${spacing[1]} ${spacing[2]}`,
-                        fontSize: fonts.size.xs,
+                        fontSize: fonts.size.sm,
                         backgroundColor: "transparent",
                         border: "none",
                         color: colors.fg.dim,
                         cursor: "pointer",
-                        fontWeight: 500,
-                        fontFamily: fonts.family.text,
+                        fontWeight: fonts.weight.medium,
+                        fontFamily: fonts.family,
                         whiteSpace: "nowrap",
                     }}
                 >
-                    <Plus size={12} />
+                    <Plus size={14} />
                     Nuevo preset
                 </button>
             )}
 
             {/* ── Create form (inline) ── */}
             {showCreateForm && (
-                <div style={{ ...cardStyle, display: "flex", flexDirection: "column", gap: spacing[3] }}>
+                <SettingsCard style={{ ...flexColumn, gap: spacing[3] }}>
                     {/* Header row: name + type + actions */}
                     <div style={{ display: "flex", gap: spacing[2], flexWrap: "nowrap", alignItems: "flex-end" }}>
                         <div style={{ flex: "1 1 0", minWidth: 0 }}>
@@ -394,7 +383,7 @@ export function PresetManager() {
                                 placeholder="Ej: Supermercado"
                                 onKeyDown={(e) => { if (e.key === "Enter") handleCreate(); if (e.key === "Escape") closeCreateForm(); }}
                                 autoFocus
-                                style={{ ...inputStyle, height: "28px" }}
+                                style={{ ...inputStyle, fontSize: fonts.size.sm }}
                             />
                         </div>
                         <TypeToggle
@@ -420,7 +409,7 @@ export function PresetManager() {
                                 value={createFormData.description ?? ""}
                                 onChange={(e) => setCreateFormData((p) => ({ ...p, description: e.target.value }))}
                                 placeholder="Ej: Compras semanales"
-                                style={{ ...inputStyle, height: "28px" }}
+                                style={{ ...inputStyle, fontSize: fonts.size.sm }}
                             />
                         </div>
                     </div>
@@ -439,8 +428,8 @@ export function PresetManager() {
                                 placeholder="—"
                                 clearable
                                 clearLabel="—"
-                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                            />
+
+                                />
                         </div>
                         <div style={{ flex: "1 1 100px", minWidth: 0 }}>
                             <span style={fieldLabelAbove}>Moneda</span>
@@ -454,8 +443,8 @@ export function PresetManager() {
                                 placeholder="—"
                                 clearable
                                 clearLabel="—"
-                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                            />
+
+                                />
                         </div>
                         <div style={{ flex: "1 1 120px", minWidth: 0 }}>
                             <span style={fieldLabelAbove}>Estado</span>
@@ -467,8 +456,8 @@ export function PresetManager() {
                                 value={createFormData.is_paid ? "true" : "false"}
                                 onChange={(v) => setCreateFormData((p) => ({ ...p, is_paid: v === "true" }))}
                                 placeholder="—"
-                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                            />
+
+                                />
                         </div>
                     </div>
 
@@ -484,8 +473,8 @@ export function PresetManager() {
                                 searchable
                                 clearable
                                 clearLabel="—"
-                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                            />
+
+                                />
                         </div>
                         <div style={{ flex: "2 1 200px", minWidth: 0 }}>
                             <span style={fieldLabelAbove}>Método de pago</span>
@@ -497,79 +486,73 @@ export function PresetManager() {
                                 searchable
                                 clearable
                                 clearLabel="—"
-                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                            />
+
+                                />
                         </div>
                     </div>
-                </div>
+                </SettingsCard>
             )}
 
             {/* ── Presets list ── */}
-            <div style={{ display: "flex", flexDirection: "column", gap: spacing[3] }}>
+            <div style={{ ...flexColumn, gap: spacing[3] }}>
                 {activePresets.map((preset) => {
                     const isEditing = editingPresetId === preset.id;
                     const isExpanded = expandedPresets.has(preset.id);
 
                     return (
-                        <div
-                            key={preset.id}
-                            style={cardStyle}
-                        >
+                        <SettingsCard key={preset.id}>
                             {/* Card header */}
                             {isEditing ? (
-                                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: spacing[2] }}>
-                                    <div style={{ display: "flex", flexDirection: "column", gap: spacing[2], flex: 1, minWidth: 0 }}>
-                                        <div style={{ display: "flex", alignItems: "flex-end", gap: spacing[2] }}>
-                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                                <span style={fieldLabelAbove}>Nombre del Preset</span>
-                                                <input
-                                                    type="text"
-                                                    value={editFormData.name}
-                                                    onChange={(e) => setEditFormData((p) => ({ ...p, name: e.target.value }))}
+                                <div style={{ ...flexColumn, gap: spacing[3] }}>
+                                    <div style={{ display: "flex", gap: spacing[2], flexWrap: "nowrap", alignItems: "flex-end" }}>
+                                        <div style={{ flex: "1 1 0", minWidth: 0 }}>
+                                            <span style={fieldLabelAbove}>Nombre del Preset</span>
+                                            <input
+                                                type="text"
+                                                value={editFormData.name}
+                                                onChange={(e) => setEditFormData((p) => ({ ...p, name: e.target.value }))}
                                                 placeholder="Ej: Supermercado"
                                                 onKeyDown={(e) => { if (e.key === "Enter") handleUpdate(); if (e.key === "Escape") closeEditForm(); }}
                                                 autoFocus
-                                                style={{ ...inputStyle, height: "28px", width: "100%" }}
+                                                style={{ ...inputStyle, width: "100%", fontSize: fonts.size.sm }}
                                             />
                                         </div>
                                         <TypeToggle
                                             value={editFormData.type}
                                             onChange={(type) => setEditFormData((p) => ({ ...p, type }))}
                                         />
-                                    </div>
-                                    <div>
-                                        <span style={fieldLabelAbove}>Descripción</span>
-                                        <input
-                                            type="text"
-                                            value={editFormData.description ?? ""}
-                                            onChange={(e) => setEditFormData((p) => ({ ...p, description: e.target.value }))}
-                                            placeholder="Ej: Compras semanales"
-                                            style={{ ...inputStyle, height: "28px", width: "100%" }}
-                                        />
+                                        <div style={{ display: "flex", gap: spacing[1], flexShrink: 0, marginBottom: "1px" }}>
+                                            <Button variant="icon" onClick={handleUpdate} disabled={!editFormData.name?.trim() || isLoadingSubmit}>
+                                                <Check size={14} />
+                                            </Button>
+                                            <Button variant="icon" onClick={closeEditForm}>
+                                                <X size={14} />
+                                            </Button>
                                         </div>
                                     </div>
-                                    <div style={{ display: "flex", gap: spacing[1], flexShrink: 0, marginTop: "18px" }}>
-                                        <Button variant="icon" onClick={handleUpdate} disabled={!editFormData.name?.trim() || isLoadingSubmit}>
-                                            <Check size={14} />
-                                        </Button>
-                                        <Button variant="icon" onClick={closeEditForm}>
-                                            <X size={14} />
-                                        </Button>
+                                    <div style={{ display: "flex", gap: spacing[2] }}>
+                                        <div style={{ flex: 1 }}>
+                                            <span style={fieldLabelAbove}>Descripción</span>
+                                            <input
+                                                type="text"
+                                                value={editFormData.description ?? ""}
+                                                onChange={(e) => setEditFormData((p) => ({ ...p, description: e.target.value }))}
+                                                placeholder="Ej: Compras semanales"
+                                                style={{ ...inputStyle, width: "100%", fontSize: fonts.size.sm }}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             ) : (
                                 <div
                                     style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
+                                        ...flexBetween,
                                         gap: spacing[5],
                                     }}
                                 >
                                     <div
                                         style={{
-                                            display: "flex",
-                                            alignItems: "center",
+                                            ...flexRow,
                                             gap: spacing[2],
                                             cursor: "pointer",
                                             flex: 1,
@@ -580,17 +563,12 @@ export function PresetManager() {
                                         <span style={{ color: colors.fg.dim, display: "flex", flexShrink: 0 }}>
                                             {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                                         </span>
-                                        <span style={{
-                                            fontWeight: 600,
+                                        <span style={{...truncate, fontWeight: fonts.weight.semibold,
                                             color: colors.fg.base,
                                             fontSize: fonts.size.sm,
                                             flex: 1,
                                             minWidth: 0,
-                                            overflow: "hidden",
-                                            textOverflow: "ellipsis",
-                                            whiteSpace: "nowrap",
-                                            paddingRight: spacing[2],
-                                        }}>
+                                            paddingRight: spacing[2]}}>
                                             {preset.name}
                                         </span>
                                         <span
@@ -602,10 +580,10 @@ export function PresetManager() {
                                                 display: "inline-block",
                                                 flexShrink: 0,
                                             }}
-                                            title={preset.type === "income" ? "Ingreso" : "Gasto"}
+                                            title={preset.type === "income" ? "Ingreso" : "Egreso"}
                                         />
                                     </div>
-                                    <div style={{ display: "flex", alignItems: "center", gap: spacing[1], flexShrink: 0 }}>
+                                    <div style={{ ...flexRow, gap: spacing[1], flexShrink: 0 }}>
                                         <Button
                                             variant="icon"
                                             title="Editar"
@@ -626,7 +604,7 @@ export function PresetManager() {
 
                             {/* Expanded content */}
                             {isExpanded && !isEditing && (
-                                <div style={{ marginTop: spacing[3], display: "flex", flexDirection: "column", gap: spacing[2] }}>
+                                <div style={{ marginTop: spacing[3], ...flexColumn, gap: spacing[2] }}>
                                 {detailFields.map(({ key, label }) => {
                                     const displayLabel = key === "is_paid"
                                         ? (preset.type === "income" ? "Recibido" : "Pagado")
@@ -645,7 +623,7 @@ export function PresetManager() {
 
                             {/* Inline edit form body */}
                             {isEditing && (
-                                <div style={{ marginTop: spacing[3], display: "flex", flexDirection: "column", gap: spacing[3] }}>
+                                <div style={{ marginTop: spacing[3], ...flexColumn, gap: spacing[3] }}>
                                     <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap" }}>
                                         <div style={{ flex: "1 1 140px", minWidth: 0 }}>
                                             <span style={fieldLabelAbove}>Frecuencia</span>
@@ -659,8 +637,8 @@ export function PresetManager() {
                                                 placeholder="—"
                                                 clearable
                                                 clearLabel="—"
-                                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                                            />
+
+                                                />
                                         </div>
                                         <div style={{ flex: "1 1 100px", minWidth: 0 }}>
                                             <span style={fieldLabelAbove}>Moneda</span>
@@ -674,8 +652,8 @@ export function PresetManager() {
                                                 placeholder="—"
                                                 clearable
                                                 clearLabel="—"
-                                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                                            />
+
+                                                />
                                         </div>
                                         <div style={{ flex: "1 1 120px", minWidth: 0 }}>
                                             <span style={fieldLabelAbove}>Estado</span>
@@ -687,8 +665,8 @@ export function PresetManager() {
                                                 value={editFormData.is_paid ? "true" : "false"}
                                                 onChange={(v) => setEditFormData((p) => ({ ...p, is_paid: v === "true" }))}
                                                 placeholder="—"
-                                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                                            />
+
+                                                />
                                         </div>
                                     </div>
 
@@ -703,8 +681,8 @@ export function PresetManager() {
                                                 searchable
                                                 clearable
                                                 clearLabel="—"
-                                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                                            />
+
+                                                />
                                         </div>
                                         <div style={{ flex: "2 1 200px", minWidth: 0 }}>
                                             <span style={fieldLabelAbove}>Método de pago</span>
@@ -716,23 +694,23 @@ export function PresetManager() {
                                                 searchable
                                                 clearable
                                                 clearLabel="—"
-                                                triggerStyle={{ height: "28px", fontSize: fonts.size.sm }}
-                                            />
+
+                                                />
                                         </div>
                                     </div>
                                 </div>
                             )}
-                        </div>
+                        </SettingsCard>
                     );
                 })}
             </div>
 
             {deletedPresets.length > 0 && (
                 <div style={{ marginTop: spacing[6] }}>
-                    <h4 style={{ color: colors.fg.dim, fontSize: fonts.size.sm, marginBottom: spacing[3], fontWeight: 500 }}>
+                    <h4 style={{ color: colors.fg.dim, fontSize: fonts.size.sm, marginBottom: spacing[3], fontWeight: fonts.weight.medium }}>
                         Presets borrados
                     </h4>
-                    <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
+                    <div style={{ ...flexColumn, gap: spacing[2] }}>
                         {deletedPresets.map((preset) => (
                             <div
                                 key={preset.id}

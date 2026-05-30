@@ -1,28 +1,46 @@
 import { useState, useRef } from "react";
 import type { HistoricalEntry, HistoricalFinanceReq } from "@/api_client";
 import { type HistoricalFilters } from "@/api_client/endpoints";
-import { useHistoricalEntriesInfinite, useUpdateHistoricalEntry, useDeleteHistoricalEntry, useImportBackup } from "@/hooks";
-import { spacing, colors, radius, fonts } from "@/styles";
+import { useUpdateHistoricalEntry, useDeleteHistoricalEntry, useImportBackup } from "@/hooks";
+import { spacing, colors, radius, fonts, flexBetween, flexColumn, flexRow } from "@/styles";
+import { inputStyle, labelStyle } from "@/styles/formStyles";
 import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Button } from "@/components/ui/Button";
-import { Modal, ModalContent } from "@/components/ui/Modal";
+import { SubmitButton } from "@/components/ui/SubmitButton";
+import { Modal, ModalContent, ModalCloseButton } from "@/components/ui/Modal";
 import { HistoricalList } from "./HistoricalList";
-import { HistoricalFiltersComponent } from "./HistoricalFilters";
-import { FileUp, FileText, XCircle, Upload, Pencil, X, AlertCircle } from "lucide-react";
+import { formatForInput, parseLocaleNumber } from "@/utils/format";
+import { FileUp, FileText, XCircle, Upload, Pencil, AlertCircle } from "lucide-react";
 
 interface HistoricalTabProps {
     showBulkImport?: boolean;
     onCloseBulkImport?: () => void;
+    filters: HistoricalFilters;
+    onFiltersChange: (filters: HistoricalFilters) => void;
+    entries: HistoricalEntry[];
+    isLoading: boolean;
+    isError: boolean;
+    error: unknown;
+    fetchNextPage: () => void;
+    hasNextPage: boolean;
+    isFetchingNextPage: boolean;
 }
 
-export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseBulkImport }: HistoricalTabProps) {
-    const [filters, setFilters] = useState<HistoricalFilters>({ sort: "month", order: "desc" });
-    const [sort, setSort] = useState<"month" | "income" | "expense">("month");
+export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseBulkImport, filters, onFiltersChange, entries, isLoading, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage }: HistoricalTabProps) {
+    const [sort, setSort] = useState<"month" | "income" | "expense" | "savings">("month");
     const [order, setOrder] = useState<"asc" | "desc">("desc");
     const [editingMonth, setEditingMonth] = useState<string | null>(null);
-    const [editForm, setEditForm] = useState<Partial<HistoricalFinanceReq>>({});
+    const [editForm, setEditForm] = useState<{
+        exchange_rate?: string;
+        income_usd?: string;
+        income_fixed_usd?: string;
+        income_variable_usd?: string;
+        expense_usd?: string;
+        expense_fixed_usd?: string;
+        expense_variable_usd?: string;
+    }>({});
     const [importFile, setImportFile] = useState<File | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<HistoricalEntry | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -30,38 +48,31 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
     const showBulkImport = externalShowBulkImport ?? false;
     const closeBulkImport = onCloseBulkImport ?? (() => {});
 
-    const { data, isLoading, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useHistoricalEntriesInfinite(filters);
     const updateMutation = useUpdateHistoricalEntry();
     const importMutation = useImportBackup();
     const deleteMutation = useDeleteHistoricalEntry();
 
-    const entries = data?.pages.flatMap(p => p.data) ?? [];
-
-    const handleFiltersChange = (newFilters: HistoricalFilters) => {
-        setFilters(newFilters);
-    };
-
-    const handleSort = (column: "month" | "income" | "expense") => {
+    const handleSort = (column: "month" | "income" | "expense" | "savings") => {
         if (sort === column && order === "desc") {
             setOrder("asc");
-            setFilters({ ...filters, sort: column, order: "asc" });
+            onFiltersChange({ ...filters, sort: column, order: "asc" });
         } else {
             setSort(column);
             setOrder("desc");
-            setFilters({ ...filters, sort: column, order: "desc" });
+            onFiltersChange({ ...filters, sort: column, order: "desc" });
         }
     };
 
     const handleEdit = (entry: HistoricalEntry) => {
         setEditingMonth(entry.month);
         setEditForm({
-            exchange_rate: entry.exchange_rate,
-            income_usd: entry.income,
-            income_fixed_usd: entry.income_fixed,
-            income_variable_usd: entry.income_variable,
-            expense_usd: entry.expense,
-            expense_fixed_usd: entry.expense_fixed,
-            expense_variable_usd: entry.expense_variable,
+            exchange_rate: formatForInput(String(entry.exchange_rate)),
+            income_usd: formatForInput(entry.income),
+            income_fixed_usd: formatForInput(entry.income_fixed),
+            income_variable_usd: formatForInput(entry.income_variable),
+            expense_usd: formatForInput(entry.expense),
+            expense_fixed_usd: formatForInput(entry.expense_fixed),
+            expense_variable_usd: formatForInput(entry.expense_variable),
         });
     };
 
@@ -85,25 +96,25 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
 
     const validateEditForm = (): string[] => {
         const errors: string[] = [];
-        const tc = editForm.exchange_rate;
-        if (tc === undefined || tc === null || isNaN(tc) || tc <= 0) {
+        const tc = parseLocaleNumber(editForm.exchange_rate ?? "");
+        if (isNaN(tc) || tc <= 0) {
             errors.push("El tipo de cambio debe ser mayor a 0.");
         }
-        const income = parseFloat(String(editForm.income_usd ?? 0));
-        const incomeFixed = parseFloat(String(editForm.income_fixed_usd ?? 0));
-        const incomeVariable = parseFloat(String(editForm.income_variable_usd ?? 0));
+        const income = parseLocaleNumber(editForm.income_usd ?? "0");
+        const incomeFixed = parseLocaleNumber(editForm.income_fixed_usd ?? "0");
+        const incomeVariable = parseLocaleNumber(editForm.income_variable_usd ?? "0");
         if (isNaN(income) || isNaN(incomeFixed) || isNaN(incomeVariable)) {
             errors.push("Los valores de ingreso deben ser numéricos.");
         } else if (Math.abs(income - (incomeFixed + incomeVariable)) > 0.01) {
             errors.push(`Ingreso (${income}) debe ser igual a fijo (${incomeFixed}) + variable (${incomeVariable}).`);
         }
-        const expense = parseFloat(String(editForm.expense_usd ?? 0));
-        const expenseFixed = parseFloat(String(editForm.expense_fixed_usd ?? 0));
-        const expenseVariable = parseFloat(String(editForm.expense_variable_usd ?? 0));
+        const expense = parseLocaleNumber(editForm.expense_usd ?? "0");
+        const expenseFixed = parseLocaleNumber(editForm.expense_fixed_usd ?? "0");
+        const expenseVariable = parseLocaleNumber(editForm.expense_variable_usd ?? "0");
         if (isNaN(expense) || isNaN(expenseFixed) || isNaN(expenseVariable)) {
-            errors.push("Los valores de gasto deben ser numéricos.");
+            errors.push("Los valores de egreso deben ser numéricos.");
         } else if (Math.abs(expense - (expenseFixed + expenseVariable)) > 0.01) {
-            errors.push(`Gasto (${expense}) debe ser igual a fijo (${expenseFixed}) + variable (${expenseVariable}).`);
+            errors.push(`Egreso (${expense}) debe ser igual a fijo (${expenseFixed}) + variable (${expenseVariable}).`);
         }
         return errors;
     };
@@ -115,8 +126,12 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
             toast(errors[0]);
             return;
         }
+        const data: Partial<HistoricalFinanceReq> = {
+            ...editForm,
+            exchange_rate: editForm.exchange_rate ? parseLocaleNumber(editForm.exchange_rate) : undefined,
+        };
         updateMutation.mutate(
-            { month: editingMonth, data: editForm },
+            { month: editingMonth, data },
             {
                 onSuccess: () => {
                     setEditingMonth(null);
@@ -169,11 +184,7 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
     };
 
     return (
-        <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", gap: spacing[2] }}>
-            <HistoricalFiltersComponent
-                filters={filters}
-                onChange={handleFiltersChange}
-            />
+        <div style={{ flex: 1, minHeight: 0, ...flexColumn, gap: spacing[2] }}>
 
             <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
                 {isLoading ? (
@@ -207,174 +218,105 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
                         padding: spacing[6],
                         maxWidth: "480px",
                         width: "100%",
-                        border: `1px solid ${colors.fill}`,
+                        border: `1px solid transparent`,
                     }}
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: spacing[4] }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: spacing[2] }}>
+                    <div style={{ ...flexBetween, marginBottom: spacing[4] }}>
+                        <div style={{ ...flexRow, gap: spacing[2] }}>
                             <Pencil size={18} color={colors.accent.teal} />
-                            <h3 style={{ margin: 0, fontSize: fonts.size.lg, fontWeight: 600, color: colors.fg.base }}>Editar {editingMonth}</h3>
+                            <h3 style={{ margin: 0, fontSize: fonts.size.lg, fontWeight: fonts.weight.semibold, color: colors.fg.base }}>Editar {editingMonth}</h3>
                         </div>
-                        <button
-                            onClick={handleCancelEdit}
-                            style={{ background: "none", border: "none", color: colors.fg.dim, cursor: "pointer", padding: spacing[1], display: "flex" }}
-                        >
-                            <X size={18} />
-                        </button>
+                        <ModalCloseButton onClick={handleCancelEdit} />
                     </div>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: spacing[4] }}>
+                    <div style={{ ...flexColumn, gap: spacing[4] }}>
                         <div>
-                            <label style={{ display: "block", fontSize: fonts.size.xs, color: colors.fg.dim, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: spacing[1] }}>
+                            <label style={labelStyle}>
                                 Tipo de cambio (ARS/USD)
                             </label>
                             <input
-                                type="number"
-                                step="0.01"
-                                min="0"
+                                type="text"
+                                inputMode="decimal"
                                 value={editForm.exchange_rate ?? ""}
-                                onChange={(e) => setEditForm((p) => ({ ...p, exchange_rate: parseFloat(e.target.value) }))}
-                                style={{
-                                    width: "100%",
-                                    padding: spacing[2],
-                                    backgroundColor: colors.bg.base,
-                                    border: `1px solid ${colors.fill}`,
-                                    borderRadius: radius.md,
-                                    color: colors.fg.base,
-                                    fontSize: fonts.size.sm,
-                                    boxSizing: "border-box",
-                                }}
+                                onChange={(e) => setEditForm((p) => ({ ...p, exchange_rate: e.target.value }))}
+                                style={inputStyle}
                             />
                         </div>
 
                         <div style={{ backgroundColor: colors.bg.base, borderRadius: radius.md, padding: spacing[3], border: `1px solid ${colors.fill}` }}>
-                            <div style={{ fontSize: fonts.size.xs, color: colors.accent.green, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: spacing[2] }}>Ingreso</div>
+                            <div style={{ fontSize: fonts.size.xs, color: colors.accent.green, fontWeight: fonts.weight.semibold, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: spacing[2] }}>Ingreso</div>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: spacing[2] }}>
                                 <div>
                                     <label style={{ display: "block", fontSize: fonts.size.xs, color: colors.fg.dim, marginBottom: spacing[1] }}>Total</label>
                                     <input
-                                        type="number"
-                                        step="0.01"
+                                        type="text"
+                                        inputMode="decimal"
                                         value={editForm.income_usd ?? ""}
                                         onChange={(e) => setEditForm((p) => ({ ...p, income_usd: e.target.value }))}
-                                        style={{
-                                            width: "100%",
-                                            padding: spacing[2],
-                                            backgroundColor: colors.bg.surface,
-                                            border: `1px solid ${colors.fill}`,
-                                            borderRadius: radius.md,
-                                            color: colors.fg.base,
-                                            fontSize: fonts.size.sm,
-                                            boxSizing: "border-box",
-                                        }}
+                                        style={inputStyle}
                                     />
                                 </div>
                                 <div>
                                     <label style={{ display: "block", fontSize: fonts.size.xs, color: colors.fg.dim, marginBottom: spacing[1] }}>Fijo</label>
                                     <input
-                                        type="number"
-                                        step="0.01"
+                                        type="text"
+                                        inputMode="decimal"
                                         value={editForm.income_fixed_usd ?? ""}
                                         onChange={(e) => setEditForm((p) => ({ ...p, income_fixed_usd: e.target.value }))}
-                                        style={{
-                                            width: "100%",
-                                            padding: spacing[2],
-                                            backgroundColor: colors.bg.surface,
-                                            border: `1px solid ${colors.fill}`,
-                                            borderRadius: radius.md,
-                                            color: colors.fg.base,
-                                            fontSize: fonts.size.sm,
-                                            boxSizing: "border-box",
-                                        }}
+                                        style={inputStyle}
                                     />
                                 </div>
                                 <div>
                                     <label style={{ display: "block", fontSize: fonts.size.xs, color: colors.fg.dim, marginBottom: spacing[1] }}>Variable</label>
                                     <input
-                                        type="number"
-                                        step="0.01"
+                                        type="text"
+                                        inputMode="decimal"
                                         value={editForm.income_variable_usd ?? ""}
                                         onChange={(e) => setEditForm((p) => ({ ...p, income_variable_usd: e.target.value }))}
-                                        style={{
-                                            width: "100%",
-                                            padding: spacing[2],
-                                            backgroundColor: colors.bg.surface,
-                                            border: `1px solid ${colors.fill}`,
-                                            borderRadius: radius.md,
-                                            color: colors.fg.base,
-                                            fontSize: fonts.size.sm,
-                                            boxSizing: "border-box",
-                                        }}
+                                        style={inputStyle}
                                     />
                                 </div>
                             </div>
                         </div>
 
                         <div style={{ backgroundColor: colors.bg.base, borderRadius: radius.md, padding: spacing[3], border: `1px solid ${colors.fill}` }}>
-                            <div style={{ fontSize: fonts.size.xs, color: colors.accent.red, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: spacing[2] }}>Gasto</div>
+                            <div style={{ fontSize: fonts.size.xs, color: colors.accent.red, fontWeight: fonts.weight.semibold, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: spacing[2] }}>Egreso</div>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: spacing[2] }}>
                                 <div>
                                     <label style={{ display: "block", fontSize: fonts.size.xs, color: colors.fg.dim, marginBottom: spacing[1] }}>Total</label>
                                     <input
-                                        type="number"
-                                        step="0.01"
+                                        type="text"
+                                        inputMode="decimal"
                                         value={editForm.expense_usd ?? ""}
                                         onChange={(e) => setEditForm((p) => ({ ...p, expense_usd: e.target.value }))}
-                                        style={{
-                                            width: "100%",
-                                            padding: spacing[2],
-                                            backgroundColor: colors.bg.surface,
-                                            border: `1px solid ${colors.fill}`,
-                                            borderRadius: radius.md,
-                                            color: colors.fg.base,
-                                            fontSize: fonts.size.sm,
-                                            boxSizing: "border-box",
-                                        }}
+                                        style={inputStyle}
                                     />
                                 </div>
                                 <div>
                                     <label style={{ display: "block", fontSize: fonts.size.xs, color: colors.fg.dim, marginBottom: spacing[1] }}>Fijo</label>
                                     <input
-                                        type="number"
-                                        step="0.01"
+                                        type="text"
+                                        inputMode="decimal"
                                         value={editForm.expense_fixed_usd ?? ""}
                                         onChange={(e) => setEditForm((p) => ({ ...p, expense_fixed_usd: e.target.value }))}
-                                        style={{
-                                            width: "100%",
-                                            padding: spacing[2],
-                                            backgroundColor: colors.bg.surface,
-                                            border: `1px solid ${colors.fill}`,
-                                            borderRadius: radius.md,
-                                            color: colors.fg.base,
-                                            fontSize: fonts.size.sm,
-                                            boxSizing: "border-box",
-                                        }}
+                                        style={inputStyle}
                                     />
                                 </div>
                                 <div>
                                     <label style={{ display: "block", fontSize: fonts.size.xs, color: colors.fg.dim, marginBottom: spacing[1] }}>Variable</label>
                                     <input
-                                        type="number"
-                                        step="0.01"
+                                        type="text"
+                                        inputMode="decimal"
                                         value={editForm.expense_variable_usd ?? ""}
                                         onChange={(e) => setEditForm((p) => ({ ...p, expense_variable_usd: e.target.value }))}
-                                        style={{
-                                            width: "100%",
-                                            padding: spacing[2],
-                                            backgroundColor: colors.bg.surface,
-                                            border: `1px solid ${colors.fill}`,
-                                            borderRadius: radius.md,
-                                            color: colors.fg.base,
-                                            fontSize: fonts.size.sm,
-                                            boxSizing: "border-box",
-                                        }}
+                                        style={inputStyle}
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        <div style={{ minHeight: "20px", display: "flex", alignItems: "center", gap: spacing[1] }}>
+                        <div style={{ minHeight: "20px", ...flexRow, gap: spacing[1] }}>
                             {(() => {
                                 const errs = validateEditForm();
                                 if (errs.length === 0) return null;
@@ -390,18 +332,15 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
                         </div>
                     </div>
 
-                    <div style={{ display: "flex", gap: spacing[2], justifyContent: "flex-end", marginTop: spacing[4] }}>
-                        <Button variant="secondary" onClick={handleCancelEdit}>
-                            Cancelar
-                        </Button>
-                        <Button
-                            variant="primary"
+                    <div style={{ marginTop: spacing[4] }}>
+                        <SubmitButton
                             onClick={handleSave}
                             disabled={validateEditForm().length > 0}
                             loading={updateMutation.isPending}
+                            fullWidth
                         >
                             Guardar
-                        </Button>
+                        </SubmitButton>
                     </div>
                 </ModalContent>
             </Modal>
@@ -423,40 +362,66 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
                         padding: spacing[6],
                         maxWidth: "520px",
                         width: "100%",
-                        border: `1px solid ${colors.fill}`,
+                        border: `1px solid transparent`,
                     }}
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <div style={{ display: "flex", alignItems: "center", gap: spacing[2], marginBottom: spacing[4] }}>
-                        <FileUp size={20} color={colors.accent.teal} />
-                        <h3 style={{ margin: 0, fontSize: fonts.size.lg, fontWeight: 600, color: colors.fg.base }}>Importar desde CSV</h3>
+                    <div style={{ ...flexBetween, marginBottom: spacing[4] }}>
+                        <div style={{ ...flexRow, gap: spacing[2] }}>
+                            <FileUp size={20} color={colors.accent.teal} />
+                            <h3 style={{ margin: 0, fontSize: fonts.size.lg, fontWeight: fonts.weight.semibold, color: colors.fg.base }}>Importar desde CSV</h3>
+                        </div>
+                        <ModalCloseButton onClick={closeBulkImport} />
                     </div>
 
-                    <div style={{ backgroundColor: colors.bg.base, borderRadius: radius.md, padding: spacing[3], marginBottom: spacing[4], border: `1px solid ${colors.fill}` }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: spacing[2], marginBottom: spacing[2] }}>
+                    <div style={{ backgroundColor: colors.bg.base, borderRadius: radius.md, padding: spacing[4], marginBottom: spacing[4], border: `1px solid ${colors.fill}` }}>
+                        {/* Header */}
+                        <div style={{ display: "flex", alignItems: "center", gap: spacing[2], marginBottom: spacing[3], paddingBottom: spacing[3], borderBottom: `1px solid ${colors.fill}` }}>
                             <FileText size={14} color={colors.fg.dim} />
-                            <span style={{ fontSize: fonts.size.sm, fontWeight: 600, color: colors.fg.base }}>Formato esperado</span>
+                            <span style={{ fontSize: fonts.size.sm, fontWeight: fonts.weight.semibold, color: colors.fg.base }}>Formato esperado</span>
                         </div>
+
+                        {/* Description + CSV schema */}
                         <p style={{ color: colors.fg.dim, margin: `0 0 ${spacing[2]}`, fontSize: fonts.size.sm, lineHeight: 1.5 }}>
                             Cada fila debe tener <strong style={{ color: colors.fg.base }}>9 columnas</strong> separadas por comas, sin encabezado:
                         </p>
-                        <div style={{ overflowX: "auto", marginBottom: spacing[2] }}>
-                            <code style={{ display: "block", fontSize: fonts.size.xs, color: colors.accent.cyan, backgroundColor: colors.bg.surface, padding: spacing[2], borderRadius: radius.sm, fontFamily: "monospace", whiteSpace: "nowrap", wordBreak: "keep-all" }}>
-                                month,income,income_variable,income_fixed,expense,expense_fixed,expense_variable,exchange_rate,savings,source
+                        <div style={{ overflowX: "auto", marginBottom: spacing[3] }}>
+                            <code style={{ display: "block", fontSize: fonts.size.xs, color: colors.accent.cyan, backgroundColor: colors.bg.surface, padding: spacing[2], borderRadius: radius.sm, fontFamily: fonts.monoFamily, whiteSpace: "nowrap" }}>
+                                month, income, income_variable, income_fixed, expense, expense_fixed, expense_variable, exchange_rate, savings, source
                             </code>
                         </div>
-                        <ul style={{ color: colors.fg.dim, fontSize: fonts.size.sm, margin: 0, paddingLeft: spacing[4], lineHeight: 1.6 }}>
-                            <li><strong>month</strong>: formato YYYY-MM (ej: 2025-01)</li>
-                            <li><strong>income / expense</strong>: totales en USD. Deben ser la suma de sus componentes: <code style={{ color: colors.fg.base }}>income = income_fixed + income_variable</code> y <code style={{ color: colors.fg.base }}>expense = expense_fixed + expense_variable</code></li>
-                            <li><strong>income_fixed / expense_fixed</strong>: parte fija en USD</li>
-                            <li><strong>income_variable / expense_variable</strong>: parte variable en USD</li>
-                            <li><strong>exchange_rate</strong>: tipo de cambio ARS/USD, mayor a 0</li>
-                            <li><strong>savings</strong>: ahorro neto del mes en USD</li>
-                            <li><strong>source</strong>: origen de los datos, siempre <code style={{ color: colors.fg.base }}>historical</code></li>
-                        </ul>
-                        <p style={{ color: colors.fg.dim, margin: `${spacing[2]} 0 0`, fontSize: fonts.size.xs }}>
-                            Ejemplo: <code style={{ color: colors.fg.base }}>2025-01,1116,153,964,1316,835,481,1165,-200,manual</code>
-                        </p>
+
+                        {/* Field reference */}
+                        <div style={{ ...flexColumn, gap: "6px", marginBottom: spacing[3] }}>
+                            {([
+                                ["month", "Formato YYYY-MM", "ej: 2025-01"],
+                                ["income / expense", "Totales en USD", "income = income_fixed + income_variable"],
+                                ["income_fixed / expense_fixed", "Parte fija en USD", null],
+                                ["income_variable / expense_variable", "Parte variable en USD", null],
+                                ["exchange_rate", "Tipo de cambio ARS/USD", "mayor a 0"],
+                                ["savings", "Ahorro neto del mes en USD", null],
+                                ["source", "Origen de los datos", "siempre \"historical\""],
+                            ] as [string, string, string | null][]).map(([field, desc, note]) => (
+                                <div key={field} style={{ display: "flex", alignItems: "baseline", gap: spacing[2] }}>
+                                    <code style={{ fontSize: fonts.size.xs, color: colors.accent.cyan, fontFamily: fonts.monoFamily, backgroundColor: `${colors.accent.cyan}14`, padding: `1px 5px`, borderRadius: radius.sm, whiteSpace: "nowrap", flexShrink: 0 }}>
+                                        {field}
+                                    </code>
+                                    <span style={{ fontSize: fonts.size.xs, color: colors.fg.dim }}>
+                                        {desc}{note && <span style={{ color: colors.fg.dim, opacity: 0.6 }}> — {note}</span>}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Example */}
+                        <div style={{ borderTop: `1px solid ${colors.fill}`, paddingTop: spacing[3] }}>
+                            <span style={{ fontSize: fonts.size.xs, color: colors.fg.dim, display: "block", marginBottom: spacing[1] }}>Ejemplo</span>
+                            <div style={{ overflowX: "auto" }}>
+                                <code style={{ display: "block", fontSize: fonts.size.xs, color: colors.fg.base, backgroundColor: colors.bg.surface, padding: spacing[2], borderRadius: radius.sm, fontFamily: fonts.monoFamily, whiteSpace: "nowrap" }}>
+                                    2025-01,1116,153,964,1316,835,481,1165,-200,manual
+                                </code>
+                            </div>
+                        </div>
                     </div>
 
                     <div
@@ -480,7 +445,7 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
                             style={{ display: "none" }}
                         />
                         {importFile ? (
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: spacing[2] }}>
+                            <div style={{ ...flexRow, justifyContent: "center", gap: spacing[2] }}>
                                 <span style={{ color: colors.fg.base, fontSize: fonts.size.sm }}>{importFile.name}</span>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); resetImport(); }}
@@ -498,18 +463,15 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
                         )}
                     </div>
 
-                    <div style={{ display: "flex", gap: spacing[2], justifyContent: "flex-end" }}>
-                        <Button variant="secondary" onClick={() => { resetImport(); closeBulkImport(); }}>
-                            Cancelar
-                        </Button>
-                        <Button
-                            variant="primary"
+                    <div>
+                        <SubmitButton
                             onClick={handleBulkImport}
                             disabled={importMutation.isPending || !importFile}
                             loading={importMutation.isPending}
+                            fullWidth
                         >
                             Importar
-                        </Button>
+                        </SubmitButton>
                     </div>
                 </ModalContent>
             </Modal>

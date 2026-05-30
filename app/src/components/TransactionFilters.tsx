@@ -13,6 +13,7 @@ import { DateDropdown } from "@/components/ui/DateDropdown";
 interface TransactionFiltersProps {
     filters: TransactionFilters;
     onChange: (filters: TransactionFilters) => void;
+    noMargin?: boolean;
 }
 
 const filterWrapperStyle: React.CSSProperties = {
@@ -23,16 +24,16 @@ const filterWrapperStyle: React.CSSProperties = {
 
 
 import { getTransactionDatePresets, formatShortDate } from "@/utils/date";
+import { flexColumn, flexRow } from "@/styles/layout";
 
 export function TransactionFilters({
     filters,
     onChange,
+    noMargin,
 }: TransactionFiltersProps) {
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
     const [searchText, setSearchText] = useState("");
-    const [dateFrom, setDateFrom] = useState("");
-    const [dateTo, setDateTo] = useState("");
 
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -74,15 +75,8 @@ export function TransactionFilters({
         return () => window.removeEventListener("dropdown-opened", handleDropdownOpened);
     }, []);
 
-    useEffect(() => {
-        setDateFrom(filters.date_from || "");
-        setDateTo(filters.date_to || "");
-    }, [filters.date_from, filters.date_to]);
-
     const clearAllFilters = () => {
         setSearchText("");
-        setDateFrom("");
-        setDateTo("");
         onChange({ limit: filters.limit, sort: filters.sort, order: filters.order });
     };
 
@@ -96,8 +90,8 @@ export function TransactionFilters({
 
     return (
         <div>
-            <div style={filterContainerStyle} ref={dropdownRef}>
-                {/* Search */}
+            <div style={{ ...filterContainerStyle, marginBottom: noMargin ? 0 : spacing[3] }} ref={dropdownRef}>
+                {/* Descripción */}
                 <div style={{
                     ...chipTriggerStyle(!!filters.search),
                     gap: spacing[1],
@@ -117,7 +111,7 @@ export function TransactionFilters({
                             border: "none",
                             outline: "none",
                             color: colors.fg.base,
-                            fontFamily: fonts.family.text,
+                            fontFamily: fonts.family,
                             fontSize: fonts.size.sm,
                             flex: 1,
                             minWidth: 0,
@@ -137,8 +131,7 @@ export function TransactionFilters({
                                 color: colors.fg.dim,
                                 cursor: "pointer",
                                 padding: "2px",
-                                display: "flex",
-                                alignItems: "center",
+                                ...flexRow,
                                 lineHeight: 1,
                             }}
                         >
@@ -147,7 +140,7 @@ export function TransactionFilters({
                     )}
                 </div>
 
-                {/* Date range dropdown */}
+                {/* Fecha */}
                 <div style={filterWrapperStyle}>
                     <DateDropdown
                         label={
@@ -172,13 +165,11 @@ export function TransactionFilters({
                                     backgroundColor: "transparent",
                                 }}
                                 onClick={() => {
-                                    setDateFrom(preset.from);
-                                    setDateTo(preset.to);
                                     onChange({
                                         ...filters,
                                         date_from: preset.from,
                                         date_to: preset.to,
-    
+
                                     });
                                     setOpenDropdown(null);
                                 }}
@@ -192,73 +183,46 @@ export function TransactionFilters({
                                 {preset.label}
                             </div>
                         ))}
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: spacing[2],
-                            }}
-                        >
+                        <div style={{ ...flexColumn, gap: spacing[2] }}>
                             <DatePicker
-                                value={dateFrom}
+                                value={filters.date_from ?? ""}
                                 onChange={(value) => {
-                                    setDateFrom(value);
-                                    onChange({
-                                        ...filters,
-                                        date_from: value || undefined,
-    
-                                    });
+                                    onChange({ ...filters, date_from: value || undefined });
                                 }}
                                 placeholder="Desde"
-                                triggerStyle={chipTriggerStyle(!!dateFrom)}
+                                triggerStyle={chipTriggerStyle(!!filters.date_from)}
                             />
                             <DatePicker
-                                value={dateTo}
+                                value={filters.date_to ?? ""}
                                 onChange={(value) => {
-                                    setDateTo(value);
-                                    onChange({
-                                        ...filters,
-                                        date_to: value || undefined,
-    
-                                    });
+                                    onChange({ ...filters, date_to: value || undefined });
                                 }}
                                 placeholder="Hasta"
-                                triggerStyle={chipTriggerStyle(!!dateTo)}
+                                triggerStyle={chipTriggerStyle(!!filters.date_to)}
                             />
                         </div>
                         {(filters.date_from || filters.date_to) && (
                             <div
                                 onClick={() => {
-                                    setDateFrom("");
-                                    setDateTo("");
-                                    onChange({
-                                        ...filters,
-                                        date_from: undefined,
-                                        date_to: undefined,
-                                    });
+                                    onChange({ ...filters, date_from: undefined, date_to: undefined });
                                     setOpenDropdown(null);
                                 }}
                                 style={{
                                     marginTop: spacing[1],
-                                    display: "flex",
-                                    alignItems: "center",
+                                    ...flexRow,
                                     justifyContent: "center",
                                     gap: spacing[1],
                                     padding: 0,
                                     lineHeight: 1,
                                     cursor: "pointer",
                                     fontSize: fonts.size.xs,
-                                    fontWeight: 400,
+                                    fontWeight: fonts.weight.regular,
                                     color: colors.fg.dim,
                                     transition: "color 0.15s",
                                     flexShrink: 0,
                                 }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.color = colors.fg.base;
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.color = colors.fg.dim;
-                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.color = colors.fg.base; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.color = colors.fg.dim; }}
                             >
                                 <X size={11} />
                                 Limpiar
@@ -267,7 +231,7 @@ export function TransactionFilters({
                     </DateDropdown>
                 </div>
 
-                {/* Type */}
+                {/* Tipo */}
                 <div style={filterWrapperStyle}>
                     <Dropdown
                         options={[
@@ -276,11 +240,7 @@ export function TransactionFilters({
                         ]}
                         value={filters.type ?? ""}
                         onChange={(id) =>
-                            onChange({
-                                ...filters,
-                                type: (id as "expense" | "income") || undefined,
-                                page: 1,
-                            })
+                            onChange({ ...filters, type: (id as "expense" | "income") || undefined, page: 1 })
                         }
                         placeholder="Tipo"
                         clearable
@@ -289,22 +249,16 @@ export function TransactionFilters({
                     />
                 </div>
 
-                {/* Installments */}
+                {/* Cuotas */}
                 <div style={filterWrapperStyle}>
                     <Dropdown
                         options={[
                             { id: "true", label: "Con cuotas" },
                             { id: "false", label: "Sin cuotas" },
                         ]}
-                        value={
-                            filters.installments === undefined ? "" : String(filters.installments)
-                        }
+                        value={filters.installments === undefined ? "" : String(filters.installments)}
                         onChange={(id) =>
-                            onChange({
-                                ...filters,
-                                installments: id === "" ? undefined : id === "true",
-                                page: 1,
-                            })
+                            onChange({ ...filters, installments: id === "" ? undefined : id === "true", page: 1 })
                         }
                         placeholder="Cuotas"
                         clearable
@@ -312,70 +266,7 @@ export function TransactionFilters({
                     />
                 </div>
 
-                {/* Category */}
-                <div style={filterWrapperStyle}>
-                    <Dropdown
-                        options={categoriesList.map((c) => ({ id: c.id, label: c.name }))}
-                        value={filters.category ?? ""}
-                        onChange={(id) =>
-                            onChange({ ...filters, category: id || undefined })
-                        }
-                        placeholder="Categoría"
-                        searchable
-                        clearable
-                        triggerStyle={chipTriggerStyle(!!filters.category)}
-                    />
-                </div>
-
-                {/* Subcategory */}
-                <div style={filterWrapperStyle}>
-                    <Dropdown
-                        groups={categoryGroups}
-                        value={filters.subcategory ?? ""}
-                        onChange={(id) =>
-                            onChange({ ...filters, subcategory: id || undefined })
-                        }
-                        placeholder="Subcategoría"
-                        searchable
-                        clearable
-                        clearLabel="Todas"
-                        triggerStyle={chipTriggerStyle(!!filters.subcategory)}
-                    />
-                </div>
-
-                {/* Channel */}
-                <div style={filterWrapperStyle}>
-                    <Dropdown
-                        options={channelsList.map((c) => ({ id: c.id, label: c.name }))}
-                        value={filters.channel ?? ""}
-                        onChange={(id) =>
-                            onChange({ ...filters, channel: id || undefined })
-                        }
-                        placeholder="Canal"
-                        searchable
-                        clearable
-                        clearLabel="Todas"
-                        triggerStyle={chipTriggerStyle(!!filters.channel)}
-                    />
-                </div>
-
-                {/* Account */}
-                <div style={filterWrapperStyle}>
-                    <Dropdown
-                        groups={accountGroups}
-                        value={filters.account ?? ""}
-                        onChange={(id) =>
-                            onChange({ ...filters, account: id || undefined })
-                        }
-                        placeholder="Cuenta"
-                        searchable
-                        clearable
-                        clearLabel="Todas"
-                        triggerStyle={chipTriggerStyle(!!filters.account)}
-                    />
-                </div>
-
-                {/* Currency */}
+                {/* Moneda */}
                 <div style={filterWrapperStyle}>
                     <Dropdown
                         options={[
@@ -384,11 +275,7 @@ export function TransactionFilters({
                         ]}
                         value={filters.currency ?? ""}
                         onChange={(id) =>
-                            onChange({
-                                ...filters,
-                                currency: (id as "ARS" | "USD") || undefined,
-                                page: 1,
-                            })
+                            onChange({ ...filters, currency: (id as "ARS" | "USD") || undefined, page: 1 })
                         }
                         placeholder="Moneda"
                         clearable
@@ -396,7 +283,7 @@ export function TransactionFilters({
                     />
                 </div>
 
-                {/* Frequency */}
+                {/* Frecuencia */}
                 <div style={filterWrapperStyle}>
                     <Dropdown
                         options={[
@@ -405,11 +292,7 @@ export function TransactionFilters({
                         ]}
                         value={filters.frequency ?? ""}
                         onChange={(id) =>
-                            onChange({
-                                ...filters,
-                                frequency: (id as "fixed" | "variable") || undefined,
-                                page: 1,
-                            })
+                            onChange({ ...filters, frequency: (id as "fixed" | "variable") || undefined, page: 1 })
                         }
                         placeholder="Frecuencia"
                         clearable
@@ -417,22 +300,71 @@ export function TransactionFilters({
                     />
                 </div>
 
-                {/* Is Paid */}
+                {/* Categoría */}
+                <div style={filterWrapperStyle}>
+                    <Dropdown
+                        options={categoriesList.map((c) => ({ id: c.id, label: c.name }))}
+                        value={filters.category ?? ""}
+                        onChange={(id) => onChange({ ...filters, category: id || undefined })}
+                        placeholder="Categoría"
+                        searchable
+                        clearable
+                        triggerStyle={chipTriggerStyle(!!filters.category)}
+                    />
+                </div>
+
+                {/* Subcategoría */}
+                <div style={filterWrapperStyle}>
+                    <Dropdown
+                        groups={categoryGroups}
+                        value={filters.subcategory ?? ""}
+                        onChange={(id) => onChange({ ...filters, subcategory: id || undefined })}
+                        placeholder="Subcategoría"
+                        searchable
+                        clearable
+                        clearLabel="Todas"
+                        triggerStyle={chipTriggerStyle(!!filters.subcategory)}
+                    />
+                </div>
+
+                {/* Canal */}
+                <div style={filterWrapperStyle}>
+                    <Dropdown
+                        options={channelsList.map((c) => ({ id: c.id, label: c.name }))}
+                        value={filters.channel ?? ""}
+                        onChange={(id) => onChange({ ...filters, channel: id || undefined })}
+                        placeholder="Canal"
+                        searchable
+                        clearable
+                        clearLabel="Todas"
+                        triggerStyle={chipTriggerStyle(!!filters.channel)}
+                    />
+                </div>
+
+                {/* Cuenta */}
+                <div style={filterWrapperStyle}>
+                    <Dropdown
+                        groups={accountGroups}
+                        value={filters.account ?? ""}
+                        onChange={(id) => onChange({ ...filters, account: id || undefined })}
+                        placeholder="Cuenta"
+                        searchable
+                        clearable
+                        clearLabel="Todas"
+                        triggerStyle={chipTriggerStyle(!!filters.account)}
+                    />
+                </div>
+
+                {/* Estado */}
                 <div style={filterWrapperStyle}>
                     <Dropdown
                         options={[
                             { id: "true", label: "Cumplidos" },
                             { id: "false", label: "Pendientes" },
                         ]}
-                        value={
-                            filters.is_paid === undefined ? "" : String(filters.is_paid)
-                        }
+                        value={filters.is_paid === undefined ? "" : String(filters.is_paid)}
                         onChange={(id) =>
-                            onChange({
-                                ...filters,
-                                is_paid: id === "" ? undefined : id === "true",
-                                page: 1,
-                            })
+                            onChange({ ...filters, is_paid: id === "" ? undefined : id === "true", page: 1 })
                         }
                         placeholder="Estado"
                         clearable

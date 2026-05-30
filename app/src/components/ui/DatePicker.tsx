@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { colors } from "@/styles/colors";
-import { spacing, radius } from "@/styles/theme";
+import { spacing, radius, shadows } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
 import { parseLocalDateInTimezone, formatDateInTimezone, getDateFormat, getNowInTimezone, isTodayInTimezone, isSameDayInTimezone, formatISODateInTimezone, createDateForDayInTimezone, getPartsInTimezone } from "@/utils/date";
 import { useUserConfig, useClickOutside, useDropdownPosition } from "@/hooks";
 import { ChevronLeft, ChevronRight, X, ChevronDown, Calendar as CalendarIcon } from "lucide-react";
+import { flexBetween, flexRow, truncate } from "@/styles/layout";
 
 interface DatePickerProps {
     value?: string;
@@ -74,9 +75,7 @@ function ChipSelect({
             <div
                 onClick={() => setIsOpen(!isOpen)}
                 style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
+                    ...flexBetween,
                     gap: spacing[1],
                     padding: "0 8px",
                     height: "26px",
@@ -84,8 +83,8 @@ function ChipSelect({
                     borderRadius: "8px",
                     color: colors.fg.base,
                     fontSize: fonts.size.sm,
-                    fontFamily: fonts.family.text,
-                    fontWeight: 500,
+                    fontFamily: fonts.family,
+                    fontWeight: fonts.weight.medium,
                     cursor: "pointer",
                     minWidth: width,
                     border: "none",
@@ -114,7 +113,7 @@ function ChipSelect({
                         backgroundColor: colors.bg.surface,
                         border: "none",
                         borderRadius: "8px",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06)",
+                        boxShadow: shadows.lg,
                         zIndex: 10,
                         minWidth: "100%",
                         padding: spacing[1],
@@ -240,9 +239,9 @@ export function DatePicker({
                     ...triggerStyle,
                 }}
             >
-                <span style={{ display: "flex", alignItems: "center", gap: spacing[2], flex: 1, overflow: "hidden" }}>
+                <span style={{ ...flexRow, gap: spacing[2], flex: 1, overflow: "hidden" }}>
                     {showIcon && <CalendarIcon size={16} style={{ flexShrink: 0, color: colors.fg.dim }} />}
-                    <span style={{ flex: 1, fontSize: fonts.size.sm, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span style={{...truncate, flex: 1, fontSize: fonts.size.sm}}>
                         {selectedDate ? formatDateInTimezone(selectedDate, userDateFormat, tz) : placeholder}
                     </span>
                 </span>
@@ -263,14 +262,12 @@ export function DatePicker({
                         border: "none",
                         borderRadius: "8px",
                         padding: spacing[2],
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06)",
+                        boxShadow: shadows.lg,
                     }}
                 >
                     <div
                         style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
+                            ...flexBetween,
                             marginBottom: spacing[2],
                         }}
                     >
@@ -320,11 +317,10 @@ export function DatePicker({
                             <div
                                 key={day}
                                 style={{
-                                    display: "flex",
-                                    alignItems: "center",
+                                    ...flexRow,
                                     justifyContent: "center",
                                     fontSize: fonts.size.xs,
-                                    fontWeight: 600,
+                                    fontWeight: fonts.weight.semibold,
                                     color: colors.fg.dim,
                                     height: "28px",
                                 }}
@@ -338,8 +334,7 @@ export function DatePicker({
                                     key={idx}
                                     onClick={(e) => { e.stopPropagation(); handleSelect(day); }}
                                     style={{
-                                        display: "flex",
-                                        alignItems: "center",
+                                        ...flexRow,
                                         justifyContent: "center",
                                         width: "34px",
                                         height: "34px",
@@ -354,7 +349,7 @@ export function DatePicker({
                                             : isToday(day, tz)
                                                 ? colors.accent.cyan
                                                 : colors.fg.base,
-                                        fontWeight: (selectedDate && isSameDay(day, selectedDate, tz)) || isToday(day, tz) ? 600 : 400,
+                                        fontWeight: (selectedDate && isSameDay(day, selectedDate, tz)) || isToday(day, tz) ? fonts.weight.semibold : fonts.weight.regular,
                                         transition: "background-color 0.1s",
                                     }}
                                     onMouseEnter={(e) => {

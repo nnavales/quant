@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Search, X, ArrowUp, ArrowDown, ArrowUpDown, Landmark, Clock, TrendingUp, Home } from "lucide-react";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -10,6 +10,7 @@ import { formatDateStr, getDateFormat } from "@/utils/date";
 import { economic } from "@/api_client";
 import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
+import { flexColumn, flexRow, truncate } from "@/styles/layout";
 import {
     useDollarBanks,
     useFixedDeposits,
@@ -21,7 +22,7 @@ import {
 type CompareTab = "dollar" | "tna" | "tea" | "uva";
 
 /* ─── Table layout constants ─── */
-const ROW_HEIGHT = 48;
+const ROW_HEIGHT = 38;
 
 interface ColumnDef {
     key: string;
@@ -85,51 +86,46 @@ function renderCell(item: any, col: ColumnDef, _tab: CompareTab) {
         case "entity": {
             const name = item.entity || item.name || "";
             return (
-                <span className="selectable" style={{
-                    fontSize: fonts.size.sm,
+                <span className="selectable" style={{...truncate, fontSize: fonts.size.sm,
                     color: colors.fg.base,
-                    fontWeight: 500,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                }}>
+                    fontWeight: fonts.weight.medium}}>
                     {name}
                 </span>
             );
         }
         case "sell":
-            return <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 500 }}>${formatNumber(item.sell)}</span>;
+            return <span className="selectable" style={{ fontFamily: fonts.family, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: fonts.weight.medium }}>${formatNumber(item.sell)}</span>;
         case "buy":
-            return <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 500 }}>${formatNumber(item.buy)}</span>;
+            return <span className="selectable" style={{ fontFamily: fonts.family, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: fonts.weight.medium }}>${formatNumber(item.buy)}</span>;
         case "pct_variation": {
             const v = item.pct_variation;
             const isPos = v > 0;
             const isNeg = v < 0;
             return (
                 <span className="selectable" style={{
-                    fontFamily: fonts.family.display,
+                    fontFamily: fonts.family,
                     fontSize: fonts.size.sm,
                     color: isPos ? colors.accent.green : isNeg ? colors.accent.red : colors.fg.dim,
-                    fontWeight: isPos || isNeg ? 500 : 400,
+                    fontWeight: isPos || isNeg ? fonts.weight.medium : fonts.weight.regular,
                 }}>
                     {isPos ? "+" : ""}{formatNumber(v)}%
                 </span>
             );
         }
         case "tem":
-            return <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 500 }}>{formatNumber(item.tem)}%</span>;
+            return <span className="selectable" style={{ fontFamily: fonts.family, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: fonts.weight.medium }}>{formatNumber(item.tem)}%</span>;
         case "tea":
-            return <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 500 }}>{formatNumber(item.tea)}%</span>;
+            return <span className="selectable" style={{ fontFamily: fonts.family, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: fonts.weight.medium }}>{formatNumber(item.tea)}%</span>;
         case "tna":
-            return <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 500 }}>{formatNumber(item.tna)}%</span>;
+            return <span className="selectable" style={{ fontFamily: fonts.family, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: fonts.weight.medium }}>{formatNumber(item.tna)}%</span>;
         case "term":
-            return <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.dim }}>{item.min_term}–{item.max_term}</span>;
+            return <span className="selectable" style={{ fontFamily: fonts.family, fontSize: fonts.size.sm, color: colors.fg.dim }}>{item.min_term}–{item.max_term}</span>;
         case "daily":
-            return <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: 500 }}>{item.daily_rate?.toFixed(3)}%</span>;
+            return <span className="selectable" style={{ fontFamily: fonts.family, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: fonts.weight.medium }}>{item.daily_rate?.toFixed(3)}%</span>;
         case "limit":
-            return <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.dim }}>{item.limit ? `$${formatNumber(item.limit)}` : "–"}</span>;
+            return <span className="selectable" style={{ fontFamily: fonts.family, fontSize: fonts.size.sm, color: colors.fg.dim }}>{item.limit ? `$${formatNumber(item.limit)}` : "–"}</span>;
         default:
-            return <span className="selectable" style={{ fontFamily: fonts.family.display, fontSize: fonts.size.sm, color: colors.fg.dim }}>–</span>;
+            return <span className="selectable" style={{ fontFamily: fonts.family, fontSize: fonts.size.sm, color: colors.fg.dim }}>–</span>;
     }
 }
 
@@ -158,18 +154,6 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
     const [search, setSearch] = useState("");
     const [sortColumn, setSortColumn] = useState<string | null>(null);
     const [sortDir, setSortDir] = useState<"asc" | "desc" | null>(null);
-    const tabRefs = useRef<(HTMLDivElement | null)[]>([]);
-    const [tabPill, setTabPill] = useState({ left: 0, width: 0 });
-
-    const measureTabs = useCallback(() => {
-        const idx = tabs.findIndex(t => t.key === activeTab);
-        const el = tabRefs.current[idx];
-        if (el?.parentElement) {
-            setTabPill({ left: el.offsetLeft, width: el.offsetWidth });
-        }
-    }, [activeTab]);
-
-    useEffect(() => { measureTabs(); }, [measureTabs]);
 
     const { data: dollarData, isLoading: dollarLoading, isError: dollarError } = useDollarBanks("sell");
     const { data: tnaData, isLoading: tnaLoading, isError: tnaError } = useFixedDeposits();
@@ -233,9 +217,8 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
             style={{
                 backgroundColor: colors.bg.surface,
                 borderRadius: radius.lg,
-                border: `1px solid ${colors.border}`,
-                display: "flex",
-                flexDirection: "column",
+                border: `1px solid transparent`,
+                ...flexColumn,
                 overflow: "hidden",
                 animation: "fadeIn 0.2s ease-out",
             }}
@@ -246,7 +229,7 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                     fontSize: fonts.size.sm,
                     color: colors.fg.base,
                     textTransform: "uppercase",
-                    fontWeight: 500,
+                    fontWeight: fonts.weight.medium,
                     letterSpacing: "0.5px",
                 }}>
                     Comparativas
@@ -260,8 +243,7 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                         color: colors.fg.dim,
                         cursor: "pointer",
                         padding: spacing[1],
-                        display: "flex",
-                        alignItems: "center",
+                        ...flexRow,
                         transition: "color 0.15s",
                     }}
                     onMouseEnter={(e) => { e.currentTarget.style.color = colors.fg.base; }}
@@ -274,7 +256,6 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
             {/* ── Tabs + search row ── */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: `${spacing[2]} ${spacing[4]}`, overflow: "hidden" }}>
                 <div style={{
-                    position: "relative",
                     display: "flex",
                     borderRadius: "8px",
                     background: colors.fill,
@@ -282,22 +263,9 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                     cursor: "pointer",
                     userSelect: "none",
                 }}>
-                    <div style={{
-                        position: "absolute",
-                        top: 0,
-                        left: tabPill.left,
-                        width: tabPill.width,
-                        height: "100%",
-                        borderRadius: "7px",
-                        background: colors.bg.surface,
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)",
-                        transition: "left 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                        pointerEvents: "none",
-                    }} />
-                    {tabs.map((tab, i) => (
+                    {tabs.map((tab) => (
                         <div
                             key={tab.key}
-                            ref={(el) => { tabRefs.current[i] = el; }}
                             onClick={() => {
                                 setActiveTab(tab.key);
                                 setSortColumn(null);
@@ -305,18 +273,18 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                                 setSearch("");
                             }}
                             style={{
-                                position: "relative",
-                                zIndex: 1,
                                 display: "flex",
                                 alignItems: "center",
                                 gap: "5px",
                                 padding: `${spacing[1]} ${spacing[3]}`,
                                 whiteSpace: "nowrap",
                                 fontSize: fonts.size.sm,
-                                fontWeight: 500,
+                                fontWeight: fonts.weight.medium,
                                 color: activeTab === tab.key ? colors.fg.base : colors.fg.dim,
+                                borderRadius: "7px",
+                                background: activeTab === tab.key ? colors.bg.surface : "transparent",
                                 cursor: "pointer",
-                                transition: "color 0.2s",
+                                transition: "background 0.15s ease, color 0.2s",
                                 lineHeight: "18px",
                             }}
                         >
@@ -326,7 +294,7 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                     ))}
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+                <div style={{ ...flexRow, flexShrink: 0 }}>
                     <div style={{
                         display: "flex",
                         alignItems: "center",
@@ -349,7 +317,7 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                                 border: "none",
                                 outline: "none",
                                 color: colors.fg.base,
-                                fontFamily: fonts.family.text,
+                                fontFamily: fonts.family,
                                 fontSize: fonts.size.sm,
                                 width: "100px",
                             }}
@@ -364,8 +332,7 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                                     color: colors.fg.dim,
                                     cursor: "pointer",
                                     padding: 0,
-                                    display: "flex",
-                                    alignItems: "center",
+                                    ...flexRow,
                                     lineHeight: 1,
                                 }}
                             >
@@ -389,14 +356,16 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                     Error al cargar datos
                 </div>
             ) : (
-                <div style={{ display: "flex", flexDirection: "column" }}>
+                <div style={{ ...flexColumn }}>
                     {/* Header */}
                     <div style={{
                         display: "flex",
                         alignItems: "center",
                         padding: `${spacing[2]} ${spacing[3]}`,
+                        height: "42px",
+                        boxSizing: "border-box",
                         borderBottom: `1px solid ${colors.border}`,
-                        backgroundColor: colors.fill,
+                        backgroundColor: colors.bg.elevated,
                     }}>
                         {columns.map((col, idx) => {
                             const sortableKey = sortableKeys[idx];
@@ -406,8 +375,7 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                                     key={col.key}
                                     onClick={() => sortableKey && handleSort(sortableKey)}
                                     style={{
-                                        display: "flex",
-                                        alignItems: "center",
+                                        ...flexRow,
                                         gap: "4px",
                                         flex: col.flex,
                                         justifyContent: col.align === "right" ? "flex-end" : col.align === "center" ? "center" : "flex-start",
@@ -419,8 +387,8 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                                     {col.tooltip ? (
                                         <Tooltip content={col.tooltip} alwaysShow>
                                             <span style={{
-                                                fontSize: fonts.table.header,
-                                                fontWeight: 500,
+                                                fontSize: fonts.size.xs3,
+                                                fontWeight: fonts.weight.medium,
                                                 color: isSorted ? colors.fg.base : colors.fg.dim,
                                                 textTransform: "uppercase",
                                                 letterSpacing: "0.05em",
@@ -442,8 +410,8 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                                         </Tooltip>
                                     ) : (
                                         <span style={{
-                                            fontSize: fonts.table.header,
-                                            fontWeight: 500,
+                                            fontSize: fonts.size.xs3,
+                                            fontWeight: fonts.weight.medium,
                                             color: isSorted ? colors.fg.base : colors.fg.dim,
                                             textTransform: "uppercase",
                                             letterSpacing: "0.05em",
@@ -469,7 +437,7 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                     </div>
 
                     {/* Rows */}
-                    <div style={{ maxHeight: 432, overflowY: "auto" }}>
+                    <div style={{ maxHeight: 456, overflowY: "auto" }}>
                         {sorted.length === 0 && (
                             <div style={{ padding: spacing[8], textAlign: "center", color: colors.fg.dim, fontSize: fonts.size.sm }}>
                                 <div style={{ fontSize: fonts.size.lg, marginBottom: spacing[1], opacity: 0.5 }}>—</div>
@@ -484,7 +452,7 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                                         display: "flex",
                                         alignItems: "center",
                                         padding: `0 ${spacing[3]}`,
-                                        borderBottom: `1px solid ${colors.fill}`,
+                                        borderBottom: `1px solid ${colors.border}`,
                                         borderLeft: "2px solid transparent",
                                         transition: "background-color 0.12s, border-color 0.12s",
                                         cursor: "default",
@@ -531,8 +499,7 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                         fontSize: fonts.size.xs,
                         color: colors.fg.dim,
                         opacity: 0.5,
-                        display: "flex",
-                        alignItems: "center",
+                        ...flexRow,
                         gap: spacing[2],
                     }}>
                         <span style={{ width: "4px", height: "4px", borderRadius: "50%", backgroundColor: colors.accent.green, display: "inline-block" }} />

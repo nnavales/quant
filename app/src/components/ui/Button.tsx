@@ -2,7 +2,15 @@ import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 
-type ButtonVariant = "primary" | "secondary" | "icon" | "chip" | "tab" | "badge" | "plain" | "ghost";
+type ButtonVariant =
+    | "primary"
+    | "secondary"
+    | "icon"
+    | "chip"
+    | "tab"
+    | "badge"
+    | "plain"
+    | "ghost";
 type ButtonSize = "sm" | "md" | "lg";
 type ButtonColor = "default" | "green" | "red" | "cyan" | "teal" | "blue" | "orange";
 
@@ -12,19 +20,23 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     color?: ButtonColor;
     active?: boolean;
     loading?: boolean;
+    noHover?: boolean;
     iconLeft?: React.ReactNode;
     iconRight?: React.ReactNode;
     fullWidth?: boolean;
     children?: React.ReactNode;
 }
 
-const colorMap: Record<ButtonColor, { bg: string; border: string; text: string; hoverBg: string; hoverBorder: string }> = {
+const colorMap: Record<
+    ButtonColor,
+    { bg: string; border: string; text: string; hoverBg: string; hoverBorder: string }
+> = {
     default: {
         bg: colors.fill,
-        border: colors.border,
+        border: colors.hoverFill,
         text: colors.fg.base,
-        hoverBg: colors.interactive.hoverBg,
-        hoverBorder: colors.interactive.hoverBorder,
+        hoverBg: colors.hoverFill,
+        hoverBorder: colors.hoverFill,
     },
     green: {
         bg: colors.variant.green.bg,
@@ -83,6 +95,7 @@ export function Button({
     active = false,
     loading = false,
     disabled = false,
+    noHover = false,
     iconLeft,
     iconRight,
     fullWidth = false,
@@ -105,8 +118,8 @@ export function Button({
             cursor: isDisabled ? "not-allowed" : "pointer",
             opacity: isDisabled ? 0.5 : 1,
             transition: "all 0.15s",
-            fontWeight: 500,
-            fontFamily: fonts.family.text,
+            fontWeight: fonts.weight.medium,
+            fontFamily: fonts.family,
             whiteSpace: "nowrap",
             width: fullWidth ? "100%" : undefined,
         };
@@ -175,7 +188,7 @@ export function Button({
                         border: "none",
                         borderRadius: radius.sm,
                         color: c.text,
-                        fontWeight: 600,
+                        fontWeight: fonts.weight.semibold,
                     };
                 }
                 return {
@@ -186,13 +199,13 @@ export function Button({
                     border: "none",
                     borderRadius: radius.sm,
                     color: active ? colors.fg.base : colors.fg.dim,
-                    fontWeight: active ? 600 : 400,
+                    fontWeight: active ? fonts.weight.semibold : fonts.weight.regular,
                 };
             case "badge":
                 return {
                     ...base,
                     padding: `${spacing[1]} ${spacing[2]}`,
-                    fontSize: fonts.table.badge,
+                    fontSize: fonts.size.xs3,
                     backgroundColor: active ? `${colors.accent.teal}26` : `${colors.fg.dim}26`,
                     border: "none",
                     borderRadius: radius.md,
@@ -215,7 +228,7 @@ export function Button({
     };
 
     const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
-        if (isDisabled) return;
+        if (isDisabled || noHover) return;
         const el = e.currentTarget;
         switch (variant) {
             case "primary":
@@ -250,7 +263,7 @@ export function Button({
     };
 
     const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
-        if (isDisabled) return;
+        if (isDisabled || noHover) return;
         const el = e.currentTarget;
         switch (variant) {
             case "primary":
@@ -293,7 +306,17 @@ export function Button({
             {...rest}
         >
             {loading ? (
-                <span style={{ display: "inline-block", width: 14, height: 14, border: `2px solid ${c.text}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.6s linear infinite" }} />
+                <span
+                    style={{
+                        display: "inline-block",
+                        width: 14,
+                        height: 14,
+                        border: `2px solid ${c.text}`,
+                        borderTopColor: "transparent",
+                        borderRadius: "50%",
+                        animation: "spin 0.6s linear infinite",
+                    }}
+                />
             ) : (
                 <>
                     {iconLeft}

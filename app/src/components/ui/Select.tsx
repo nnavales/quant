@@ -48,7 +48,7 @@ export function CustomSelect({ value, options, onChange, style }: CustomSelectPr
                     border: `1px solid ${colors.fill}`,
                     borderRadius: radius.md,
                     color: colors.fg.base,
-                    fontSize: fonts.table.meta,
+                    fontSize: fonts.size.xs4,
                     cursor: "pointer",
                     width: "100%",
                     justifyContent: "space-between",
@@ -81,7 +81,7 @@ export function CustomSelect({ value, options, onChange, style }: CustomSelectPr
                                 padding: `${spacing[1]} ${spacing[2]}`,
                                 borderRadius: radius.sm,
                                 cursor: "pointer",
-                                fontSize: fonts.table.meta,
+                                fontSize: fonts.size.xs4,
                                 color: colors.fg.base,
                                 backgroundColor: opt.value === value ? colors.fill : "transparent",
                             }}

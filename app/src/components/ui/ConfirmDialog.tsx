@@ -4,6 +4,8 @@ import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { Button } from "./Button";
+import { SubmitButton } from "./SubmitButton";
+import { flexRow } from "@/styles/layout";
 
 interface ConfirmDialogProps {
     isOpen: boolean;
@@ -81,9 +83,9 @@ function HoldButton({
                 borderRadius: radius.md,
                 border: "none",
                 backgroundColor: colors.accent.red,
-                color: colors.fg.white,
+                color: "#fff",
                 fontSize: fonts.size.sm,
-                fontWeight: 500,
+                fontWeight: fonts.weight.medium,
                 cursor: disabled ? "not-allowed" : "pointer",
                 opacity: disabled ? 0.6 : 1,
                 overflow: "hidden",
@@ -161,8 +163,7 @@ export function ConfirmDialog({
                     backgroundColor: colors.overlay.black55,
                     backdropFilter: "blur(4px)",
                     WebkitBackdropFilter: "blur(4px)",
-                    display: "flex",
-                    alignItems: "center",
+                    ...flexRow,
                     justifyContent: "center",
                     zIndex: 1000,
                     animation: "dialogBackdropIn 0.18s ease-out",
@@ -176,8 +177,7 @@ export function ConfirmDialog({
                         padding: spacing[6],
                         maxWidth: "380px",
                         width: "90%",
-                        border: `1px solid ${colors.border}`,
-                        outline: `1px solid ${colors.fill}`,
+                        border: `1px solid transparent`,
                         animation: "dialogContentIn 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
                     }}
                     onClick={(e) => e.stopPropagation()}
@@ -185,8 +185,7 @@ export function ConfirmDialog({
                     {/* Icon + Title row */}
                     <div
                         style={{
-                            display: "flex",
-                            alignItems: "center",
+                            ...flexRow,
                             gap: spacing[3],
                             marginBottom: spacing[3],
                         }}
@@ -194,13 +193,12 @@ export function ConfirmDialog({
                         {destructive && (
                             <div
                                 style={{
-                                    display: "flex",
-                                    alignItems: "center",
+                                    ...flexRow,
                                     justifyContent: "center",
                                     width: "32px",
                                     height: "32px",
                                     borderRadius: radius.full,
-                                    backgroundColor: colors.badge.destructive,
+                                    backgroundColor: `${colors.accent.red}1A`,
                                     flexShrink: 0,
                                 }}
                             >
@@ -211,7 +209,7 @@ export function ConfirmDialog({
                             style={{
                                 margin: 0,
                                 fontSize: fonts.size.lg,
-                                fontWeight: 600,
+                                fontWeight: fonts.weight.semibold,
                                 color: colors.fg.base,
                                 lineHeight: 1.3,
                             }}
@@ -241,15 +239,22 @@ export function ConfirmDialog({
                             marginTop: spacing[6],
                         }}
                     >
-                        <Button variant="secondary" onClick={onClose} disabled={isLoading}>
+                        <Button
+                            variant="primary"
+                            onClick={onClose}
+                            disabled={isLoading}
+                            style={{ backgroundColor: colors.bg.selected, border: "none", color: colors.fg.dim }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.border; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.bg.selected; }}
+                        >
                             {cancelLabel}
                         </Button>
                         {requireHold ? (
                             <HoldButton onConfirm={onConfirm} disabled={isLoading} />
                         ) : (
-                            <Button variant="primary" onClick={onConfirm} loading={isLoading}>
+                            <SubmitButton onClick={onConfirm} loading={isLoading} style={{ border: "none" }}>
                                 {confirmLabel}
-                            </Button>
+                            </SubmitButton>
                         )}
                     </div>
                 </div>

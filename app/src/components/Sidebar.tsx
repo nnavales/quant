@@ -1,4 +1,13 @@
-import { ArrowLeftRight, Settings, TrendingUp, LayoutDashboard, NotebookPen, BarChart3, Activity } from "lucide-react";
+import {
+    ArrowLeftRight,
+    Settings,
+    Scale,
+    LayoutDashboard,
+    Target,
+    BarChart3,
+    LineChart,
+    CalendarClock,
+} from "lucide-react";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 
@@ -9,13 +18,14 @@ interface SidebarProps {
 }
 
 const navItems = [
-     { id: "analysis", icon: LayoutDashboard, label: "Inicio" },
-     { id: "evolution", icon: Activity, label: "Evolución" },
-     { id: "metrics", icon: BarChart3, label: "Métricas" },
-     { id: "planning", icon: NotebookPen, label: "Planning" },
-     { id: "transactions", icon: ArrowLeftRight, label: "Transacciones" },
-     { id: "economic", icon: TrendingUp, label: "Económico" },
- ];
+    { id: "analysis", icon: LayoutDashboard, label: "Inicio" },
+    { id: "transactions", icon: ArrowLeftRight, label: "Transacciones" },
+    { id: "evolution", icon: LineChart, label: "Evolución" },
+    { id: "metrics", icon: BarChart3, label: "Métricas" },
+    { id: "historical", icon: CalendarClock, label: "Histórico" },
+    { id: "planning", icon: Target, label: "Planning" },
+    { id: "economic", icon: Scale, label: "Económico" },
+];
 
 const sidebarStyle: React.CSSProperties = {
     width: "60px",
@@ -24,7 +34,6 @@ const sidebarStyle: React.CSSProperties = {
     top: 0,
     flexShrink: 0,
     backgroundColor: colors.bg.surface,
-    borderRight: `1px solid ${colors.fill}`,
     display: "flex",
     flexDirection: "column",
     padding: `${spacing[3]} ${spacing[2]}`,

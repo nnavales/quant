@@ -4,6 +4,7 @@ import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { formatCurrency } from "@/utils/format";
 import type { DimensionSeriesResponse } from "@/api_client/types";
+import { flexBetween, flexColumn, flexRow, truncate } from "@/styles/layout";
 
 const monthNames = [
     "Ene", "Feb", "Mar", "Abr", "May", "Jun",
@@ -190,8 +191,7 @@ export function Heatmap({
                 width: "100%",
                 height: "100%",
                 position: "relative",
-                display: "flex",
-                flexDirection: "column",
+                ...flexColumn,
             }}
         >
             <table
@@ -199,7 +199,7 @@ export function Heatmap({
                     width: "100%",
                     borderCollapse: "separate",
                     borderSpacing: "2px",
-                    fontSize: fonts.table.body,
+                    fontSize: fonts.size.sm3,
                     tableLayout: "fixed",
                 }}
             >
@@ -216,8 +216,8 @@ export function Heatmap({
                                 textAlign: "left",
                                 padding: `${spacing[2]} ${spacing[3]}`,
                                 color: colors.fg.dim,
-                                fontWeight: 500,
-                                fontSize: fonts.table.header,
+                                fontWeight: fonts.weight.medium,
+                                fontSize: fonts.size.xs2,
                                 textTransform: "uppercase",
                                 letterSpacing: "0.05em",
                                 whiteSpace: "nowrap",
@@ -234,8 +234,8 @@ export function Heatmap({
                                     textAlign: "center",
                                     padding: `${spacing[2]} ${spacing[1]}`,
                                     color: colors.fg.dim,
-                                    fontWeight: 500,
-                                    fontSize: fonts.table.header,
+                                    fontWeight: fonts.weight.medium,
+                                    fontSize: fonts.size.xs3,
                                     textTransform: "uppercase",
                                     letterSpacing: "0.05em",
                                 }}
@@ -252,7 +252,7 @@ export function Heatmap({
                         width: "100%",
                         borderCollapse: "separate",
                         borderSpacing: "2px",
-                        fontSize: fonts.table.body,
+                        fontSize: fonts.size.sm3,
                         tableLayout: "fixed",
                     }}
                 >
@@ -270,8 +270,8 @@ export function Heatmap({
                                     textAlign: "left",
                                     padding: `${spacing[2]} ${spacing[3]}`,
                                     color: colors.fg.base,
-                                    fontWeight: 500,
-                                    fontSize: fonts.table.body,
+                                    fontWeight: fonts.weight.medium,
+                                    fontSize: fonts.size.sm3,
                                     whiteSpace: "nowrap",
                                     overflow: "hidden",
                                     textOverflow: "ellipsis",
@@ -301,10 +301,10 @@ export function Heatmap({
                                             intensity > 0.5
                                                 ? colors.bg.base
                                                 : colors.fg.dim,
-                                        fontFamily: fonts.family.display,
-                                        fontSize: fonts.table.meta,
-                                        fontWeight: 500,
-                                        borderRadius: radius.sm,
+                                        fontFamily: fonts.family,
+                                        fontSize: fonts.size.xs4,
+                                        fontWeight: fonts.weight.medium,
+                                        borderRadius: radius.md,
                                         cursor: "pointer",
                                         transition: "background-color 0.2s, transform 0.15s",
                                     }}
@@ -321,13 +321,8 @@ export function Heatmap({
                                     >
                                         <span
                                             className="selectable"
-                                            style={{
-                                                display: "block",
-                                                overflow: "hidden",
-                                                textOverflow: "ellipsis",
-                                                whiteSpace: "nowrap",
-                                                maxWidth: "100%",
-                                            }}
+                                            style={{...truncate, display: "block",
+                                                maxWidth: "100%"}}
                                         >
                                             {formatCompactCurrency(value)}
                                         </span>
@@ -347,11 +342,10 @@ export function Heatmap({
                         position: "fixed",
                         left: 0,
                         top: 0,
-                        backgroundColor: colors.bg.header,
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: radius.md,
+                        backgroundColor: colors.bg.elevated,
+                        border: `2px solid ${colors.border}`,
+                        borderRadius: radius.lg,
                         padding: `${spacing[1]} ${spacing[2]}`,
-                        outline: `1px solid ${colors.fill}`,
                         zIndex: 1000,
                         minWidth: "180px",
                         maxWidth: "300px",
@@ -368,15 +362,15 @@ export function Heatmap({
                         paddingBottom: spacing[1],
                     }}>
                         <div style={{
-                            fontWeight: 600,
-                            fontSize: "13px",
+                            fontWeight: fonts.weight.semibold,
+                            fontSize: fonts.size.sm,
                             color: colors.fg.base,
                             lineHeight: 1.3,
                         }}>
                             {hoveredCell.category}
                         </div>
                         <div style={{
-                            fontSize: "11px",
+                            fontSize: fonts.size.xs,
                             color: colors.fg.dim,
                             marginTop: "1px",
                             lineHeight: 1.3,
@@ -385,19 +379,17 @@ export function Heatmap({
                         </div>
                     </div>
                     <div style={{
-                        fontSize: "12.5px",
+                        fontSize: fonts.size.xs4,
                         color: colors.fg.dim,
                         marginBottom: spacing[1],
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
+                        ...flexBetween,
                         gap: spacing[2],
                     }}>
                         <span style={{ lineHeight: 1.4 }}>Total</span>
                         <span style={{
-                            fontFamily: fonts.family.display,
-                            fontWeight: 600,
-                            fontSize: "12.5px",
+                            fontFamily: fonts.family,
+                            fontWeight: fonts.weight.semibold,
+                            fontSize: fonts.size.xs4,
                             color: colors.fg.base,
                             whiteSpace: "nowrap",
                             textAlign: "right",
@@ -412,7 +404,7 @@ export function Heatmap({
                             marginTop: spacing[1],
                         }}>
                             <div style={{
-                                fontSize: "11px",
+                                fontSize: fonts.size.xs,
                                 color: colors.fg.dim,
                                 marginBottom: spacing[1],
                                 textTransform: "uppercase",
@@ -424,10 +416,8 @@ export function Heatmap({
                                 <div
                                     key={i}
                                     style={{
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        alignItems: "center",
-                                        fontSize: "12.5px",
+                                        ...flexBetween,
+                                        fontSize: fonts.size.xs4,
                                         padding: "1px 0",
                                         gap: spacing[2],
                                     }}
@@ -440,8 +430,8 @@ export function Heatmap({
                                         {comp.key}
                                     </span>
                                     <span style={{
-                                        fontFamily: fonts.family.display,
-                                        fontWeight: 600,
+                                        fontFamily: fonts.family,
+                                        fontWeight: fonts.weight.semibold,
                                         color: colors.fg.base,
                                         whiteSpace: "nowrap",
                                         textAlign: "right",
@@ -462,12 +452,11 @@ export function HeatmapLegend({ isIncome }: { isIncome: boolean }) {
     return (
         <div
             style={{
-                display: "flex",
-                alignItems: "center",
+                ...flexRow,
                 gap: spacing[2],
             }}
         >
-            <span style={{ fontSize: fonts.table.meta, color: colors.fg.dim }}>Menor</span>
+            <span style={{ fontSize: fonts.size.xs4, color: colors.fg.dim }}>Menor</span>
             <div
                 style={{
                     display: "flex",
@@ -486,7 +475,7 @@ export function HeatmapLegend({ isIncome }: { isIncome: boolean }) {
                     }}
                 />
             </div>
-            <span style={{ fontSize: fonts.table.meta, color: colors.fg.dim }}>Mayor</span>
+            <span style={{ fontSize: fonts.size.xs4, color: colors.fg.dim }}>Mayor</span>
         </div>
     );
 }

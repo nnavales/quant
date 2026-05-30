@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Search, ChevronDown, X } from "lucide-react";
 import { colors } from "@/styles/colors";
-import { spacing, radius } from "@/styles/theme";
+import { spacing, radius, shadows } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
 import { useClickOutside, useDropdownPosition } from "@/hooks";
+import { inputStyle, flexBetween, flexColumn, flexRow, truncate } from "@/styles/layout";
 
 let instanceCounter = 0;
 
@@ -49,7 +50,7 @@ const PANEL_BASE: React.CSSProperties = {
     gap: "2px",
     minWidth: "160px",
     maxWidth: "280px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06)",
+    boxShadow: shadows.lg,
 };
 
 const ITEM_BASE: React.CSSProperties = {
@@ -171,35 +172,20 @@ export function Dropdown({
                 onMouseDown={handleToggle}
                 disabled={disabled}
                 style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
+                    ...inputStyle,
+                    ...flexBetween,
                     gap: spacing[2],
-                    padding: `0 ${spacing[2]}`,
-                    height: "40px",
-                    backgroundColor: colors.bg.base,
-                    border: `1px solid ${colors.fill}`,
-                    borderRadius: radius.md,
                     color: selectedOption ? colors.fg.base : colors.fg.dim,
                     cursor: disabled ? "not-allowed" : "pointer",
-                    fontSize: fonts.size.sm,
-                    width: "100%",
-                    boxSizing: "border-box",
-                    outline: "none",
+                    transform: "none",
                     ...triggerStyle,
                 }}
 
             >
                 <span
-                    style={{
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        fontWeight: selectedOption ? 500 : 400,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: spacing[2],
-                    }}
+                    style={{...truncate, fontWeight: selectedOption ? fonts.weight.medium : fonts.weight.regular,
+                        ...flexRow,
+                        gap: spacing[2]}}
                 >
                     {selectedOption?.dotColor && (
                         <span
@@ -225,17 +211,18 @@ export function Dropdown({
                 />
             </button>
 
-            {isOpen && (
-                <div
-                    ref={panelRef}
-                    data-dropdown-panel
-                    style={{
-                        ...PANEL_BASE,
-                        ...panelStyle,
-                        visibility: "hidden",
-                        maxHeight: `${panelMaxHeight}px`,
-                    }}
-                >
+            <div
+                ref={panelRef}
+                data-dropdown-panel
+                style={{
+                    ...PANEL_BASE,
+                    ...panelStyle,
+                    visibility: "hidden",
+                    opacity: isOpen ? 1 : 0,
+                    pointerEvents: isOpen ? "auto" : "none",
+                    maxHeight: `${panelMaxHeight}px`,
+                }}
+            >
                     {searchable && (
                         <div
                             style={{
@@ -264,7 +251,7 @@ export function Dropdown({
                                     border: "none",
                                     outline: "none",
                                     color: colors.fg.base,
-                                    fontFamily: fonts.family.text,
+                                    fontFamily: fonts.family,
                                     fontSize: fonts.size.sm,
                                     padding: 0,
                                     minWidth: 0,
@@ -283,8 +270,7 @@ export function Dropdown({
                                         color: colors.fg.dim,
                                         cursor: "pointer",
                                         padding: 0,
-                                        display: "flex",
-                                        alignItems: "center",
+                                        ...flexRow,
                                         lineHeight: 1,
                                         flexShrink: 0,
                                     }}
@@ -297,8 +283,7 @@ export function Dropdown({
 
                     <div
                         style={{
-                            display: "flex",
-                            flexDirection: "column",
+                            ...flexColumn,
                             gap: spacing[1],
                             overflowY: "auto",
                             overflowX: "hidden",
@@ -321,12 +306,12 @@ export function Dropdown({
                         )}
 
                         {filteredGroups.map((group, groupIdx) => (
-                            <div key={group.label || `__g${groupIdx}`} style={{ display: "flex", flexDirection: "column", gap: spacing[1] }}>
+                            <div key={group.label || `__g${groupIdx}`} style={{ ...flexColumn, gap: spacing[1] }}>
                                 {group.label && (
                                     <div
                                         style={{
                                             ...ITEM_BASE,
-                                            fontWeight: 600,
+                                            fontWeight: fonts.weight.semibold,
                                             color: colors.fg.dim,
                                             cursor: "default",
                                             fontSize: fonts.size.xs,
@@ -349,12 +334,11 @@ export function Dropdown({
                                                 item.id === value
                                                     ? colors.fill
                                                     : "transparent",
-                                            fontWeight: item.id === value ? 500 : 400,
+                                            fontWeight: item.id === value ? fonts.weight.medium : fonts.weight.regular,
                                             opacity: item.disabled ? 0.4 : 1,
                                             cursor: item.disabled ? "not-allowed" : "pointer",
                                             paddingLeft: group.label ? "16px" : spacing[2],
-                                            display: "flex",
-                                            alignItems: "center",
+                                            ...flexRow,
     gap: spacing[1],
                                         }}
                                         onMouseEnter={(e) => {
@@ -390,15 +374,14 @@ export function Dropdown({
                             onClick={() => handleSelect("")}
                             style={{
                                 marginTop: spacing[1],
-                                display: "flex",
-                                alignItems: "center",
+                                ...flexRow,
                                 justifyContent: "center",
                                 gap: spacing[1],
                                 padding: 0,
                                 lineHeight: 1,
                                 cursor: "pointer",
                                 fontSize: fonts.size.xs,
-                                fontWeight: 400,
+                                fontWeight: fonts.weight.regular,
                                 color: colors.fg.dim,
                                 transition: "color 0.15s",
                                 flexShrink: 0,
@@ -415,7 +398,6 @@ export function Dropdown({
                         </div>
                     )}
                 </div>
-            )}
-        </>
-    );
-}
+            </>
+        );
+    }
