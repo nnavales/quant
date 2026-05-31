@@ -454,7 +454,7 @@ export function MetricsComparisonPage() {
                         />
                     </div>
 
-                    <div style={{ flex: "0 1 auto", minHeight: 0, borderRadius: radius.lg, backgroundColor: colors.bg.elevated }}>
+                    <div style={{ flex: "0 1 auto", minHeight: 0, borderRadius: radius.lg, backgroundColor: colors.bg.surface }}>
                         <MetricsComparisonTable
                             data={metricsData ?? ({} as MetricComparisonDashboard)}
                         />

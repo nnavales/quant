@@ -710,7 +710,7 @@ export function EvolutionPage() {
                                         .forEach(([key, val]) => {
                                             html += `<div style="display:flex;align-items:center;gap:4px;margin-top:2px;font-size:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${subColor[key]}"></span>${key}: <b>${formatCompact(val)}</b></div>`;
                                         });
-                                    html += `<div style="display:flex;align-items:center;gap:4px;margin-top:4px;padding-top:4px;border-top:1px solid ${colors.fill};font-size:12px">Total: <b>${formatCompact(entry.total)}</b></div>`;
+                                    html += `<div style="display:flex;align-items:center;gap:4px;margin-top:4px;padding-top:4px;border-top:1px solid ${colors.border};font-size:12px">Total: <b>${formatCompact(entry.total)}</b></div>`;
                                     return html;
                                 },
                             },
@@ -858,7 +858,7 @@ export function EvolutionPage() {
                             gap: spacing[1],
                             padding: spacing[5],
                             paddingBottom: spacing[3],
-                            borderBottom: `1px solid ${colors.fill}`,
+                            borderBottom: `1px solid ${colors.border}`,
                             flexShrink: 0,
                         }}>
                             <div style={{ ...flexBetween }}>
@@ -919,41 +919,36 @@ export function EvolutionPage() {
                                     <ModalCloseButton onClick={() => setModalChartId(null)} />
                                 </div>
                             </div>
-                            <div style={{ ...flexBetween, gap: spacing[2], flexWrap: "wrap" }}>
-                                <div style={{ ...flexRow, gap: spacing[2] }}>
-                                    {chart.desc && <span style={{ fontSize: fonts.size.sm, fontWeight: fonts.weight.medium, color: colors.fg.dim }}>{chart.desc}</span>}
+                            {chart.legend && (
+                                <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap", alignItems: "center" }}>
+                                    {chart.legend.map((l: { label: string; color: string; style?: "line" }) => {
+                                        const isHidden = modalHiddenSeries[modalChartId]?.includes(l.label);
+                                        return (
+                                            <div
+                                                key={l.label}
+                                                onClick={l.style === "line" ? undefined : () => toggleModalSeries(modalChartId, l.label)}
+                                                style={{
+                                                    ...flexRow,
+                                                    gap: 3,
+                                                    fontSize: fonts.size.sm,
+                                                    fontWeight: fonts.weight.medium,
+                                                    color: isHidden ? colors.fg.dim : undefined,
+                                                    cursor: l.style === "line" ? "default" : "pointer",
+                                                    opacity: isHidden ? 0.45 : 1,
+                                                    transition: "opacity 0.15s",
+                                                }}
+                                            >
+                                                {l.style === "line" ? (
+                                                    <span style={{ display: "inline-block", width: 18, height: 3, borderRadius: 2, background: l.color, flexShrink: 0 }} />
+                                                ) : (
+                                                    <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: l.color, flexShrink: 0 }} />
+                                                )}
+                                                {l.label}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                                {chart.legend && (
-                                    <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap", alignItems: "center", paddingRight: spacing[1] }}>
-                                        {chart.legend.map((l: { label: string; color: string; style?: "line" }) => {
-                                            const isHidden = modalHiddenSeries[modalChartId]?.includes(l.label);
-                                            return (
-                                                <div
-                                                    key={l.label}
-                                                    onClick={l.style === "line" ? undefined : () => toggleModalSeries(modalChartId, l.label)}
-                                                    style={{
-                                                        ...flexRow,
-                                                        gap: 3,
-                                                        fontSize: fonts.size.sm,
-                                                        fontWeight: fonts.weight.medium,
-                                                        color: isHidden ? colors.fg.dim : undefined,
-                                                        cursor: l.style === "line" ? "default" : "pointer",
-                                                        opacity: isHidden ? 0.45 : 1,
-                                                        transition: "opacity 0.15s",
-                                                    }}
-                                                >
-                                                    {l.style === "line" ? (
-                                                        <span style={{ display: "inline-block", width: 18, height: 3, borderRadius: 2, background: l.color, flexShrink: 0 }} />
-                                                    ) : (
-                                                        <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: l.color, flexShrink: 0 }} />
-                                                    )}
-                                                    {l.label}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
+                            )}
                         </div>
                         <div style={{ flex: 1, minHeight: 0 }}>
                             {renderChart(modalChartId, modalHiddenSeries[modalChartId] ?? [], {

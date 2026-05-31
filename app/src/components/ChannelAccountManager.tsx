@@ -386,7 +386,7 @@ export function ChannelAccountManager() {
                         )}
 
                         {expandedChannels.has(group.channel.id) && (
-                            <div style={{ display: "flex", flexDirection: "column", gap: spacing[1], marginTop: spacing[3], paddingLeft: spacing[6], borderLeft: `1px solid ${colors.fill}` }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: spacing[1], marginTop: spacing[3], paddingLeft: spacing[6], borderLeft: `1px solid ${colors.border}` }}>
                                 {group.accounts.filter(a => !a.deleted_at).map((acc) => (
                                     <div key={acc.id}>
                                         {editingAccountId === acc.id ? (
@@ -518,7 +518,7 @@ export function ChannelAccountManager() {
                                     alignItems: "center",
                                     padding: `${spacing[3]} ${spacing[4]}`,
                                     backgroundColor: colors.bg.surface,
-                                    border: `1px dashed ${colors.fill}`,
+                                    border: `1px dashed ${colors.border}`,
                                     borderRadius: radius.md,
                                     opacity: 0.6,
                                 }}

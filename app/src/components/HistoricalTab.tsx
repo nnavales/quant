@@ -244,7 +244,7 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
                             />
                         </div>
 
-                        <div style={{ backgroundColor: colors.bg.base, borderRadius: radius.md, padding: spacing[3], border: `1px solid ${colors.fill}` }}>
+                        <div style={{ backgroundColor: colors.bg.base, borderRadius: radius.md, padding: spacing[3], border: `1px solid ${colors.border}` }}>
                             <div style={{ fontSize: fonts.size.xs, color: colors.accent.green, fontWeight: fonts.weight.semibold, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: spacing[2] }}>Ingreso</div>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: spacing[2] }}>
                                 <div>
@@ -280,7 +280,7 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
                             </div>
                         </div>
 
-                        <div style={{ backgroundColor: colors.bg.base, borderRadius: radius.md, padding: spacing[3], border: `1px solid ${colors.fill}` }}>
+                        <div style={{ backgroundColor: colors.bg.base, borderRadius: radius.md, padding: spacing[3], border: `1px solid ${colors.border}` }}>
                             <div style={{ fontSize: fonts.size.xs, color: colors.accent.red, fontWeight: fonts.weight.semibold, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: spacing[2] }}>Egreso</div>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: spacing[2] }}>
                                 <div>
@@ -374,9 +374,9 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
                         <ModalCloseButton onClick={closeBulkImport} />
                     </div>
 
-                    <div style={{ backgroundColor: colors.bg.base, borderRadius: radius.md, padding: spacing[4], marginBottom: spacing[4], border: `1px solid ${colors.fill}` }}>
+                    <div style={{ backgroundColor: colors.bg.base, borderRadius: radius.md, padding: spacing[4], marginBottom: spacing[4], border: `1px solid ${colors.border}` }}>
                         {/* Header */}
-                        <div style={{ display: "flex", alignItems: "center", gap: spacing[2], marginBottom: spacing[3], paddingBottom: spacing[3], borderBottom: `1px solid ${colors.fill}` }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: spacing[2], marginBottom: spacing[3], paddingBottom: spacing[3], borderBottom: `1px solid ${colors.border}` }}>
                             <FileText size={14} color={colors.fg.dim} />
                             <span style={{ fontSize: fonts.size.sm, fontWeight: fonts.weight.semibold, color: colors.fg.base }}>Formato esperado</span>
                         </div>
@@ -414,7 +414,7 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
                         </div>
 
                         {/* Example */}
-                        <div style={{ borderTop: `1px solid ${colors.fill}`, paddingTop: spacing[3] }}>
+                        <div style={{ borderTop: `1px solid ${colors.border}`, paddingTop: spacing[3] }}>
                             <span style={{ fontSize: fonts.size.xs, color: colors.fg.dim, display: "block", marginBottom: spacing[1] }}>Ejemplo</span>
                             <div style={{ overflowX: "auto" }}>
                                 <code style={{ display: "block", fontSize: fonts.size.xs, color: colors.fg.base, backgroundColor: colors.bg.surface, padding: spacing[2], borderRadius: radius.sm, fontFamily: fonts.monoFamily, whiteSpace: "nowrap" }}>
@@ -426,7 +426,7 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
 
                     <div
                         style={{
-                            border: `2px dashed ${importFile ? colors.accent.teal + "80" : colors.fill}`,
+                            border: `2px dashed ${importFile ? colors.accent.teal + "80" : colors.border}`,
                             borderRadius: radius.md,
                             padding: spacing[4],
                             textAlign: "center",

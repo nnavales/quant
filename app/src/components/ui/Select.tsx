@@ -45,7 +45,7 @@ export function CustomSelect({ value, options, onChange, style }: CustomSelectPr
                     gap: spacing[1],
                     padding: `${spacing[1]} ${spacing[2]}`,
                     backgroundColor: colors.bg.surface,
-                    border: `1px solid ${colors.fill}`,
+                    border: `1px solid ${colors.border}`,
                     borderRadius: radius.md,
                     color: colors.fg.base,
                     fontSize: fonts.size.xs4,

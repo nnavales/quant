@@ -517,7 +517,7 @@ export function PresetPickerModal({ isOpen, onClose, onSelectPreset, onManual }:
                         justifyContent: "space-between",
                         alignItems: "center",
                         padding: `${spacing[4]} ${spacing[5]}`,
-                        borderBottom: `1px solid ${colors.fill}`,
+                        borderBottom: `1px solid ${colors.border}`,
                         flexShrink: 0,
                     }}>
                         <div style={{ ...flexRow, gap: spacing[2] }}>
@@ -656,7 +656,7 @@ export function PresetPickerModal({ isOpen, onClose, onSelectPreset, onManual }:
                             alignItems: "center",
                             gap: spacing[3],
                             backgroundColor: colors.bg.surface,
-                            borderTop: `1px solid ${colors.fill}`,
+                            borderTop: `1px solid ${colors.border}`,
                             flexShrink: 0,
                         }}>
                             <div style={{ ...flexRow, width: "100%", gap: spacing[3] }}>
@@ -674,7 +674,7 @@ export function PresetPickerModal({ isOpen, onClose, onSelectPreset, onManual }:
                                     fontWeight: fonts.weight.medium,
                                     color: colors.fg.dim,
                                     backgroundColor: colors.bg.base,
-                                    border: `1px solid ${colors.fill}`,
+                                    border: `1px solid ${colors.border}`,
                                     borderRadius: radius.lg,
                                     padding: "8px 20px",
                                     cursor: "pointer",
@@ -686,7 +686,7 @@ export function PresetPickerModal({ isOpen, onClose, onSelectPreset, onManual }:
                                     e.currentTarget.style.backgroundColor = colors.bg.hover;
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.currentTarget.style.borderColor = colors.fill;
+                                    e.currentTarget.style.borderColor = colors.border;
                                     e.currentTarget.style.color = colors.fg.dim;
                                     e.currentTarget.style.backgroundColor = colors.bg.base;
                                 }}

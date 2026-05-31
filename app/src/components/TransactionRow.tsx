@@ -50,8 +50,8 @@ const selBg = (sel: boolean) => sel ? SEL_STYLE : undefined;
 type DateTextFormat = "default" | "full";
 
 const MONTH_NAMES = [
-    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+    "Ene", "Feb", "Mar", "Abr", "May", "Jun",
+    "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
 ];
 
 const formatDateCell = (dateStr: string, textFormat: DateTextFormat, userFormat: import("@/utils/date").DateFormat) => {
@@ -109,7 +109,7 @@ export const TransactionRowCells = memo(function TransactionRowCells({
 
     return (
         <>
-            <td className={`td-checkbox td-center${isNew ? " td-new" : ""}`} style={selBg(isSelected)}>
+            <div className={`td-checkbox td-center${isNew ? " td-new" : ""}`} style={selBg(isSelected)}>
                 <div className="checkbox-center">
                     <div
                         onClick={(e) => onToggleSelect?.(e.shiftKey)}
@@ -129,16 +129,16 @@ export const TransactionRowCells = memo(function TransactionRowCells({
                         {isSelected && <Check size={10} color={colors.bg.base} strokeWidth={3} />}
                     </div>
                 </div>
-            </td>
-            <td
+            </div>
+            <div
                 className="td-fecha td-left"
                 style={selBg(isSelected)}
                 onClick={onFormatClick}
                 title="Cambiar formato"
             >
                 <span className="selectable">{formatDateCell(transaction.date, textFormat, userDateFormat)}</span>
-            </td>
-            <td className="td-tipo" style={selBg(isSelected)}>
+            </div>
+            <div className="td-tipo" style={selBg(isSelected)}>
                 <span className="selectable" style={{
                     fontSize: fonts.size.xs2,
                     fontWeight: fonts.weight.medium,
@@ -146,15 +146,15 @@ export const TransactionRowCells = memo(function TransactionRowCells({
                 }}>
                     {isExpense ? "▼ EGR" : "▲ ING"}
                 </span>
-            </td>
-            <td className="td-desc td-left" style={selBg(isSelected)}>
+            </div>
+            <div className="td-desc td-left" style={selBg(isSelected)}>
                 <Tooltip content={transaction.description || "Sin descripción"}>
                     <span className="selectable text-trunc" style={{ fontWeight: fonts.weight.medium }}>
                         {transaction.description || "Sin descripción"}
                     </span>
                 </Tooltip>
-            </td>
-            <td className="td-cuotas td-center" style={selBg(isSelected)}>
+            </div>
+            <div className="td-cuotas td-center" style={selBg(isSelected)}>
                 {transaction.total_installments ? (
                     <span className="text-sub" style={{ fontSize: fonts.size.xs2 }}>
                         {transaction.installment_number
@@ -164,8 +164,8 @@ export const TransactionRowCells = memo(function TransactionRowCells({
                 ) : (
                     <span style={{ color: colors.fg.dim, fontSize: fonts.size.xs2 }}>-</span>
                 )}
-            </td>
-            <td className="td-monto td-right" style={selBg(isSelected)}>
+            </div>
+            <div className="td-monto td-right" style={selBg(isSelected)}>
                 <Tooltip
                     alwaysShow
                     content={
@@ -185,8 +185,8 @@ export const TransactionRowCells = memo(function TransactionRowCells({
                         {amountFmt}
                     </span>
                 </Tooltip>
-            </td>
-            <td className="td-mon" style={selBg(isSelected)}>
+            </div>
+            <div className="td-mon" style={selBg(isSelected)}>
                 <span className="selectable" style={{
                     fontSize: fonts.size.xs2,
                     fontWeight: fonts.weight.medium,
@@ -196,15 +196,15 @@ export const TransactionRowCells = memo(function TransactionRowCells({
                 }}>
                     {transaction.currency}
                 </span>
-            </td>
-            <td className="td-tc" style={selBg(isSelected)}>
+            </div>
+            <div className="td-tc" style={selBg(isSelected)}>
                 <Tooltip content={formatNumber(transaction.exchange_rate, { trim: true })}>
                     <span className="selectable amount-alt text-trunc" style={{ fontSize: fonts.size.xs2 }}>
                         {formatNumber(transaction.exchange_rate, { trim: true })}
                     </span>
                 </Tooltip>
-            </td>
-            <td className="td-frec" style={selBg(isSelected)}>
+            </div>
+            <div className="td-frec" style={selBg(isSelected)}>
                 {transaction.frequency === "fixed" ? (
                     <span className="selectable" style={{ fontSize: fonts.size.xs2, fontWeight: fonts.weight.medium, color: colors.fg.dim }}>
                         FIJO
@@ -216,20 +216,20 @@ export const TransactionRowCells = memo(function TransactionRowCells({
                 ) : (
                     <span style={{ color: colors.fg.dim }}>-</span>
                 )}
-            </td>
-            <td className="td-cat td-left" style={selBg(isSelected)}>
+            </div>
+            <div className="td-cat td-left" style={selBg(isSelected)}>
                 <Tooltip
                     as="div"
                     content={
                         <div>
                             <div style={{ display: "flex", gap: "8px" }}>
                                 <span style={{ color: colors.fg.dim, minWidth: 62, flexShrink: 0 }}>Categoría</span>
-                                <span>{transaction.category_name || "-"}</span>
+                                <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{transaction.category_name || "-"}</span>
                             </div>
                             {transaction.subcategory_name && (
                                 <div style={{ display: "flex", gap: "8px", marginTop: "3px" }}>
                                     <span style={{ color: colors.fg.dim, minWidth: 62, flexShrink: 0 }}>Subcat.</span>
-                                    <span>{transaction.subcategory_name}</span>
+                                    <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{transaction.subcategory_name}</span>
                                 </div>
                             )}
                         </div>
@@ -242,20 +242,20 @@ export const TransactionRowCells = memo(function TransactionRowCells({
                         )}
                     </span>
                 </Tooltip>
-            </td>
-            <td className="td-canal td-left" style={selBg(isSelected)}>
+            </div>
+            <div className="td-canal td-left" style={selBg(isSelected)}>
                 <Tooltip
                     as="div"
                     content={
                         <div>
                             <div style={{ display: "flex", gap: "8px" }}>
                                 <span style={{ color: colors.fg.dim, minWidth: 62, flexShrink: 0 }}>Canal</span>
-                                <span>{transaction.channel_name}</span>
+                                <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{transaction.channel_name}</span>
                             </div>
                             {transaction.account_name && (
                                 <div style={{ display: "flex", gap: "8px", marginTop: "3px" }}>
                                     <span style={{ color: colors.fg.dim, minWidth: 62, flexShrink: 0 }}>Cuenta</span>
-                                    <span>{transaction.account_name}</span>
+                                    <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{transaction.account_name}</span>
                                 </div>
                             )}
                         </div>
@@ -268,15 +268,15 @@ export const TransactionRowCells = memo(function TransactionRowCells({
                         )}
                     </span>
                 </Tooltip>
-            </td>
-            <td className="td-estado" style={selBg(isSelected)}>
+            </div>
+            <div className="td-estado" style={selBg(isSelected)}>
                 <span onClick={handleTogglePaid} style={{ cursor: "pointer", lineHeight: 0 }}>
                     {transaction.is_paid
                         ? <SquareCheck size={15} color={colors.accent.teal} />
                         : <SquareMinus size={15} color={colors.accent.orange} />}
                 </span>
-            </td>
-            <td className="td-opciones" style={selBg(isSelected)}>
+            </div>
+            <div className="td-opciones" style={selBg(isSelected)}>
                 <span style={{ display: "flex", gap: spacing[2], justifyContent: "center" }}>
                     <Button
                         variant="icon"
@@ -296,7 +296,7 @@ export const TransactionRowCells = memo(function TransactionRowCells({
                         <Trash2 size={13.5} />
                     </Button>
                 </span>
-            </td>
+            </div>
         </>
     );
 }, (p, n) =>

@@ -149,12 +149,12 @@ export function PlanningPlanTable({
                                         fontWeight: fonts.weight.medium, color: colors.fg.dim,
                                         fontSize: fonts.size.xs2, textTransform: "uppercase", letterSpacing: "0.06em",
                                         whiteSpace: "nowrap", borderBottom: `1px solid ${colors.border}`,
-                                        borderLeft: `1px solid ${colors.fill}`,
+                                        borderLeft: `1px solid ${colors.border}`,
                                         backgroundColor: colors.bg.elevated,
                                     }}>{m}</th>
                                 ))}
                                 <th style={{
-                                    borderBottom: `1px solid ${colors.border}`, borderLeft: `1px solid ${colors.fill}`,
+                                    borderBottom: `1px solid ${colors.border}`, borderLeft: `1px solid ${colors.border}`,
                                     backgroundColor: colors.bg.elevated, textAlign: "center", padding: "0 4px",
                                     color: colors.fg.dim, fontSize: fonts.size.sm, letterSpacing: "0.1em",
                                 }}>
@@ -177,7 +177,7 @@ export function PlanningPlanTable({
                                         <td style={{
                                             verticalAlign: "middle", padding: "0 12px",
                                             overflow: "hidden", maxWidth: "0", boxSizing: "border-box",
-                                            borderBottom: `1px solid ${colors.fill}`,
+                                            borderBottom: `1px solid ${colors.border}`,
                                             color: row.clr,
                                             fontSize: fonts.size.xs2,
                                             fontWeight: fonts.weight.semibold,
@@ -198,8 +198,8 @@ export function PlanningPlanTable({
                                                         ...numCell,
                                                         fontSize: fonts.size.sm2,
                                                         fontWeight: fonts.weight.medium,
-                                                        borderBottom: `1px solid ${colors.fill}`,
-                                                        borderLeft: `1px solid ${colors.fill}`,
+                                                        borderBottom: `1px solid ${colors.border}`,
+                                                        borderLeft: `1px solid ${colors.border}`,
                                                         color: hasVal ? row.clr : "transparent",
                                                         cursor: "pointer",
                                                     }}>
@@ -219,8 +219,8 @@ export function PlanningPlanTable({
                                         })}
                                         <td style={{
                                             ...numCell,
-                                            borderBottom: `1px solid ${colors.fill}`,
-                                            borderLeft: `1px solid ${colors.fill}`,
+                                            borderBottom: `1px solid ${colors.border}`,
+                                            borderLeft: `1px solid ${colors.border}`,
                                             textAlign: "center",
                                             padding: "0 4px",
                                         }}>

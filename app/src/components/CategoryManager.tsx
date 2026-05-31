@@ -463,7 +463,7 @@ export function CategoryManager() {
                                     gap: spacing[1],
                                     marginTop: spacing[3],
                                     paddingLeft: spacing[6],
-                                    borderLeft: `1px solid ${colors.fill}`,
+                                    borderLeft: `1px solid ${colors.border}`,
                                 }}
                             >
                                 {group.subcategories
@@ -766,7 +766,7 @@ export function CategoryManager() {
                                     alignItems: "center",
                                     padding: `${spacing[3]} ${spacing[4]}`,
                                     backgroundColor: colors.bg.surface,
-                                    border: `1px dashed ${colors.fill}`,
+                                    border: `1px dashed ${colors.border}`,
                                     borderRadius: radius.md,
                                     opacity: 0.6,
                                 }}

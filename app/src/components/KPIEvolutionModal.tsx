@@ -220,20 +220,6 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
     };
     const title = titleMap[kpi] || kpi;
 
-    const descMap: Record<string, string> = {
-        "Ingresos YTD": "Evolución de ingresos período a período",
-        "Egresos YTD": "Evolución de egresos período a período",
-        "Ahorro Neto YTD": "Evolución del ahorro neto período a período",
-        "Balance Total": "Evolución del balance total período a período",
-        "Patrimonio Neto": "Evolución del patrimonio neto período a período",
-    };
-    const multiDescMap: Record<string, string> = {
-        "Capital": "Comparativa real vs plan vs forecast vs año anterior",
-        "Ahorro": "Comparativa real vs plan vs forecast vs año anterior",
-        "Egresos": "Comparativa real vs plan vs forecast vs año anterior",
-        "Ingresos": "Comparativa real vs plan vs forecast vs año anterior",
-    };
-    const desc = isMultiSeries ? (multiDescMap[kpi] || "Comparativa período a período") : (descMap[kpi] || "Evolución período a período");
     const visibleSeries = isMultiSeries
         ? multiSeriesOptions.filter((s) => !hiddenSeries.includes(s.name))
         : [];
@@ -257,7 +243,7 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
                     gap: spacing[1],
                     padding: spacing[5],
                     paddingBottom: spacing[3],
-                    borderBottom: `1px solid ${colors.fill}`,
+                    borderBottom: `1px solid ${colors.border}`,
                     flexShrink: 0,
                 }}>
                     <div
@@ -322,37 +308,33 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
                         </div>
                     </div>
 
-                    {(desc || isMultiSeries) && (
-                        <div style={{ ...flexBetween, gap: spacing[2], flexWrap: "wrap" }}>
-                            <span style={{ fontSize: fonts.size.xs, fontWeight: fonts.weight.regular, color: colors.fg.dim }}>{desc}</span>
-                            {isMultiSeries && (
-                                <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap", alignItems: "center", paddingRight: spacing[1] }}>
-                                    {(["Real", "FCST", "Plan", "LY"] as const).map((name) => {
-                                        const isHidden = hiddenSeries.includes(name);
-                                        return (
-                                            <div
-                                                key={name}
-                                                onClick={() => toggleSeries(name)}
-                                                style={{
-                                                    ...flexRow,
-                                                    gap: 3,
-                                                    cursor: "pointer",
-                                                    fontSize: fonts.size.sm,
-                                                    fontWeight: fonts.weight.medium,
-                                                    color: isHidden ? colors.fg.dim : undefined,
-                                                    opacity: isHidden ? 0.45 : 1,
-                                                    transition: "opacity 0.15s",
-                                                }}
-                                            >
-                                                <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: seriesColors[name], flexShrink: 0 }} />
-                                                {name}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
+                    {isMultiSeries && (
+                        <div style={{ display: "flex", gap: spacing[2], flexWrap: "wrap" }}>
+                            {(["Real", "FCST", "Plan", "LY"] as const).map((name) => {
+                                const isHidden = hiddenSeries.includes(name);
+                                return (
+                                    <div
+                                        key={name}
+                                        onClick={() => toggleSeries(name)}
+                                        style={{
+                                            ...flexRow,
+                                            gap: 3,
+                                            cursor: "pointer",
+                                            fontSize: fonts.size.sm,
+                                            fontWeight: fonts.weight.medium,
+                                            color: isHidden ? colors.fg.dim : undefined,
+                                            opacity: isHidden ? 0.45 : 1,
+                                            transition: "opacity 0.15s",
+                                        }}
+                                    >
+                                        <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: seriesColors[name], flexShrink: 0 }} />
+                                        {name}
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
+
                 </div>
                 <div style={{ flex: 1, minHeight: 0 }}>
                     <ReactECharts

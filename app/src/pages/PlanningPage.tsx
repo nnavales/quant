@@ -492,7 +492,7 @@ const isPlan = activeTab === "plan";
                         ...flexColumn,
                         border: `1px solid transparent`,
                     }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: `${spacing[4]} ${spacing[5]}`, borderBottom: `1px solid ${colors.fill}` }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: `${spacing[4]} ${spacing[5]}`, borderBottom: `1px solid ${colors.border}` }}>
                             <h2 style={{ margin: 0, fontSize: fonts.size.lg, fontWeight: fonts.weight.semibold, color: colors.fg.base }}>Generar Plan {year}</h2>
                             <ModalCloseButton onClick={() => setShowGenerateModal(false)} />
                         </div>
@@ -513,7 +513,7 @@ const isPlan = activeTab === "plan";
                                     style={inputStyle} />
                             </div>
                         </div>
-                        <div style={{ display: "flex", gap: spacing[3], padding: `${spacing[3]} ${spacing[5]}`, borderTop: `1px solid ${colors.fill}` }}>
+                        <div style={{ display: "flex", gap: spacing[3], padding: `${spacing[3]} ${spacing[5]}`, borderTop: `1px solid ${colors.border}` }}>
                             <SubmitButton type="submit" onClick={handleGenerateGoals} fullWidth>Generar</SubmitButton>
                         </div>
                     </ModalContent>
@@ -532,7 +532,7 @@ const isPlan = activeTab === "plan";
                         ...flexColumn,
                         border: `1px solid transparent`,
                     }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: `${spacing[4]} ${spacing[5]}`, borderBottom: `1px solid ${colors.fill}` }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: `${spacing[4]} ${spacing[5]}`, borderBottom: `1px solid ${colors.border}` }}>
                             <h2 style={{ margin: 0, fontSize: fonts.size.lg, fontWeight: fonts.weight.semibold, color: colors.fg.base }}>Nuevo concepto</h2>
                             <ModalCloseButton onClick={() => setShowNewModal(false)} />
                         </div>
@@ -572,7 +572,7 @@ const isPlan = activeTab === "plan";
                                 </div>
                             </div>
                         </div>
-                        <div style={{ display: "flex", gap: spacing[3], padding: `${spacing[3]} ${spacing[5]}`, borderTop: `1px solid ${colors.fill}` }}>
+                        <div style={{ display: "flex", gap: spacing[3], padding: `${spacing[3]} ${spacing[5]}`, borderTop: `1px solid ${colors.border}` }}>
                             <SubmitButton type="submit" onClick={handleSaveNew} disabled={!newDesc.trim()} fullWidth>Crear concepto</SubmitButton>
                         </div>
                     </ModalContent>
@@ -587,7 +587,7 @@ const isPlan = activeTab === "plan";
                         maxHeight: "80vh", overflow: "hidden", ...flexColumn,
                         border: `1px solid transparent`,
                     }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: `${spacing[4]} ${spacing[5]}`, borderBottom: `1px solid ${colors.fill}` }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: `${spacing[4]} ${spacing[5]}`, borderBottom: `1px solid ${colors.border}` }}>
                             <h2 style={{ margin: 0, fontSize: fonts.size.lg, fontWeight: fonts.weight.semibold, color: colors.fg.base }}>Configuración {year}</h2>
                             <ModalCloseButton onClick={() => setShowSettingsModal(false)} />
                         </div>
@@ -612,7 +612,7 @@ const isPlan = activeTab === "plan";
                                 </div>
                             </div>
                         </div>
-                        <div style={{ display: "flex", gap: spacing[3], padding: `${spacing[3]} ${spacing[5]}`, borderTop: `1px solid ${colors.fill}` }}>
+                        <div style={{ display: "flex", gap: spacing[3], padding: `${spacing[3]} ${spacing[5]}`, borderTop: `1px solid ${colors.border}` }}>
                             <SubmitButton type="submit" onClick={() => {
                                 updateConfig.mutate({ year: String(year), data: { initial_capital: cfgCapital } });
                                 cfgRates.forEach((rate, i) => {

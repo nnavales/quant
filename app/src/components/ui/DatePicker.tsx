@@ -226,7 +226,7 @@ export function DatePicker({
                     gap: spacing[2],
                     padding: `0 ${spacing[2]}`,
                     backgroundColor: colors.bg.base,
-                    border: `1px solid ${colors.fill}`,
+                    border: `1px solid ${colors.border}`,
                     borderRadius: radius.md,
                     cursor: "pointer",
                     color: selectedDate ? colors.fg.base : colors.fg.dim,

@@ -26,7 +26,7 @@ const MONTHS_FULL = [
 
 const ROW_HOVER_CSS = `
     .metric-table-row td {
-        background-color: ${colors.bg.elevated};
+        background-color: ${colors.bg.surface};
         transition: background-color 0.12s ease;
     }
     .metric-table-row:hover td {

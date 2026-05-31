@@ -595,7 +595,7 @@ export function BackupManager() {
                         padding: 0,
                         maxWidth: "640px",
                         width: "100%",
-                        border: `1px solid ${colors.fill}`,
+                        border: `1px solid ${colors.border}`,
                         overflow: "hidden",
                     }}
                     onClick={(e) => e.stopPropagation()}
@@ -691,7 +691,7 @@ export function BackupManager() {
                                 style={{
                                     backgroundColor: colors.bg.base,
                                     borderRadius: radius.md,
-                                    border: `1px solid ${colors.fill}`,
+                                    border: `1px solid ${colors.border}`,
                                     padding: spacing[3],
                                     overflowX: "auto",
                                 }}
@@ -727,7 +727,7 @@ export function BackupManager() {
                                 style={{
                                     backgroundColor: colors.bg.base,
                                     borderRadius: radius.md,
-                                    border: `1px solid ${colors.fill}`,
+                                    border: `1px solid ${colors.border}`,
                                     padding: spacing[3],
                                 }}
                             >

@@ -885,7 +885,7 @@ export function TransactionFlowModal({
                 >
                     {/* Header — picker view */}
                     {isPickerView ? (
-                        <div style={{ flexShrink: 0, borderBottom: `1px solid ${colors.fill}` }}>
+                        <div style={{ flexShrink: 0, borderBottom: `1px solid ${colors.border}` }}>
                             {/* Title row */}
                             <div
                                 style={{
@@ -1015,7 +1015,7 @@ export function TransactionFlowModal({
                                 alignItems: "center",
                                 padding: `0 ${spacing[5]}`,
                                 height: "52px",
-                                borderBottom: `1px solid ${colors.fill}`,
+                                borderBottom: `1px solid ${colors.border}`,
                                 flexShrink: 0,
                             }}
                         >

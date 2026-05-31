@@ -31,8 +31,8 @@ export const thStyle = (
     cursor: sortable ? "pointer" : "default",
     userSelect: sortable ? "none" : "auto",
     transition: "color 0.15s",
-    borderBottom: `1px solid ${colors.fill}`,
-    borderLeft: `1px solid ${colors.fill}`,
+    borderBottom: `1px solid ${colors.border}`,
+    borderLeft: `1px solid ${colors.border}`,
 });
 
 export const sortableThStyle: React.CSSProperties = {

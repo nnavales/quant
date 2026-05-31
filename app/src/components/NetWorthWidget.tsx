@@ -474,7 +474,7 @@ function NetWorthWidget({ networthData, hideFrame = false }: { networthData: Net
             </div>
 
             {(hideFrame || (!hideFrame && assets.length > 0)) && (
-                <div style={{ borderTop: `1px solid ${colors.fill}`, paddingTop: spacing[3], flex: 1, minHeight: 0, display: "flex", flexDirection: "column", gap: spacing[5] }}>
+                <div style={{ borderTop: `1px solid ${colors.border}`, paddingTop: spacing[3], flex: 1, minHeight: 0, display: "flex", flexDirection: "column", gap: spacing[5] }}>
                     <div style={{ ...flexRow, gap: spacing[2], flexShrink: 0 }}>
                         <span style={{ fontSize: fonts.size.sm, fontWeight: fonts.weight.semibold, color: colors.fg.base }}>
                             Activos ({assets.length})

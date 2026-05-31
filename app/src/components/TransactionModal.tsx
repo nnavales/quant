@@ -223,7 +223,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType, initialPr
                         justifyContent: "space-between",
                         alignItems: "center",
                         padding: `${spacing[4]} ${spacing[5]}`,
-                        borderBottom: `1px solid ${colors.fill}`,
+                        borderBottom: `1px solid ${colors.border}`,
                     }}
                 >
                     <div>
@@ -550,7 +550,7 @@ export function TransactionModal({ isOpen, onClose, type: initialType, initialPr
                         display: "flex",
                         gap: spacing[3],
                         padding: `${spacing[3]} ${spacing[5]}`,
-                        borderTop: `1px solid ${colors.fill}`,
+                        borderTop: `1px solid ${colors.border}`,
                     }}
                 >
                     <SubmitButton

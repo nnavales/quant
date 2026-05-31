@@ -24,25 +24,23 @@ import {
 import { economic } from "@/api_client";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Dropdown } from "@/components/ui/Dropdown";
-import { flexRow } from "@/styles/layout";
 const trStyle: React.CSSProperties = {
     transition: "background-color 0.15s",
 };
 
 const tdStyle: React.CSSProperties = {
     padding: `0 ${spacing[2]}`,
-    verticalAlign: "middle",
-    textAlign: "center",
-    borderBottom: `1px solid ${colors.fill}`,
-    borderLeft: `1px solid ${colors.fill}`,
-    height: "30px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderBottom: `1px solid ${colors.border}`,
+    borderLeft: `1px solid ${colors.border}`,
+    minWidth: 0,
+    overflow: "hidden",
 };
 
-const fixedWidthStyle = (width: string): React.CSSProperties => ({
-    width,
-    minWidth: width,
-    maxWidth: width,
-});
+// Widths now come from the parent CSS grid template; keep call sites but no-op.
+const fixedWidthStyle = (_width: string): React.CSSProperties => ({});
 
 const EDIT_ROW_FONT_SIZE = fonts.size.sm2;
 
@@ -230,7 +228,7 @@ export function TransactionRowEditCells({
     return (
         <>
             {/* Checkbox placeholder */}
-            <td
+            <div
                 style={{
                     ...tdStyle,
                     width: "36px",
@@ -241,16 +239,16 @@ export function TransactionRowEditCells({
                 }}
             />
             {/* Fecha */}
-            <td style={{ ...tdStyle, ...fixedWidthStyle("9%") }}>
+            <div style={{ ...tdStyle, ...fixedWidthStyle("7%") }}>
                 <DatePicker
                     value={formData.date}
                     onChange={(value) => setFormData({ ...formData, date: value })}
                     triggerStyle={{ ...triggerStyle, textAlign: "left" }}
                     showIcon={false}
                 />
-            </td>
+            </div>
             {/* Tipo */}
-            <td style={{ ...tdStyle, ...fixedWidthStyle("4%") }}>
+            <div style={{ ...tdStyle, ...fixedWidthStyle("5%") }}>
                 <span
                     onClick={() =>
                         setFormData({
@@ -265,8 +263,9 @@ export function TransactionRowEditCells({
                         e.currentTarget.style.opacity = "1";
                     }}
                     style={{
-                        fontSize: fonts.size.xs2,
+                        fontSize: fonts.size.xs,
                         fontWeight: fonts.weight.medium,
+                        lineHeight: 1,
                         color: colors.fg.base,
                         backgroundColor: colors.bg.elevated,
                         borderRadius: radius.md,
@@ -281,9 +280,9 @@ export function TransactionRowEditCells({
                 >
                     {formData.type === "expense" ? "▼ EGR" : "▲ ING"}
                 </span>
-            </td>
+            </div>
             {/* Descripción */}
-            <td
+            <div
                 style={{
                     ...tdStyle,
                     textAlign: "left",
@@ -299,9 +298,9 @@ export function TransactionRowEditCells({
                     style={{ ...formInputStyle, textAlign: "left", width: "100%" }}
                     required
                 />
-            </td>
+            </div>
             {/* Cuotas */}
-            <td style={{ ...tdStyle, ...fixedWidthStyle("4%") }}>
+            <div style={{ ...tdStyle, ...fixedWidthStyle("4%") }}>
                 <input
                     type="number"
                     inputMode="numeric"
@@ -325,9 +324,9 @@ export function TransactionRowEditCells({
                     }}
                     style={{ ...formInputStyle, fontSize: fonts.size.xs2, width: "100%" }}
                 />
-            </td>
+            </div>
             {/* Monto */}
-            <td style={{ ...tdStyle, ...fixedWidthStyle("9%"), overflow: "hidden" }}>
+            <div style={{ ...tdStyle, ...fixedWidthStyle("9%"), overflow: "hidden" }}>
                 <input
                     type="text"
                     inputMode="decimal"
@@ -336,9 +335,9 @@ export function TransactionRowEditCells({
                     style={{ ...formInputStyle, textAlign: "right", width: "100%" }}
                     required
                 />
-            </td>
+            </div>
             {/* Moneda */}
-            <td style={{ ...tdStyle, ...fixedWidthStyle("4%") }}>
+            <div style={{ ...tdStyle, ...fixedWidthStyle("4%") }}>
                 <span
                     onClick={() =>
                         setFormData({
@@ -353,7 +352,7 @@ export function TransactionRowEditCells({
                         e.currentTarget.style.opacity = "1";
                     }}
                     style={{
-                        fontSize: fonts.size.xs2,
+                        fontSize: fonts.size.xs,
                         fontWeight: fonts.weight.medium,
                         color: colors.fg.base,
                         backgroundColor: colors.bg.elevated,
@@ -371,9 +370,9 @@ export function TransactionRowEditCells({
                 >
                     {formData.currency}
                 </span>
-            </td>
+            </div>
             {/* TC */}
-            <td style={{ ...tdStyle, ...fixedWidthStyle("4%"), overflow: "hidden" }}>
+            <div style={{ ...tdStyle, ...fixedWidthStyle("5%"), overflow: "hidden" }}>
                 <div style={{ position: "relative" }}>
                     <input
                         type="text"
@@ -420,9 +419,9 @@ export function TransactionRowEditCells({
                         <RefreshCw size={12} />
                     </Button>
                 </div>
-            </td>
+            </div>
             {/* Frecuencia */}
-            <td style={{ ...tdStyle, ...fixedWidthStyle("4%") }}>
+            <div style={{ ...tdStyle, ...fixedWidthStyle("4%") }}>
                 <span
                     onClick={() =>
                         setFormData({
@@ -437,7 +436,7 @@ export function TransactionRowEditCells({
                         e.currentTarget.style.opacity = "1";
                     }}
                     style={{
-                        fontSize: fonts.size.xs2,
+                        fontSize: fonts.size.xs,
                         fontWeight: fonts.weight.medium,
                         color: colors.fg.base,
                         backgroundColor: colors.bg.elevated,
@@ -455,9 +454,9 @@ export function TransactionRowEditCells({
                 >
                     {formData.frequency === "fixed" ? "FIJO" : "VAR"}
                 </span>
-            </td>
+            </div>
             {/* Categoría */}
-            <td
+            <div
                 style={{
                     ...tdStyle,
                     textAlign: "left",
@@ -473,9 +472,9 @@ export function TransactionRowEditCells({
                     searchable
                     triggerStyle={triggerStyle}
                 />
-            </td>
+            </div>
             {/* Canal */}
-            <td
+            <div
                 style={{
                     ...tdStyle,
                     textAlign: "left",
@@ -491,9 +490,9 @@ export function TransactionRowEditCells({
                     searchable
                     triggerStyle={triggerStyle}
                 />
-            </td>
+            </div>
             {/* Estado */}
-            <td style={{ ...tdStyle, ...fixedWidthStyle("3%") }}>
+            <div style={{ ...tdStyle, ...fixedWidthStyle("3%") }}>
                 <span
                     onClick={() => handleTogglePaid(!transaction.is_paid)}
                     style={{
@@ -515,9 +514,9 @@ export function TransactionRowEditCells({
                         <SquareMinus size={15} color={colors.fg.base} />
                     )}
                 </span>
-            </td>
+            </div>
             {/* Acciones */}
-            <td style={{ ...tdStyle, ...fixedWidthStyle("8%") }}>
+            <div style={{ ...tdStyle, ...fixedWidthStyle("8%") }}>
                 <span style={{ display: "flex", gap: spacing[2], justifyContent: "center" }}>
                     <Button
                         variant="icon"
@@ -531,7 +530,7 @@ export function TransactionRowEditCells({
                         <X size={14} />
                     </Button>
                 </span>
-            </td>
+            </div>
         </>
     );
 }

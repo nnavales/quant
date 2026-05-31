@@ -22,7 +22,11 @@ const tooltipBaseStyle: React.CSSProperties = {
     color: colors.fg.base,
     lineHeight: 1.6,
     zIndex: 9999,
+    // Tooltip is mounted inside a cell that sets white-space:nowrap; reset it here
+    // so long values wrap inside the tooltip instead of overflowing past its edge.
+    whiteSpace: "normal",
     wordBreak: "break-word",
+    overflowWrap: "anywhere",
     pointerEvents: "none",
     opacity: 0,
     transition: "opacity 0.12s",

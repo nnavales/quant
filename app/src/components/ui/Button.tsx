@@ -142,7 +142,7 @@ export function Button({
                     padding: s.padding,
                     fontSize: s.fontSize,
                     backgroundColor: "transparent",
-                    border: `1px solid ${colors.fill}`,
+                    border: `1px solid ${colors.border}`,
                     borderRadius: radius.md,
                     color: colors.fg.dim,
                 };

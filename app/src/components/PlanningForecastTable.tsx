@@ -72,7 +72,7 @@ function InputRow({
             <td style={{
                 verticalAlign: "middle", padding: "0 12px",
                 overflow: "hidden", maxWidth: "0", boxSizing: "border-box",
-                borderBottom: `1px solid ${colors.fill}`,
+                borderBottom: `1px solid ${colors.border}`,
                 boxShadow: isHovered ? `inset 3px 0 0 0 ${colors.accent.cyan}` : `inset 3px 0 0 0 transparent`,
                 transition: "box-shadow 0.15s",
             }}>
@@ -98,7 +98,7 @@ function InputRow({
             {/* Type */}
             <td style={{
                 verticalAlign: "middle", padding: "0 12px",
-                borderBottom: `1px solid ${colors.fill}`, borderLeft: `1px solid ${colors.fill}`,
+                borderBottom: `1px solid ${colors.border}`, borderLeft: `1px solid ${colors.border}`,
                 whiteSpace: "nowrap", textAlign: "center", cursor: "pointer",
             }}
                 onDoubleClick={() => onSaveFieldEdit(input.id, "type", input.type === "income" ? "expense" : "income")}
@@ -115,7 +115,7 @@ function InputRow({
             {/* Currency */}
             <td style={{
                 verticalAlign: "middle", padding: "0 12px",
-                borderBottom: `1px solid ${colors.fill}`, borderLeft: `1px solid ${colors.fill}`,
+                borderBottom: `1px solid ${colors.border}`, borderLeft: `1px solid ${colors.border}`,
                 whiteSpace: "nowrap", cursor: "pointer", textAlign: "center",
             }}
                 onDoubleClick={() => onSaveFieldEdit(input.id, "currency", input.currency === "USD" ? "ARS" : "USD")}
@@ -142,8 +142,8 @@ function InputRow({
                             ...numCell,
                             fontSize: fonts.size.sm2,
                             fontWeight: fonts.weight.medium,
-                            borderBottom: `1px solid ${colors.fill}`,
-                            borderLeft: `1px solid ${colors.fill}`,
+                            borderBottom: `1px solid ${colors.border}`,
+                            borderLeft: `1px solid ${colors.border}`,
                             color: hasVal ? colors.fg.base : "transparent",
                             cursor: "pointer",
                         }}>
@@ -164,8 +164,8 @@ function InputRow({
 
             <td style={{
                 ...numCell,
-                borderBottom: `1px solid ${colors.fill}`,
-                borderLeft: `1px solid ${colors.fill}`,
+                borderBottom: `1px solid ${colors.border}`,
+                borderLeft: `1px solid ${colors.border}`,
                 textAlign: "center",
                 padding: "0 4px",
             }}>
@@ -296,7 +296,7 @@ export function PlanningForecastTable({
                                         fontWeight: fonts.weight.medium, color: colors.fg.dim,
                                         fontSize: fonts.size.xs2, textTransform: "uppercase", letterSpacing: "0.06em",
                                         whiteSpace: "nowrap", borderBottom: `1px solid ${colors.border}`,
-                                        borderLeft: i > 0 ? `1px solid ${colors.fill}` : undefined,
+                                        borderLeft: i > 0 ? `1px solid ${colors.border}` : undefined,
                                         backgroundColor: colors.bg.elevated,
                                     }}>{label}</th>
                                 ))}
@@ -306,12 +306,12 @@ export function PlanningForecastTable({
                                         fontWeight: fonts.weight.medium, color: colors.fg.dim,
                                         fontSize: fonts.size.xs2, textTransform: "uppercase", letterSpacing: "0.06em",
                                         whiteSpace: "nowrap", borderBottom: `1px solid ${colors.border}`,
-                                        borderLeft: `1px solid ${colors.fill}`,
+                                        borderLeft: `1px solid ${colors.border}`,
                                         backgroundColor: colors.bg.elevated,
                                     }}>{m}</th>
                                 ))}
                                 <th style={{
-                                    borderBottom: `1px solid ${colors.border}`, borderLeft: `1px solid ${colors.fill}`,
+                                    borderBottom: `1px solid ${colors.border}`, borderLeft: `1px solid ${colors.border}`,
                                     backgroundColor: colors.bg.elevated, textAlign: "center", padding: "0 4px",
                                     color: colors.fg.dim, fontSize: fonts.size.sm, letterSpacing: "0.1em",
                                 }}>
