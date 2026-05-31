@@ -7,7 +7,6 @@ import { PresetManager } from "@/components/PresetManager";
 import { BackupManager } from "@/components/BackupManager";
 import { UpdateChecker } from "@/components/UpdateChecker";
 import { Modal, ModalContent, ModalCloseButton } from "@/components/ui/Modal";
-import { Button } from "@/components/ui/Button";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";

@@ -7,7 +7,7 @@ import { fonts } from "@/styles/fonts";
 import { SettingsCard } from "@/components/SettingsCard";
 import { flexColumn, flexRow } from "@/styles/layout";
 
-const CURRENT_VERSION = "0.8.0";
+const CURRENT_VERSION = "0.8.1";
 const UPDATE_CHECK_URL = "https://api.github.com/repos/nnavales/quant/releases?per_page=1";
 
 export function UpdateChecker() {

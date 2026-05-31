@@ -9,7 +9,6 @@ import { fonts } from "@/styles/fonts";
 import { Modal, ModalContent, ModalCloseButton } from "@/components/ui/Modal";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { chipTriggerStyle } from "@/styles/filters";
-import { Button } from "@/components/ui/Button";
 import ReactECharts from "echarts-for-react";
 import type { KPI, MetricCell } from "@/api_client/types";
 import { flexBetween, flexColumn, flexRow } from "@/styles/layout";

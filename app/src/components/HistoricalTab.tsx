@@ -7,7 +7,6 @@ import { inputStyle, labelStyle } from "@/styles/formStyles";
 import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { Button } from "@/components/ui/Button";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { Modal, ModalContent, ModalCloseButton } from "@/components/ui/Modal";
 import { HistoricalList } from "./HistoricalList";
