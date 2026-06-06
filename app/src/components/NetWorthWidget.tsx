@@ -48,7 +48,7 @@ export function AddAssetForm({ onClose }: AddAssetFormProps) {
     };
 
     return (
-        <Modal isOpen onClose={onClose} opacity={0.8}>
+        <Modal isOpen onClose={onClose} opacity={0.5}>
             <ModalContent
                 onClick={(e) => e.stopPropagation()}
                 style={{
@@ -247,9 +247,9 @@ function AssetRow({ asset }: AssetRowProps) {
                     style={{ cursor: "pointer", ...flexRow }}
                 >
                     {asset.type === "liquid" ? (
-                        <Droplets size={15} color={colors.accent.cyan} opacity={0.8} />
+                        <Droplets size={15} strokeWidth={2.5} color={colors.accent.cyan} opacity={0.8} />
                     ) : (
-                        <Package size={15} color={colors.accent.purple} opacity={0.8} />
+                        <Package size={15} strokeWidth={2.5} color={colors.accent.purple} opacity={0.8} />
                     )}
                 </span>
                 <div style={{ ...flexRow, gap: 0, flexShrink: 1, minWidth: 0 }}>
@@ -326,7 +326,7 @@ function AssetRow({ asset }: AssetRowProps) {
                     title="Eliminar"
                     onClick={() => setDeleteConfirm(true)}
                 >
-                    <Trash2 size={14} />
+                    <Trash2 size={14} strokeWidth={2.5} />
                 </Button>
             </div>
 
@@ -397,20 +397,20 @@ function NetWorthWidget({ networthData, hideFrame = false }: { networthData: Net
                         variant="chip"
                         size="sm"
                         color="default"
-                        iconLeft={<Plus size={14} />}
+                        iconLeft={<Plus size={14} strokeWidth={2.5} />}
                         style={{
                             height: "32px",
                             padding: "0 14px",
                             fontSize: fonts.size.sm,
                             border: "none",
                             borderRadius: "8px",
-                            transition: "background-color 0.15s",
+                            transition: "filter 0.15s ease",
                         }}
                         onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = colors.border;
+                            e.currentTarget.style.filter = "brightness(1.15)";
                         }}
                         onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = colors.fill;
+                            e.currentTarget.style.filter = "";
                         }}
                         onClick={() => setShowAddForm(true)}
                     >
@@ -441,7 +441,7 @@ function NetWorthWidget({ networthData, hideFrame = false }: { networthData: Net
                             gap: spacing[1],
                         }}
                     >
-                        <Droplets size={15} color={liquidColor} />
+                        <Droplets size={15} strokeWidth={2.5} color={liquidColor} />
                         <span style={{ fontSize: fonts.size.xs, color: colors.fg.dim, flexShrink: 0 }}>Líquido</span>
                         <span style={{...truncate, fontFamily: fonts.family, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: fonts.weight.semibold}}>
                             {formatUSD(networthData.liquid_usd)}
@@ -461,7 +461,7 @@ function NetWorthWidget({ networthData, hideFrame = false }: { networthData: Net
                             gap: spacing[1],
                         }}
                     >
-                        <Package size={15} color={physicalColor} />
+                        <Package size={15} strokeWidth={2.5} color={physicalColor} />
                         <span style={{ fontSize: fonts.size.xs, color: colors.fg.dim, flexShrink: 0 }}>Físico</span>
                         <span style={{...truncate, fontFamily: fonts.family, fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: fonts.weight.semibold}}>
                             {formatUSD(networthData.physical_usd)}
@@ -507,11 +507,11 @@ function NetWorthWidget({ networthData, hideFrame = false }: { networthData: Net
                                     onClick={() => setSortAsc((a) => !a)}
                                     style={{ ...ghostButton, ...flexRow, gap: spacing[1], fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: fonts.weight.semibold, padding: `${spacing[1]} ${spacing[3]}`, borderRadius: radius.md, backgroundColor: colors.fill, transition: "all 0.15s" }}
                                 >
-                                    <ArrowUpDown size={13} />
+                                    <ArrowUpDown size={13} strokeWidth={2.5} />
                                     {sortAsc ? "A-Z" : "Z-A"}
                                 </button>
                                 <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: spacing[1], backgroundColor: colors.fill, borderRadius: "8px", padding: `0 ${spacing[2]}`, height: "24px", width: "140px", boxSizing: "border-box" }}>
-                                    <Search size={14} strokeWidth={1.5} color={colors.fg.dim} />
+                                    <Search size={14} strokeWidth={2.5} color={colors.fg.dim} />
                                     <input
                                         type="text"
                                         value={searchQuery}
@@ -525,7 +525,7 @@ function NetWorthWidget({ networthData, hideFrame = false }: { networthData: Net
                                             onClick={() => setSearchQuery("")}
                                             style={{ background: "none", border: "none", color: colors.fg.dim, cursor: "pointer", padding: 0, ...flexRow, lineHeight: 1 }}
                                         >
-                                            <X size={12} />
+                                            <X size={12} strokeWidth={2.5} />
                                         </button>
                                     )}
                                 </div>
@@ -606,7 +606,7 @@ export function NetWorthWidgetContainer({ hideFrame = false }: { hideFrame?: boo
                 >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: spacing[3], borderBottom: `1px solid ${colors.border}` }}>
                         <span style={{ fontSize: fonts.size.sm, color: colors.fg.base, textTransform: "uppercase", fontWeight: fonts.weight.medium, letterSpacing: "0.5px" }}>Net Worth</span>
-                        <Button variant="chip" color="cyan" size="sm" iconLeft={<Plus size={14} />} onClick={() => setShowAddForm(true)}>
+                        <Button variant="chip" color="cyan" size="sm" iconLeft={<Plus size={14} strokeWidth={2.5} />} onClick={() => setShowAddForm(true)}>
                             Agregar
                         </Button>
                     </div>

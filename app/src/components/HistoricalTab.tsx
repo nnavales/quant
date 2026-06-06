@@ -223,7 +223,7 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
                 >
                     <div style={{ ...flexBetween, marginBottom: spacing[4] }}>
                         <div style={{ ...flexRow, gap: spacing[2] }}>
-                            <Pencil size={18} color={colors.accent.teal} />
+                            <Pencil size={18} strokeWidth={2.5} color={colors.accent.teal} />
                             <h3 style={{ margin: 0, fontSize: fonts.size.lg, fontWeight: fonts.weight.semibold, color: colors.fg.base }}>Editar {editingMonth}</h3>
                         </div>
                         <ModalCloseButton onClick={handleCancelEdit} />
@@ -321,7 +321,7 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
                                 if (errs.length === 0) return null;
                                 return (
                                     <>
-                                        <AlertCircle size={12} color={colors.accent.yellow} />
+                                        <AlertCircle size={12} strokeWidth={2.5} color={colors.accent.yellow} />
                                         <span style={{ fontSize: fonts.size.xs, color: colors.accent.yellow }}>
                                             {errs[0]}
                                         </span>
@@ -367,7 +367,7 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
                 >
                     <div style={{ ...flexBetween, marginBottom: spacing[4] }}>
                         <div style={{ ...flexRow, gap: spacing[2] }}>
-                            <FileUp size={20} color={colors.accent.teal} />
+                            <FileUp size={20} strokeWidth={2.5} color={colors.accent.teal} />
                             <h3 style={{ margin: 0, fontSize: fonts.size.lg, fontWeight: fonts.weight.semibold, color: colors.fg.base }}>Importar desde CSV</h3>
                         </div>
                         <ModalCloseButton onClick={closeBulkImport} />
@@ -376,7 +376,7 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
                     <div style={{ backgroundColor: colors.bg.base, borderRadius: radius.md, padding: spacing[4], marginBottom: spacing[4], border: `1px solid ${colors.border}` }}>
                         {/* Header */}
                         <div style={{ display: "flex", alignItems: "center", gap: spacing[2], marginBottom: spacing[3], paddingBottom: spacing[3], borderBottom: `1px solid ${colors.border}` }}>
-                            <FileText size={14} color={colors.fg.dim} />
+                            <FileText size={14} strokeWidth={2.5} color={colors.fg.dim} />
                             <span style={{ fontSize: fonts.size.sm, fontWeight: fonts.weight.semibold, color: colors.fg.base }}>Formato esperado</span>
                         </div>
 
@@ -451,12 +451,12 @@ export function HistoricalTab({ showBulkImport: externalShowBulkImport, onCloseB
                                     style={{ background: "none", border: "none", color: colors.fg.dim, cursor: "pointer", padding: 0, display: "flex" }}
                                     title="Quitar archivo"
                                 >
-                                    <XCircle size={16} />
+                                    <XCircle size={16} strokeWidth={2.5} />
                                 </button>
                             </div>
                         ) : (
                             <>
-                                <Upload size={24} color={colors.fg.dim} style={{ marginBottom: spacing[2] }} />
+                                <Upload size={24} strokeWidth={2.5} color={colors.fg.dim} style={{ marginBottom: spacing[2] }} />
                                 <p style={{ color: colors.fg.dim, fontSize: fonts.size.sm, margin: 0 }}>Hacé click para elegir un archivo CSV</p>
                             </>
                         )}

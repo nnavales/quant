@@ -1,5 +1,5 @@
 import { spacing, radius } from "@/styles/theme";
-import { colors } from "@/styles/colors";
+import { colors, hoverFill } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 
 type ButtonVariant =
@@ -33,10 +33,10 @@ const colorMap: Record<
 > = {
     default: {
         bg: colors.fill,
-        border: colors.hoverFill,
+        border: hoverFill(colors.fill),
         text: colors.fg.base,
-        hoverBg: colors.hoverFill,
-        hoverBorder: colors.hoverFill,
+        hoverBg: hoverFill(colors.fill),
+        hoverBorder: hoverFill(colors.fill),
     },
     green: {
         bg: colors.variant.green.bg,
@@ -228,71 +228,75 @@ export function Button({
     };
 
     const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
-        if (isDisabled || noHover) return;
-        const el = e.currentTarget;
-        switch (variant) {
-            case "primary":
-                el.style.backgroundColor = c.hoverBg;
-                el.style.borderColor = c.hoverBorder;
-                break;
-            case "secondary":
-                el.style.backgroundColor = colors.fill;
-                break;
-            case "icon":
-                el.style.color = colors.fg.base;
-                break;
-            case "chip":
-                el.style.backgroundColor = c.hoverBg;
-                el.style.borderColor = c.hoverBorder;
-                break;
-            case "ghost":
-                if (!active) el.style.backgroundColor = colors.fill;
-                break;
-            case "tab":
-                if (active && color !== "default") {
+        if (isDisabled) return;
+        if (!noHover) {
+            const el = e.currentTarget;
+            switch (variant) {
+                case "primary":
                     el.style.backgroundColor = c.hoverBg;
-                } else if (!active) {
+                    el.style.borderColor = c.hoverBorder;
+                    break;
+                case "secondary":
                     el.style.backgroundColor = colors.fill;
-                }
-                break;
-            case "plain":
-                el.style.color = colors.fg.base;
-                break;
+                    break;
+                case "icon":
+                    el.style.color = colors.fg.base;
+                    break;
+                case "chip":
+                    el.style.backgroundColor = c.hoverBg;
+                    el.style.borderColor = c.hoverBorder;
+                    break;
+                case "ghost":
+                    if (!active) el.style.backgroundColor = colors.fill;
+                    break;
+                case "tab":
+                    if (active && color !== "default") {
+                        el.style.backgroundColor = c.hoverBg;
+                    } else if (!active) {
+                        el.style.backgroundColor = colors.fill;
+                    }
+                    break;
+                case "plain":
+                    el.style.color = colors.fg.base;
+                    break;
+            }
         }
         onMouseEnter?.(e);
     };
 
     const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
-        if (isDisabled || noHover) return;
-        const el = e.currentTarget;
-        switch (variant) {
-            case "primary":
-                el.style.backgroundColor = c.bg;
-                el.style.borderColor = c.border;
-                break;
-            case "secondary":
-                el.style.backgroundColor = "transparent";
-                break;
-            case "icon":
-                el.style.color = colors.fg.dim;
-                break;
-            case "chip":
-                el.style.backgroundColor = c.bg;
-                el.style.borderColor = c.border;
-                break;
-            case "ghost":
-                if (!active) el.style.backgroundColor = "transparent";
-                break;
-            case "tab":
-                if (active && color !== "default") {
+        if (isDisabled) return;
+        if (!noHover) {
+            const el = e.currentTarget;
+            switch (variant) {
+                case "primary":
                     el.style.backgroundColor = c.bg;
-                } else if (!active) {
+                    el.style.borderColor = c.border;
+                    break;
+                case "secondary":
                     el.style.backgroundColor = "transparent";
-                }
-                break;
-            case "plain":
-                el.style.color = colors.fg.dim;
-                break;
+                    break;
+                case "icon":
+                    el.style.color = colors.fg.dim;
+                    break;
+                case "chip":
+                    el.style.backgroundColor = c.bg;
+                    el.style.borderColor = c.border;
+                    break;
+                case "ghost":
+                    if (!active) el.style.backgroundColor = "transparent";
+                    break;
+                case "tab":
+                    if (active && color !== "default") {
+                        el.style.backgroundColor = c.bg;
+                    } else if (!active) {
+                        el.style.backgroundColor = "transparent";
+                    }
+                    break;
+                case "plain":
+                    el.style.color = colors.fg.dim;
+                    break;
+            }
         }
         onMouseLeave?.(e);
     };

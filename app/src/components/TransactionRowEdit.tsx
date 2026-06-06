@@ -9,24 +9,20 @@ import { formatForInput, parseLocaleNumber } from "@/utils/format";
 import { colors } from "@/styles/colors";
 import { radius, spacing } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
-import { Button } from "@/components/ui/Button";
 import {
     useUpdateTransaction,
+    useUpdateEntryPaid,
     useCategories,
     useSubcategories,
     useChannels,
     useAccounts,
     useUserConfig,
-    useUpdateEntryPaid,
     useCategoryGroups,
     useAccountGroups,
 } from "@/hooks";
 import { economic } from "@/api_client";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Dropdown } from "@/components/ui/Dropdown";
-const trStyle: React.CSSProperties = {
-    transition: "background-color 0.15s",
-};
 
 const tdStyle: React.CSSProperties = {
     padding: `0 ${spacing[2]}`,
@@ -39,32 +35,45 @@ const tdStyle: React.CSSProperties = {
     overflow: "hidden",
 };
 
-// Widths now come from the parent CSS grid template; keep call sites but no-op.
-const fixedWidthStyle = (_width: string): React.CSSProperties => ({});
-
 const EDIT_ROW_FONT_SIZE = fonts.size.sm2;
 
 const triggerStyle: React.CSSProperties = {
-    height: "24px",
+    height: "26px",
     fontSize: EDIT_ROW_FONT_SIZE,
+    fontWeight: fonts.weight.medium,
     backgroundColor: colors.bg.elevated,
     border: "none",
+    padding: 0,
 };
 
-const formInputStyle: React.CSSProperties = {
+const baseInput: React.CSSProperties = {
     width: "100%",
-    height: "24px",
-    padding: "4px 6px",
-    backgroundColor: colors.bg.elevated,
+    height: "26px",
+    padding: 0,
+    backgroundColor: "transparent",
     border: "none",
-    borderRadius: radius.md,
     color: colors.fg.base,
     fontSize: EDIT_ROW_FONT_SIZE,
+    fontWeight: fonts.weight.medium,
     textAlign: "center",
     outline: "none",
     boxSizing: "border-box",
     appearance: "none",
     MozAppearance: "textfield",
+};
+
+const toggleBase: React.CSSProperties = {
+    fontSize: fonts.size.xs,
+    fontWeight: fonts.weight.medium,
+    lineHeight: 1,
+    borderRadius: radius.md,
+    padding: "0 10px",
+    height: "26px",
+    display: "inline-flex",
+    alignItems: "center",
+    cursor: "pointer",
+    userSelect: "none",
+    transition: "filter 0.15s",
 };
 
 interface TransactionRowEditProps {
@@ -85,7 +94,7 @@ export function TransactionRowEditCells({
     onCancel,
 }: TransactionRowEditCellsProps) {
     const [installmentInput, setInstallmentInput] = useState<string>(
-        String(transaction.total_installments ?? 1)
+        String(transaction.total_installments ?? 0)
     );
     const [exchangeRateInput, setExchangeRateInput] = useState<string>(
         formatForInput(String(transaction.exchange_rate))
@@ -94,6 +103,7 @@ export function TransactionRowEditCells({
     const updateMutation = useUpdateTransaction();
     const updatePaidMutation = useUpdateEntryPaid();
     const isSavingRef = useRef(false);
+    const descRef = useRef<HTMLInputElement>(null);
 
     const { data: categoriesData } = useCategories();
     const { data: subcategoriesData } = useSubcategories();
@@ -115,7 +125,7 @@ export function TransactionRowEditCells({
         date: dateValue,
         type: transaction.type,
         frequency: transaction.frequency ?? "variable",
-        installment_number: transaction.total_installments ?? 1,
+        installment_number: transaction.total_installments ?? 0,
         amount: formatForInput(transaction.original_amount ?? transaction.amount),
         currency: transaction.currency,
         exchange_rate: transaction.exchange_rate,
@@ -123,6 +133,7 @@ export function TransactionRowEditCells({
         subcategory_id: transaction.subcategory_id || "",
         channel_id: transaction.channel_id || "",
         account_id: transaction.account_id || "",
+        is_paid: transaction.is_paid,
     });
 
     useEffect(() => {
@@ -130,7 +141,7 @@ export function TransactionRowEditCells({
             transaction.installment_group_id && transaction.installment_start_date
                 ? transaction.installment_start_date
                 : transaction.date;
-        const installments = transaction.total_installments ?? 1;
+        const installments = transaction.total_installments ?? 0;
         setFormData({
             description: transaction.description || "",
             date: startDate,
@@ -144,17 +155,22 @@ export function TransactionRowEditCells({
             subcategory_id: transaction.subcategory_id || "",
             channel_id: transaction.channel_id || "",
             account_id: transaction.account_id || "",
+            is_paid: transaction.is_paid,
         });
         setInstallmentInput(String(installments));
         setExchangeRateInput(formatForInput(String(transaction.exchange_rate)));
     }, [transaction]);
+
+    useEffect(() => {
+        descRef.current?.focus();
+    }, []);
 
     const originalData: TransactionAggregateReq = {
         description: transaction.description || "",
         date: dateValue,
         type: transaction.type,
         frequency: transaction.frequency ?? "variable",
-        installment_number: transaction.total_installments ?? 1,
+        installment_number: transaction.total_installments ?? 0,
         amount: transaction.original_amount ?? transaction.amount,
         currency: transaction.currency,
         exchange_rate: transaction.exchange_rate,
@@ -162,6 +178,7 @@ export function TransactionRowEditCells({
         subcategory_id: transaction.subcategory_id || "",
         channel_id: transaction.channel_id || "",
         account_id: transaction.account_id || "",
+        is_paid: transaction.is_paid,
     };
 
     const hasChanges =
@@ -172,11 +189,12 @@ export function TransactionRowEditCells({
         formData.installment_number !== originalData.installment_number ||
         parseLocaleNumber(formData.amount) !== parseLocaleNumber(originalData.amount) ||
         formData.currency !== originalData.currency ||
-        (parseLocaleNumber(exchangeRateInput) || 1) !== (originalData.exchange_rate ?? 0) ||
+        (parseLocaleNumber(exchangeRateInput) || 0) !== (originalData.exchange_rate ?? 0) ||
         formData.category_id !== originalData.category_id ||
         formData.subcategory_id !== originalData.subcategory_id ||
         formData.channel_id !== originalData.channel_id ||
-        formData.account_id !== originalData.account_id;
+        formData.account_id !== originalData.account_id ||
+        formData.is_paid !== originalData.is_paid;
 
     const { groups: categoryGroups, getCategoryId } = useCategoryGroups(
         categoriesList,
@@ -195,17 +213,35 @@ export function TransactionRowEditCells({
     const handleSave = () => {
         if (isSavingRef.current) return;
         isSavingRef.current = true;
+        const { is_paid, ...aggregateFields } = formData;
         const dataToSend = {
-            ...formData,
+            ...aggregateFields,
             amount: String(parseLocaleNumber(formData.amount)),
-            exchange_rate: parseLocaleNumber(exchangeRateInput) || 1,
+            exchange_rate: isNaN(parseLocaleNumber(exchangeRateInput)) ? 1 : parseLocaleNumber(exchangeRateInput),
         };
         updateMutation.mutate(
             { id: transaction.id, data: dataToSend },
             {
                 onSuccess: () => {
-                    toast("Transacción actualizada", "success");
-                    onSave?.();
+                    const paidChanged = is_paid !== originalData.is_paid;
+                    if (paidChanged) {
+                        updatePaidMutation.mutate(
+                            { id: transaction.id, isPaid: is_paid ?? false },
+                            {
+                                onSuccess: () => {
+                                    toast("Transacción actualizada", "success");
+                                    onSave?.();
+                                },
+                                onError: (err) => {
+                                    isSavingRef.current = false;
+                                    toast(getApiErrorMessage(err));
+                                },
+                            }
+                        );
+                    } else {
+                        toast("Transacción actualizada", "success");
+                        onSave?.();
+                    }
                 },
                 onError: (err) => {
                     isSavingRef.current = false;
@@ -215,31 +251,35 @@ export function TransactionRowEditCells({
         );
     };
 
-    const handleTogglePaid = (newPaid: boolean) => {
-        updatePaidMutation.mutate(
-            { id: transaction.id, isPaid: newPaid },
-            {
-                onSuccess: () => toast("Estado actualizado", "success"),
-                onError: (err) => toast(getApiErrorMessage(err)),
-            }
-        );
+    const keyHandlerRef = useRef<(e: KeyboardEvent) => void>(() => {});
+    keyHandlerRef.current = (e: KeyboardEvent) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            e.stopPropagation();
+            if (hasChanges && !updateMutation.isPending) handleSave();
+        } else if (e.key === "Escape") {
+            e.preventDefault();
+            e.stopPropagation();
+            onCancel?.();
+        }
     };
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => keyHandlerRef.current(e);
+        document.addEventListener("keydown", onKey);
+        return () => document.removeEventListener("keydown", onKey);
+    }, []);
 
     return (
         <>
-            {/* Checkbox placeholder */}
             <div
                 style={{
                     ...tdStyle,
                     width: "36px",
                     minWidth: "36px",
                     maxWidth: "36px",
-                    borderLeft: `3px solid ${colors.accent.cyan}`,
-                    boxShadow: "none",
                 }}
             />
-            {/* Fecha */}
-            <div style={{ ...tdStyle, ...fixedWidthStyle("7%") }}>
+            <div style={{ ...tdStyle }}>
                 <DatePicker
                     value={formData.date}
                     onChange={(value) => setFormData({ ...formData, date: value })}
@@ -247,8 +287,7 @@ export function TransactionRowEditCells({
                     showIcon={false}
                 />
             </div>
-            {/* Tipo */}
-            <div style={{ ...tdStyle, ...fixedWidthStyle("5%") }}>
+            <div style={{ ...tdStyle }}>
                 <span
                     onClick={() =>
                         setFormData({
@@ -256,88 +295,63 @@ export function TransactionRowEditCells({
                             type: formData.type === "expense" ? "income" : "expense",
                         })
                     }
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.opacity = "0.6";
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.opacity = "1";
-                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.3)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.filter = "none"; }}
                     style={{
-                        fontSize: fonts.size.xs,
-                        fontWeight: fonts.weight.medium,
-                        lineHeight: 1,
-                        color: colors.fg.base,
-                        backgroundColor: colors.bg.elevated,
-                        borderRadius: radius.md,
-                        padding: "0 10px",
-                        height: "24px",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        cursor: "pointer",
-                        userSelect: "none",
-                        transition: "opacity 0.12s",
+                        ...toggleBase,
+                        color: formData.type === "expense" ? colors.accent.red : colors.accent.green,
                     }}
                 >
                     {formData.type === "expense" ? "▼ EGR" : "▲ ING"}
                 </span>
             </div>
-            {/* Descripción */}
-            <div
-                style={{
-                    ...tdStyle,
-                    textAlign: "left",
-                    ...fixedWidthStyle("17%"),
-                    overflow: "hidden",
-                }}
-            >
+            <div style={{ ...tdStyle, textAlign: "left", overflow: "hidden" }}>
                 <input
+                    ref={descRef}
                     type="text"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder="Descripción"
-                    style={{ ...formInputStyle, textAlign: "left", width: "100%" }}
+                    style={{ ...baseInput, textAlign: "left" }}
                     required
                 />
             </div>
-            {/* Cuotas */}
-            <div style={{ ...tdStyle, ...fixedWidthStyle("4%") }}>
+            <div style={{ ...tdStyle }}>
                 <input
                     type="number"
                     inputMode="numeric"
-                    min="1"
+                    min="0"
                     value={installmentInput}
                     onChange={(e) => {
                         const val = e.target.value;
                         setInstallmentInput(val);
                         if (val !== "") {
                             const num = parseInt(val, 10);
-                            if (!isNaN(num) && num >= 1) {
+                            if (!isNaN(num) && num >= 0) {
                                 setFormData({ ...formData, installment_number: num });
                             }
                         }
                     }}
                     onBlur={() => {
-                        if (installmentInput === "" || parseInt(installmentInput, 10) < 1) {
-                            setInstallmentInput("1");
-                            setFormData({ ...formData, installment_number: 1 });
+                        if (installmentInput === "" || parseInt(installmentInput, 10) < 0) {
+                            setInstallmentInput("0");
+                            setFormData({ ...formData, installment_number: 0 });
                         }
                     }}
-                    style={{ ...formInputStyle, fontSize: fonts.size.xs2, width: "100%" }}
+                    style={{ ...baseInput, fontSize: fonts.size.xs2 }}
                 />
             </div>
-            {/* Monto */}
-            <div style={{ ...tdStyle, ...fixedWidthStyle("9%"), overflow: "hidden" }}>
+            <div style={{ ...tdStyle, overflow: "hidden" }}>
                 <input
                     type="text"
                     inputMode="decimal"
                     value={formData.amount}
                     onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    style={{ ...formInputStyle, textAlign: "right", width: "100%" }}
+                    style={{ ...baseInput, textAlign: "right" }}
                     required
                 />
             </div>
-            {/* Moneda */}
-            <div style={{ ...tdStyle, ...fixedWidthStyle("4%") }}>
+            <div style={{ ...tdStyle }}>
                 <span
                     onClick={() =>
                         setFormData({
@@ -345,49 +359,21 @@ export function TransactionRowEditCells({
                             currency: formData.currency === "ARS" ? "USD" : "ARS",
                         })
                     }
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.opacity = "0.7";
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.opacity = "1";
-                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.3)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.filter = "none"; }}
                     style={{
-                        fontSize: fonts.size.xs,
-                        fontWeight: fonts.weight.medium,
-                        color: colors.fg.base,
-                        backgroundColor: colors.bg.elevated,
-                        borderRadius: radius.md,
-                        padding: "0 10px",
-                        height: "24px",
-                        display: "inline-flex",
-                        alignItems: "center",
+                        ...toggleBase,
+                        color: formData.currency === "ARS" ? colors.accent.cyan : colors.accent.green,
                         textTransform: "uppercase",
                         letterSpacing: "0.04em",
-                        cursor: "pointer",
-                        userSelect: "none",
-                        transition: "opacity 0.12s",
                     }}
                 >
                     {formData.currency}
                 </span>
             </div>
-            {/* TC */}
-            <div style={{ ...tdStyle, ...fixedWidthStyle("5%"), overflow: "hidden" }}>
-                <div style={{ position: "relative" }}>
-                    <input
-                        type="text"
-                        inputMode="decimal"
-                        value={exchangeRateInput}
-                        onChange={(e) => setExchangeRateInput(e.target.value)}
-                        style={{
-                            ...formInputStyle,
-                            fontSize: fonts.size.xs2,
-                            paddingRight: "28px",
-                        }}
-                    />
-                    <Button
-                        variant="icon"
-                        type="button"
+            <div style={{ ...tdStyle, overflow: "hidden", justifyContent: "flex-end" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: spacing[1], width: "100%", height: "100%" }}>
+                    <button
                         onClick={async () => {
                             if (!userConfig?.dollar_source) return;
                             try {
@@ -410,18 +396,34 @@ export function TransactionRowEditCells({
                         }}
                         title="Actualizar TC"
                         style={{
-                            position: "absolute",
-                            right: "4px",
-                            top: "50%",
-                            transform: "translateY(-50%)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: 20,
+                            height: 20,
+                            borderRadius: radius.sm,
+                            border: "none",
+                            backgroundColor: "transparent",
+                            color: colors.fg.dim,
+                            cursor: "pointer",
+                            flexShrink: 0,
+                            transition: "all 0.12s",
                         }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = colors.fg.base; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = colors.fg.dim; }}
                     >
-                        <RefreshCw size={12} />
-                    </Button>
+                        <RefreshCw size={11} strokeWidth={2.5} />
+                    </button>
+                    <input
+                        type="text"
+                        inputMode="decimal"
+                        value={exchangeRateInput}
+                        onChange={(e) => setExchangeRateInput(e.target.value)}
+                        style={{ ...baseInput, fontSize: fonts.size.xs2, textAlign: "right", flex: 1 }}
+                    />
                 </div>
             </div>
-            {/* Frecuencia */}
-            <div style={{ ...tdStyle, ...fixedWidthStyle("4%") }}>
+            <div style={{ ...tdStyle }}>
                 <span
                     onClick={() =>
                         setFormData({
@@ -429,41 +431,19 @@ export function TransactionRowEditCells({
                             frequency: formData.frequency === "fixed" ? "variable" : "fixed",
                         })
                     }
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.opacity = "0.7";
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.opacity = "1";
-                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.3)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.filter = "none"; }}
                     style={{
-                        fontSize: fonts.size.xs,
-                        fontWeight: fonts.weight.medium,
-                        color: colors.fg.base,
-                        backgroundColor: colors.bg.elevated,
-                        borderRadius: radius.md,
-                        padding: "0 10px",
-                        height: "24px",
-                        display: "inline-flex",
-                        alignItems: "center",
+                        ...toggleBase,
+                        color: formData.frequency === "fixed" ? colors.accent.blue : colors.accent.purple,
                         textTransform: "uppercase",
                         letterSpacing: "0.04em",
-                        cursor: "pointer",
-                        userSelect: "none",
-                        transition: "opacity 0.12s",
                     }}
                 >
                     {formData.frequency === "fixed" ? "FIJO" : "VAR"}
                 </span>
             </div>
-            {/* Categoría */}
-            <div
-                style={{
-                    ...tdStyle,
-                    textAlign: "left",
-                    ...fixedWidthStyle("17%"),
-                    overflow: "hidden",
-                }}
-            >
+            <div style={{ ...tdStyle, textAlign: "left", overflow: "hidden" }}>
                 <Dropdown
                     groups={categoryGroups}
                     value={formData.subcategory_id}
@@ -473,15 +453,7 @@ export function TransactionRowEditCells({
                     triggerStyle={triggerStyle}
                 />
             </div>
-            {/* Canal */}
-            <div
-                style={{
-                    ...tdStyle,
-                    textAlign: "left",
-                    ...fixedWidthStyle("17%"),
-                    overflow: "hidden",
-                }}
-            >
+            <div style={{ ...tdStyle, textAlign: "left", overflow: "hidden" }}>
                 <Dropdown
                     groups={accountGroups}
                     value={formData.account_id}
@@ -491,44 +463,76 @@ export function TransactionRowEditCells({
                     triggerStyle={triggerStyle}
                 />
             </div>
-            {/* Estado */}
-            <div style={{ ...tdStyle, ...fixedWidthStyle("3%") }}>
+            <div style={{ ...tdStyle }}>
                 <span
-                    onClick={() => handleTogglePaid(!transaction.is_paid)}
+                    onClick={() =>
+                        setFormData({ ...formData, is_paid: !formData.is_paid })
+                    }
                     style={{
                         cursor: "pointer",
                         lineHeight: 0,
-                        opacity: 1,
                         transition: "opacity 0.12s",
                     }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.opacity = "0.6";
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.opacity = "1";
-                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.3)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.filter = "none"; }}
                 >
-                    {transaction.is_paid ? (
-                        <SquareCheck size={15} color={colors.fg.base} />
+                    {formData.is_paid ? (
+                        <SquareCheck size={15} strokeWidth={2.5} color={colors.accent.teal} />
                     ) : (
-                        <SquareMinus size={15} color={colors.fg.base} />
+                        <SquareMinus size={15} strokeWidth={2.5} color={colors.accent.orange} />
                     )}
                 </span>
             </div>
-            {/* Acciones */}
-            <div style={{ ...tdStyle, ...fixedWidthStyle("8%") }}>
-                <span style={{ display: "flex", gap: spacing[2], justifyContent: "center" }}>
-                    <Button
-                        variant="icon"
+            <div style={{ ...tdStyle }}>
+                <span style={{ display: "flex", gap: spacing[1], justifyContent: "center" }}>
+                    <button
                         onClick={handleSave}
                         disabled={updateMutation.isPending || !hasChanges}
-                        title="Guardar"
+                        title="Guardar (Enter)"
+                        style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: 28,
+                            height: 26,
+                            padding: 0,
+                            border: "none",
+                            borderRadius: radius.md,
+                            backgroundColor: "transparent",
+                            color: colors.accent.teal,
+                            cursor: hasChanges && !updateMutation.isPending ? "pointer" : "default",
+                            opacity: updateMutation.isPending || !hasChanges ? 0.4 : 1,
+                            transition: "filter 0.12s",
+                        }}
+                        onMouseEnter={(e) => { if (hasChanges && !updateMutation.isPending) e.currentTarget.style.filter = "brightness(1.3)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.filter = "none"; }}
                     >
-                        {updateMutation.isPending ? "..." : <Check size={14} />}
-                    </Button>
-                    <Button variant="icon" onClick={onCancel} title="Cancelar">
-                        <X size={14} />
-                    </Button>
+                        {updateMutation.isPending
+                            ? <span style={{ fontSize: "10px" }}>...</span>
+                            : <Check size={14} strokeWidth={2.5} />}
+                    </button>
+                    <button
+                        onClick={onCancel}
+                        title="Cancelar (Esc)"
+                        style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: 28,
+                            height: 26,
+                            padding: 0,
+                            border: "none",
+                            borderRadius: radius.md,
+                            backgroundColor: "transparent",
+                            color: colors.accent.red,
+                            cursor: "pointer",
+                            transition: "filter 0.12s",
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.3)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.filter = "none"; }}
+                    >
+                        <X size={14} strokeWidth={2.5} />
+                    </button>
                 </span>
             </div>
         </>
@@ -537,7 +541,7 @@ export function TransactionRowEditCells({
 
 export function TransactionRowEdit({ transaction, onSave, onCancel }: TransactionRowEditProps) {
     return (
-        <tr style={{ ...trStyle, backgroundColor: colors.bg.surface }}>
+        <tr style={{ backgroundColor: colors.bg.elevated }}>
             <TransactionRowEditCells
                 transaction={transaction}
                 onSave={onSave}

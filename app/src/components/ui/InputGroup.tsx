@@ -66,7 +66,7 @@ export function InputGroup({ placeholder, value, onChange, onSubmit, buttonLabel
                     opacity: value.trim() ? 1 : 0.5,
                 }}
             >
-                <Plus size={16} />
+                <Plus size={16} strokeWidth={2.5} />
                 {buttonLabel}
             </button>
         </div>

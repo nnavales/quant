@@ -1,6 +1,7 @@
 import {
     useState,
     useEffect,
+    useLayoutEffect,
     useRef,
     useMemo,
     useCallback,
@@ -115,6 +116,32 @@ export const TransactionList = forwardRef<TransactionListHandle, TransactionList
         const newIdsRef = useRef<Set<string>>(new Set());
         const newGroupIdsRef = useRef<Set<string>>(new Set());
 
+        // Snap the table height so the scroller holds a whole number of 30px rows (no half-row at
+        // the bottom) while leaving ~7% breathing room. chrome (header + borders) is measured live
+        // so it stays correct regardless of styling; measuring pre-paint avoids a first-frame flash,
+        // and we skip while hidden (offsetParent null).
+        const rootRef = useRef<HTMLDivElement>(null);
+        const scrollerRef = useRef<HTMLDivElement>(null);
+        const [snapH, setSnapH] = useState<number>();
+        const recomputeHeight = useCallback(() => {
+            const el = rootRef.current, sc = scrollerRef.current;
+            if (!el || !el.offsetParent || !sc) return;
+            const ROW = 30;
+            const chrome = el.getBoundingClientRect().height - sc.getBoundingClientRect().height;
+            const avail = (window.innerHeight - el.getBoundingClientRect().top) * 0.93;
+            const rows = Math.max(ROW, Math.floor((avail - chrome) / ROW) * ROW);
+            setSnapH(chrome + rows);
+        }, []);
+        useLayoutEffect(() => { recomputeHeight(); });
+        useLayoutEffect(() => {
+            const el = rootRef.current;
+            if (!el) return;
+            const ro = new ResizeObserver(recomputeHeight);
+            if (el.parentElement) ro.observe(el.parentElement);
+            window.addEventListener("resize", recomputeHeight);
+            return () => { ro.disconnect(); window.removeEventListener("resize", recomputeHeight); };
+        }, [recomputeHeight]);
+
         useImperativeHandle(ref, () => ({
             notifyNewTransaction: (id, installmentGroupId) => {
                 newIdsRef.current.add(id);
@@ -201,7 +228,7 @@ export const TransactionList = forwardRef<TransactionListHandle, TransactionList
         const itemContent = useCallback((index: number, tx: TransactionRowDTO) => {
             const isEditing = editingIdRef.current === tx.id;
             return (
-                <div className="tx-grid-row">
+                <div className="tx-grid-row" style={isEditing ? { height: "30px", backgroundColor: colors.bg.elevated } : undefined}>
                     {isEditing ? (
                         <TransactionRowEditCells
                             transaction={tx}
@@ -257,7 +284,7 @@ export const TransactionList = forwardRef<TransactionListHandle, TransactionList
                 </span>
             ) : (
                 <span style={{ marginLeft: spacing[1], opacity: 0.5, display: "inline-flex" }}>
-                    <ArrowUpDown size={11} />
+                    <ArrowUpDown size={11} strokeWidth={2.5} />
                 </span>
             );
 
@@ -278,7 +305,7 @@ export const TransactionList = forwardRef<TransactionListHandle, TransactionList
         }
 
         return (
-            <div style={{ height: "95%", ...flexColumn }}>
+            <div ref={rootRef} style={{ height: snapH ?? "93%", ...flexColumn }}>
                 <div
                     style={{
                         borderRadius: radius.lg,
@@ -327,12 +354,12 @@ export const TransactionList = forwardRef<TransactionListHandle, TransactionList
                                         >
                                             {isAllSelected && (
                                                 <span style={{ lineHeight: 0 }}>
-                                                    <Check size={10} color={colors.bg.base} strokeWidth={3} />
+                                                    <Check size={10} strokeWidth={2.5} color={colors.bg.base} />
                                                 </span>
                                             )}
                                             {hasPartial && (
                                                 <span style={{ lineHeight: 0 }}>
-                                                    <Minus size={10} color={colors.fg.base} strokeWidth={3} />
+                                                    <Minus size={10} strokeWidth={2.5} color={colors.fg.base} />
                                                 </span>
                                             )}
                                         </div>
@@ -357,14 +384,14 @@ export const TransactionList = forwardRef<TransactionListHandle, TransactionList
                                 <span style={sortableThStyle}>Monto{sortIcon(amountActive)}</span>
                             </div>
                             <div>Mon.</div>
-                            <div>T.C.</div>
+                            <div className="th-right">T.C.</div>
                             <div>Frec.</div>
                             <div className="th-left">Categoría</div>
                             <div className="th-left">Método de pago</div>
                             <div>Est.</div>
                             <div>Opciones</div>
                         </div>
-                        <div style={{ flex: 1, minHeight: 0 }}>
+                        <div ref={scrollerRef} style={{ flex: 1, minHeight: 0 }}>
                             <Virtuoso<TransactionRowDTO>
                                 ref={virtuosoRef}
                                 style={{ height: "100%", overflowY: "scroll" }}
@@ -424,7 +451,7 @@ export const TransactionList = forwardRef<TransactionListHandle, TransactionList
                             }}
                             title="Volver arriba"
                         >
-                            <ArrowUp size={18} />
+                            <ArrowUp size={18} strokeWidth={2.5} />
                         </button>
                     )}
                 </div>

@@ -9,6 +9,9 @@ import { KPIEvolutionModal } from "@/components/KPIEvolutionModal";
 import { formatNumber } from "@/utils/format";
 import type { MetricCell, MetricSeries, MetricComparisonDashboard } from "@/api_client";
 import { flexColumn } from "@/styles/layout";
+import { HelpModal } from "@/components/ui/HelpModal";
+import { PageHeader, HelpButton } from "@/components/ui/PageHeader";
+import { helpContent } from "@/data/helpContent";
 
 type TabKey = "mtd" | "ytd" | "fy";
 
@@ -182,7 +185,7 @@ function MetricSummaryCard({
                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = accentColor; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = colors.fg.dim; }}
                 >
-                    <BarChart2 size={13} strokeWidth={2} />
+                    <BarChart2 size={13} strokeWidth={2.5} />
                 </button>
             </div>
 
@@ -288,6 +291,7 @@ export function MetricsComparisonPage() {
     const currentYear = new Date().getFullYear();
     const [year] = useState(currentYear);
     const [selectedKPI, setSelectedKPI] = useState<string | null>(null);
+    const [showHelp, setShowHelp] = useState(false);
 
     const { data: metricsData, isLoading, isError } = useDashboardMetrics(year);
 
@@ -386,31 +390,11 @@ export function MetricsComparisonPage() {
                 <KPIEvolutionModal kpi={selectedKPI} onClose={() => setSelectedKPI(null)} />
             ) : null}
 
-            <div style={{ flexShrink: 0, minHeight: "64px" }}>
-                <h1
-                    style={{
-                        fontFamily: fonts.family,
-                        fontSize: fonts.size.xl,
-                        fontWeight: fonts.weight.semibold,
-                        color: colors.fg.base,
-                        margin: 0,
-                        marginBottom: spacing[1],
-                    }}
-                >
-                    Métricas
-                </h1>
-                <p
-                    style={{
-                        fontFamily: fonts.family,
-                        fontSize: fonts.size.sm,
-                        color: colors.fg.dim,
-                        margin: 0,
-                        minHeight: "1.4em",
-                    }}
-                >
-                    {isLoading ? "Cargando..." : isError ? "Error al cargar" : "Resumen financiero"}
-                </p>
-            </div>
+            <PageHeader
+                title="Métricas"
+                subtitle={isLoading ? "Cargando..." : isError ? "Error al cargar" : "Resumen financiero"}
+                actions={<HelpButton onClick={() => setShowHelp(true)} />}
+            />
 
             {!isLoading && !isError && (
                 <>
@@ -461,6 +445,14 @@ export function MetricsComparisonPage() {
                     </div>
                 </>
             )}
+
+            <HelpModal
+                isOpen={showHelp}
+                onClose={() => setShowHelp(false)}
+                title={helpContent.metrics.title}
+                intro={helpContent.metrics.intro}
+                sections={helpContent.metrics.sections}
+            />
         </div>
     );
 }

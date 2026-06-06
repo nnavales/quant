@@ -677,34 +677,28 @@ func TestConfigSetInput_Valid(t *testing.T) {
 	if err := in.Validate(); err != nil {
 		t.Fatalf("validation failed: %v", err)
 	}
-	if in["default_rate"] != "1000" {
-		t.Errorf("value = %q, want 1000", in["default_rate"])
+	if in.Key != "default_rate" {
+		t.Errorf("key = %q, want default_rate", in.Key)
+	}
+	if in.Value != "1000" {
+		t.Errorf("value = %q, want 1000", in.Value)
 	}
 }
 
 func TestConfigSetInput_Empty(t *testing.T) {
-	in, err := newConfigSetInput(map[string]string{})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if err := in.Validate(); err == nil {
+	_, err := newConfigSetInput(map[string]string{})
+	if err == nil {
 		t.Error("expected error for empty config")
 	}
 }
 
 func TestConfigSetInput_MultipleKeys(t *testing.T) {
-	in, err := newConfigSetInput(map[string]string{
+	_, err := newConfigSetInput(map[string]string{
 		"key1": "val1",
 		"key2": "val2",
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if err := in.Validate(); err != nil {
-		t.Fatalf("validation failed: %v", err)
-	}
-	if len(in) != 2 {
-		t.Errorf("len = %d, want 2", len(in))
+	if err == nil {
+		t.Error("expected error for multiple keys")
 	}
 }
 

@@ -20,6 +20,9 @@ import { transactionAggregates } from "@/api_client";
 import { formatNumber } from "@/utils/format";
 import { spacing, colors, radius, flexColumn, flexRow } from "@/styles";
 import { fonts } from "@/styles/fonts";
+import { HelpModal } from "@/components/ui/HelpModal";
+import { PageHeader, HelpButton } from "@/components/ui/PageHeader";
+import { helpContent } from "@/data/helpContent";
 
 const Sep = () => (
     <span
@@ -43,6 +46,7 @@ export function TransactionsPage() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [allSelectedData, setAllSelectedData] = useState<TransactionIDAmount[] | null>(null);
     const [lastClickedIndex, setLastClickedIndex] = useState<number | null>(null);
+    const [showHelp, setShowHelp] = useState(false);
 
     const toggleSelect = (id: string, idx: number, shiftKey: boolean) => {
         setSelectedIds((prev) => {
@@ -222,47 +226,30 @@ export function TransactionsPage() {
                 animation: "fadeIn 0.2s ease-out",
             }}
         >
-            <div
-                style={{
-                    ...flexColumn,
-                    gap: spacing[2],
-                    flexShrink: 0,
-                    minHeight: "64px",
-                }}
-            >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <div>
-                        <h1
+            <PageHeader
+                title={
+                    <>
+                        Transacciones
+                        <span
                             style={{
-                                fontFamily: fonts.family,
-                                fontSize: fonts.size.xl,
-                                fontWeight: fonts.weight.semibold,
-                                color: colors.fg.base,
-                                margin: 0,
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: spacing[2],
+                                fontWeight: fonts.weight.regular,
+                                color: colors.fg.dim,
+                                fontSize: fonts.size.sm,
+                                marginLeft: spacing[2],
                             }}
                         >
-                            <span>Transacciones</span>
-                            <span
-                                style={{
-                                    fontWeight: fonts.weight.regular,
-                                    color: colors.fg.dim,
-                                    fontSize: fonts.size.sm,
-                                    marginLeft: spacing[1],
-                                }}
-                            >
-                                ({total})
-                            </span>
-                        </h1>
-                    </div>
-                    <div style={{ display: "flex", gap: spacing[2] }}>
+                            ({total})
+                        </span>
+                    </>
+                }
+                actions={
+                    <>
+                        <HelpButton onClick={() => setShowHelp(true)} />
                         <Button
                             variant="chip"
                             size="sm"
                             color="default"
-                            iconLeft={<Plus size={14} />}
+                            iconLeft={<Plus size={14} strokeWidth={2.5} />}
                             style={{
                                 height: "30px",
                                 padding: "0 14px",
@@ -277,10 +264,11 @@ export function TransactionsPage() {
                         >
                             Nueva Transacción
                         </Button>
-                    </div>
-                </div>
+                    </>
+                }
+            >
                 <TransactionFiltersComponent filters={filters} onChange={setFilters} noMargin />
-            </div>
+            </PageHeader>
 
             <div style={{ flex: 1, minHeight: 0 }}>
                         {isLoading ? (
@@ -441,7 +429,7 @@ export function TransactionsPage() {
                                                 }}
                                                 title="Eliminar seleccionadas"
                                             >
-                                                <Trash2 size={14} />
+                                                <Trash2 size={14} strokeWidth={2.5} />
                                             </button>
                                             <button
                                                 onClick={clearSelection}
@@ -467,7 +455,7 @@ export function TransactionsPage() {
                                                 }}
                                                 title="Limpiar selección"
                                             >
-                                                <X size={14} />
+                                                <X size={14} strokeWidth={2.5} />
                                             </button>
                                         </span>
                                     </div>
@@ -520,6 +508,14 @@ export function TransactionsPage() {
                 onTransactionCreated={(id, installmentGroupId) => {
                     txListRef.current?.notifyNewTransaction(id, installmentGroupId);
                 }}
+            />
+
+            <HelpModal
+                isOpen={showHelp}
+                onClose={() => setShowHelp(false)}
+                title={helpContent.transactions.title}
+                intro={helpContent.transactions.intro}
+                sections={helpContent.transactions.sections}
             />
         </div>
     );

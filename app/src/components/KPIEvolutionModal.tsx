@@ -83,7 +83,7 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
 
     if (isLoading || evolutionLoading)
         return (
-            <Modal isOpen onClose={onClose} opacity={0.7}>
+            <Modal isOpen onClose={onClose} opacity={0.45}>
                 <ModalContent
                     onClick={(e) => e.stopPropagation()}
                     style={{
@@ -101,7 +101,7 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
         );
     if (isError)
         return (
-            <Modal isOpen onClose={onClose} opacity={0.7}>
+            <Modal isOpen onClose={onClose} opacity={0.45}>
                 <ModalContent
                     onClick={(e) => e.stopPropagation()}
                     style={{
@@ -224,7 +224,7 @@ export function KPIEvolutionModal({ kpi, onClose, metricMonths, accentColor }: K
         : [];
 
     return (
-        <Modal isOpen onClose={onClose} opacity={0.8}>
+        <Modal isOpen onClose={onClose} opacity={0.5}>
             <ModalContent
                 onClick={(e) => e.stopPropagation()}
                 style={{

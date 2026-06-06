@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/nnavales/quant/api/categories"
 	"github.com/nnavales/quant/api/channels"
@@ -13,6 +14,7 @@ import (
 	"github.com/nnavales/quant/api/historical"
 	"github.com/nnavales/quant/api/macro"
 	"github.com/nnavales/quant/api/networth"
+	"github.com/nnavales/quant/api/timeutils"
 	"github.com/nnavales/quant/api/users"
 	"github.com/openai/openai-go/v3"
 )
@@ -38,6 +40,32 @@ type ServiceTools struct {
 func NewTools(s *ServiceTools) []Tool {
 	return []Tool{
 		{
+			Name:        "get_date",
+			Description: "Get current date",
+			Parameters: openai.FunctionParameters{
+				"type":                 "object",
+				"additionalProperties": false,
+				"properties":           map[string]any{},
+			},
+
+			Execute: func(ctx context.Context, _ json.RawMessage) (string, error) {
+				clock := timeutils.RealClock{}
+
+				timezone, err := s.UserSvc.Get(ctx, "timezone")
+				if err != nil || timezone == "" {
+					timezone = "America/Argentina/Buenos_Aires"
+				}
+
+				loc, err := time.LoadLocation(timezone)
+				if err != nil {
+					return "", fmt.Errorf("could not resolve timezone %q: %w", timezone, err)
+				}
+
+				return clock.Now().In(loc).Format("2006-01-02"), nil
+			},
+		},
+
+		{
 			Name:        "get_rate",
 			Description: "Get current valid exchange_rate",
 			Parameters: openai.FunctionParameters{
@@ -47,21 +75,19 @@ func NewTools(s *ServiceTools) []Tool {
 			},
 
 			Execute: func(ctx context.Context, _ json.RawMessage) (string, error) {
-				dollarSrcRaw, err := s.UserSvc.Get(ctx, "dollar_source")
-				if err == nil {
-					if dollarSrc, ok := dollarSrcRaw.(string); ok && dollarSrc != "" {
-						rates, err := s.MacroSvc.FetchDollarCotization(ctx, true)
-						if err == nil {
-							if v, ok := rates[dollarSrc]; ok {
-								return fmt.Sprintf("%f", v.Sell), nil
-							}
+				dollarSrc, err := s.UserSvc.Get(ctx, "dollar_source")
+				if err == nil && dollarSrc != "" {
+					rates, err := s.MacroSvc.FetchDollarCotization(ctx, true)
+					if err == nil {
+						if v, ok := rates[dollarSrc]; ok {
+							return fmt.Sprintf("%f", v.Sell), nil
 						}
 					}
 				}
 
-				defaultRaw, err := s.UserSvc.Get(ctx, "default_rate")
-				if err == nil && defaultRaw != nil {
-					rate, err := strconv.ParseFloat(fmt.Sprintf("%v", defaultRaw), 64)
+				defaultRate, err := s.UserSvc.Get(ctx, "default_rate")
+				if err == nil && defaultRate != "" {
+					rate, err := strconv.ParseFloat(defaultRate, 64)
 					if err == nil {
 						return fmt.Sprintf("%f", rate), nil
 					}
@@ -411,6 +437,173 @@ Maximum 50 items.
 				}
 
 				return `{"status":"created"}`, nil
+			},
+		},
+
+		{
+			Name: "update_transaction",
+
+			Description: `
+Update an existing transaction. Replaces all its fields.
+
+Find the transaction id first with list_transactions.
+Resolve IDs with list_categories, list_subcategories,
+list_channels and list_accounts if unknown.
+`,
+
+			Parameters: openai.FunctionParameters{
+				"type":                 "object",
+				"additionalProperties": false,
+
+				"properties": map[string]any{
+					"id": map[string]any{
+						"type":        "string",
+						"description": "Transaction ID from list_transactions",
+					},
+
+					"description": map[string]any{
+						"type":        "string",
+						"description": "Transaction description",
+					},
+
+					"date": map[string]any{
+						"type":        "string",
+						"description": "YYYY-MM-DD",
+					},
+
+					"amount": map[string]any{
+						"type":        "string",
+						"description": "Transaction amount as string (e.g. '1500.50')",
+					},
+
+					"type": map[string]any{
+						"type": "string",
+						"enum": []string{"expense", "income"},
+					},
+
+					"frequency": map[string]any{
+						"type": "string",
+						"enum": []string{"fixed", "variable"},
+					},
+
+					"currency": map[string]any{
+						"type": "string",
+						"enum": []string{"ARS", "USD"},
+					},
+
+					"category_id": map[string]any{
+						"type":        "string",
+						"description": "Category ID from list_categories",
+					},
+
+					"subcategory_id": map[string]any{
+						"type":        "string",
+						"description": "Subcategory ID from list_subcategories",
+					},
+
+					"channel_id": map[string]any{
+						"type":        "string",
+						"description": "Channel ID from list_channels",
+					},
+
+					"account_id": map[string]any{
+						"type":        "string",
+						"description": "Account ID from list_accounts",
+					},
+
+					"exchange_rate": map[string]any{
+						"type":        "number",
+						"description": "Exchange rate from get_rate",
+					},
+
+					"installment_number": map[string]any{
+						"type":        "integer",
+						"description": "Installment count if applicable",
+					},
+
+					"is_paid": map[string]any{
+						"type":        "boolean",
+						"description": "State of the transaction",
+					},
+				},
+
+				"required": []string{
+					"id",
+					"description",
+					"date",
+					"amount",
+					"type",
+					"frequency",
+					"currency",
+					"category_id",
+					"subcategory_id",
+					"channel_id",
+					"account_id",
+					"exchange_rate",
+				},
+			},
+
+			Execute: func(ctx context.Context, args json.RawMessage) (string, error) {
+				var req struct {
+					ID string `json:"id"`
+					finance.TransactionAggregateReq
+				}
+
+				if err := json.Unmarshal(args, &req); err != nil {
+					return "", err
+				}
+
+				result, err := s.FinanceSvc.UpdateTransactionAggregate(ctx, req.ID, req.TransactionAggregateReq)
+				if err != nil {
+					return "", err
+				}
+
+				b, err := json.Marshal(result)
+				if err != nil {
+					return "", err
+				}
+
+				return string(b), nil
+			},
+		},
+
+		{
+			Name: "delete_transaction",
+
+			Description: `
+Delete a transaction by id.
+
+Find the transaction id first with list_transactions.
+`,
+
+			Parameters: openai.FunctionParameters{
+				"type":                 "object",
+				"additionalProperties": false,
+
+				"properties": map[string]any{
+					"id": map[string]any{
+						"type":        "string",
+						"description": "Transaction ID from list_transactions",
+					},
+				},
+
+				"required": []string{"id"},
+			},
+
+			Execute: func(ctx context.Context, args json.RawMessage) (string, error) {
+				var req struct {
+					ID string `json:"id"`
+				}
+
+				if err := json.Unmarshal(args, &req); err != nil {
+					return "", err
+				}
+
+				if err := s.FinanceSvc.DeleteTransactionAggregate(ctx, req.ID); err != nil {
+					return "", err
+				}
+
+				return `{"status":"deleted"}`, nil
 			},
 		},
 

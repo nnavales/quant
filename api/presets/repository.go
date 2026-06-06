@@ -177,6 +177,9 @@ func (r *SQLiteRepo) UpdatePreset(ctx context.Context, p Preset) (*Preset, error
 		p.ID,
 	)
 	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return nil, apperrors.ErrDuplicate
+		}
 		return nil, err
 	}
 	return &p, nil

@@ -42,17 +42,16 @@ func (s *Service) CreateTransactionAggregate(ctx context.Context, req Transactio
 		return nil, fmt.Errorf("currency is required: %w", ErrInvalidField)
 	}
 
-	installmentCount := 1
-	if req.InstallmentNumber != nil && *req.InstallmentNumber > 0 {
-		installmentCount = *req.InstallmentNumber
-	}
 	totalAmount, err := money.ParseAmountToCents(req.Amount)
 	if err != nil {
 		return nil, fmt.Errorf("parsing failed: %w: %w", err, ErrInvalidField)
 	}
 
+	installmentCount := 1
 	var group *installments.InstallmentGroup
-	if installmentCount > 1 {
+
+	if req.InstallmentNumber != nil && *req.InstallmentNumber >= 1 {
+		installmentCount = *req.InstallmentNumber
 		group = installments.NewInstallmentGroup(now, installmentCount, req.Description, req.Currency, money.Money(totalAmount), req.Date)
 		if err := group.Validate(); err != nil {
 			return nil, fmt.Errorf("invalid installment group: %w", err)
@@ -252,18 +251,16 @@ func (s *Service) UpdateTransactionAggregate(ctx context.Context, id string, req
 		return nil, fmt.Errorf("currency is required: %w", ErrInvalidField)
 	}
 
-	installmentCount := 1
-	if req.InstallmentNumber != nil && *req.InstallmentNumber > 0 {
-		installmentCount = *req.InstallmentNumber
-	}
-
 	totalAmount, err := money.ParseAmountToCents(req.Amount)
 	if err != nil {
 		return nil, fmt.Errorf("parsing failed: %w: %w", err, ErrInvalidField)
 	}
 
+	installmentCount := 1
 	var group *installments.InstallmentGroup
-	if installmentCount > 1 {
+
+	if req.InstallmentNumber != nil && *req.InstallmentNumber >= 1 {
+		installmentCount = *req.InstallmentNumber
 		group = installments.NewInstallmentGroup(now, installmentCount, req.Description, req.Currency, money.Money(totalAmount), req.Date)
 		if err := group.Validate(); err != nil {
 			return nil, fmt.Errorf("invalid installment group: %w", err)
@@ -399,17 +396,16 @@ func (s *Service) BulkCreateTransactionAggregate(ctx context.Context, req BulkTr
 			return fmt.Errorf("currency is required: %w", ErrInvalidField)
 		}
 
-		installmentCount := 1
-		if r.InstallmentNumber != nil && *r.InstallmentNumber > 0 {
-			installmentCount = *r.InstallmentNumber
-		}
 		totalAmount, err := money.ParseAmountToCents(r.Amount)
 		if err != nil {
 			return fmt.Errorf("parsing failed: %w: %w", err, ErrInvalidField)
 		}
 
+		installmentCount := 1
 		var group *installments.InstallmentGroup
-		if installmentCount > 1 {
+
+		if r.InstallmentNumber != nil && *r.InstallmentNumber >= 1 {
+			installmentCount = *r.InstallmentNumber
 			group = installments.NewInstallmentGroup(now, installmentCount, r.Description, r.Currency, money.Money(totalAmount), r.Date)
 			if err := group.Validate(); err != nil {
 				return fmt.Errorf("invalid installment group: %w", err)

@@ -1,6 +1,5 @@
+import { useState } from "react";
 import { spacing } from "@/styles/theme";
-import { colors } from "@/styles/colors";
-import { fonts } from "@/styles/fonts";
 import {
     DollarSection,
     UsdtSection,
@@ -11,14 +10,19 @@ import {
 } from "@/components/EconomicMetrics";
 import { EconomicComparatives } from "@/components/EconomicComparatives";
 import { flexColumn } from "@/styles/layout";
+import { HelpModal } from "@/components/ui/HelpModal";
+import { PageHeader, HelpButton } from "@/components/ui/PageHeader";
+import { helpContent } from "@/data/helpContent";
 
 export function EconomicPage() {
+    const [showHelp, setShowHelp] = useState(false);
     return (
         <div style={{ padding: spacing[3], ...flexColumn, gap: spacing[3], animation: "fadeIn 0.2s ease-out" }}>
-            <div style={{ flexShrink: 0, minHeight: "64px" }}>
-                <h1 style={{ fontFamily: fonts.family, fontSize: fonts.size.xl, fontWeight: fonts.weight.semibold, color: colors.fg.base, margin: 0, marginBottom: spacing[1] }}>Datos Económicos</h1>
-                <p style={{ fontFamily: fonts.family, fontSize: fonts.size.sm, color: colors.fg.dim, margin: 0 }}>Dólar, tasas y créditos</p>
-            </div>
+            <PageHeader
+                title="Datos Económicos"
+                subtitle="Dólar, tasas y créditos"
+                actions={<HelpButton onClick={() => setShowHelp(true)} />}
+            />
 
             <div
                 style={{
@@ -36,6 +40,14 @@ export function EconomicPage() {
             </div>
 
             <EconomicComparatives />
+
+            <HelpModal
+                isOpen={showHelp}
+                onClose={() => setShowHelp(false)}
+                title={helpContent.economic.title}
+                intro={helpContent.economic.intro}
+                sections={helpContent.economic.sections}
+            />
         </div>
     );
 }

@@ -85,7 +85,7 @@ func (s *Service) DeleteTransaction(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *Service) UpdateTansactionPaid(ctx context.Context, id string, isPaid bool) (*Transaction, error) {
+func (s *Service) UpdateTransactionPaid(ctx context.Context, id string, isPaid bool) (*Transaction, error) {
 	e, err := s.repo.GetTransactionByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transaction for update: %w", err)

@@ -5,13 +5,15 @@ import { colors } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { useDashboard, useDashboardMetrics, useDimensionSeries } from "@/hooks";
 import { Dropdown } from "@/components/ui/Dropdown";
-import { Button } from "@/components/ui/Button";
 import { ModalCloseButton } from "@/components/ui/Modal";
 import { Maximize2, BarChart3, GitCompare, PieChart } from "lucide-react";
 import { chipTriggerStyle } from "@/styles/filters";
 import ReactECharts from "echarts-for-react";
 import type { MetricCell, MonthlyData } from "@/api_client/types";
 import { flexBetween, flexColumn, flexRow } from "@/styles/layout";
+import { HelpModal } from "@/components/ui/HelpModal";
+import { PageHeader, HelpButton } from "@/components/ui/PageHeader";
+import { helpContent } from "@/data/helpContent";
 
 type ViewMode = "current_year" | "ytd" | "monthly";
 
@@ -162,6 +164,7 @@ export function EvolutionPage() {
     const [modalExpenseYear, setModalExpenseYear] = useState(String(new Date().getFullYear()));
     const [modalExpenseMonth, setModalExpenseMonth] = useState("all");
     const [modalChartId, setModalChartId] = useState<string | null>(null);
+    const [showHelp, setShowHelp] = useState(false);
     const toggleSeries = (chartId: string, name: string) => {
         setHiddenSeries((prev) => {
             const current = prev[chartId] ?? [];
@@ -287,9 +290,9 @@ export function EvolutionPage() {
         }));
 
     const groupIcons: Record<string, React.ReactNode> = {
-        "cashflow-capital": <BarChart3 size={14} strokeWidth={1.5} />,
-        "real-vs-plan": <GitCompare size={14} strokeWidth={1.5} />,
-        "composition-detail": <PieChart size={14} strokeWidth={1.5} />,
+        "cashflow-capital": <BarChart3 size={14} strokeWidth={2.5} />,
+        "real-vs-plan": <GitCompare size={14} strokeWidth={2.5} />,
+        "composition-detail": <PieChart size={14} strokeWidth={2.5} />,
     };
 
     if (dashLoading) {
@@ -740,18 +743,10 @@ export function EvolutionPage() {
                 animation: "fadeIn 0.2s ease-out",
             }}
         >
-            <div style={{ ...flexColumn, gap: spacing[2], flexShrink: 0, minHeight: "64px" }}>
-                <h1
-                    style={{
-                        fontFamily: fonts.family,
-                        fontSize: fonts.size.xl,
-                        fontWeight: fonts.weight.semibold,
-                        color: colors.fg.base,
-                        margin: 0,
-                    }}
-                >
-                    Evolución
-                </h1>
+            <PageHeader
+                title="Evolución"
+                actions={<HelpButton onClick={() => setShowHelp(true)} />}
+            >
                 <div style={{
                     display: "inline-flex",
                     borderRadius: "8px",
@@ -786,7 +781,7 @@ export function EvolutionPage() {
                         </div>
                     ))}
                 </div>
-            </div>
+            </PageHeader>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: spacing[3], flex: 1, minHeight: 0 }}>
                 {groups[groupIdx].charts.map((ch: { id: string; title: string; desc?: string; legend?: { label: string; color: string }[] }) => (
@@ -794,9 +789,28 @@ export function EvolutionPage() {
                         <div style={{ ...chartHeader, ...flexColumn, gap: 2 }}>
                             <div style={{ ...flexBetween, gap: spacing[2] }}>
                                 <span>{ch.title}</span>
-                                <Button variant="plain" onClick={() => { setModalChartId(ch.id); setModalHiddenSeries({}); }} title="Expandir">
-                                    <Maximize2 size={14} />
-                                </Button>
+                                <button
+                                    onClick={() => { setModalChartId(ch.id); setModalHiddenSeries({}); }}
+                                    title="Expandir"
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        width: 24,
+                                        height: 24,
+                                        borderRadius: radius.md,
+                                        border: "none",
+                                        backgroundColor: "transparent",
+                                        color: colors.fg.dim,
+                                        cursor: "pointer",
+                                        transition: "all 0.12s ease",
+                                        flexShrink: 0,
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.fill; e.currentTarget.style.color = colors.fg.base; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = colors.fg.dim; }}
+                                >
+                                    <Maximize2 size={14} strokeWidth={2.5} />
+                                </button>
                             </div>
                             <div style={{ ...flexBetween, gap: spacing[2], flexWrap: "wrap" }}>
                                 {ch.desc && <span style={{ fontSize: fonts.size.xs4, fontWeight: fonts.weight.medium, color: colors.fg.dim }}>{ch.desc}</span>}
@@ -975,6 +989,13 @@ export function EvolutionPage() {
                 </div>
             );
         })()}
+            <HelpModal
+                isOpen={showHelp}
+                onClose={() => setShowHelp(false)}
+                title={helpContent.evolution.title}
+                intro={helpContent.evolution.intro}
+                sections={helpContent.evolution.sections}
+            />
         </>
     );
 }

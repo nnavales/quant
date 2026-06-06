@@ -16,7 +16,7 @@ export function Modal({
     isOpen,
     onClose,
     children,
-    opacity = 0.7,
+    opacity = 0.45,
     zIndex = 1000,
     padding = spacing[4],
 }: ModalProps) {
@@ -104,7 +104,7 @@ export function ModalCloseButton({
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.fill; e.currentTarget.style.color = colors.fg.base; }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = colors.fg.dim; }}
         >
-            <X size={size} />
+            <X size={size} strokeWidth={2.5} />
         </button>
     );
 }

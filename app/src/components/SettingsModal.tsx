@@ -1,18 +1,19 @@
 import { useState } from "react";
-import { CreditCard, Tag, User, Layers, Database, RefreshCw } from "lucide-react";
+import { CreditCard, Tag, User, Layers, Database, RefreshCw, BotMessageSquare } from "lucide-react";
 import { ChannelAccountManager } from "@/components/ChannelAccountManager";
 import { CategoryManager } from "@/components/CategoryManager";
 import { UserSettings } from "@/components/UserSettings";
 import { PresetManager } from "@/components/PresetManager";
 import { BackupManager } from "@/components/BackupManager";
 import { UpdateChecker } from "@/components/UpdateChecker";
+import { ChatbotSettings } from "@/components/ChatbotSettings";
 import { Modal, ModalContent, ModalCloseButton } from "@/components/ui/Modal";
 import { colors } from "@/styles/colors";
 import { spacing, radius } from "@/styles/theme";
 import { fonts } from "@/styles/fonts";
 import { flexColumn } from "@/styles/layout";
 
-type SettingsTab = "user" | "channels" | "categories" | "presets" | "backup" | "updates";
+type SettingsTab = "user" | "channels" | "categories" | "presets" | "backup" | "updates" | "chatbot";
 
 const tabs: { id: SettingsTab; label: string; icon: React.ElementType }[] = [
     { id: "user", label: "Usuario", icon: User },
@@ -20,6 +21,7 @@ const tabs: { id: SettingsTab; label: string; icon: React.ElementType }[] = [
     { id: "categories", label: "Categorías", icon: Tag },
     { id: "presets", label: "Presets", icon: Layers },
     { id: "backup", label: "Backup", icon: Database },
+    { id: "chatbot", label: "Chatbot", icon: BotMessageSquare },
     { id: "updates", label: "Actualizaciones", icon: RefreshCw },
 ];
 
@@ -31,7 +33,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
     const [activeTab, setActiveTab] = useState<SettingsTab>("user");
 
     return (
-        <Modal isOpen onClose={onClose} opacity={0.5}>
+        <Modal isOpen onClose={onClose} opacity={0.4}>
             <ModalContent
                 onClick={(e) => e.stopPropagation()}
                 style={{
@@ -121,6 +123,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                                 >
                                     <tab.icon
                                         size={16}
+                                        strokeWidth={2.5}
                                         style={{
                                             flexShrink: 0,
                                             color: isActive ? colors.accent.cyan : colors.fg.dim,
@@ -167,6 +170,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                         {activeTab === "presets" && <PresetManager />}
                         {activeTab === "backup" && <BackupManager />}
                         {activeTab === "updates" && <UpdateChecker />}
+                        {activeTab === "chatbot" && <ChatbotSettings />}
                     </div>
                 </div>
             </ModalContent>

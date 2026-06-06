@@ -36,7 +36,7 @@ export function MetricCard({ title, icon: Icon, iconColor, real, fcst, plan, ly,
             }}
         >
             <div style={{ ...flexRow, gap: spacing[2] }}>
-                <Icon size={compact ? 14 : 18} color={iconColor} />
+                <Icon size={compact ? 14 : 18} strokeWidth={2.5} color={iconColor} />
                 <span style={{ fontSize: compact ? fonts.size.xs : fonts.size.sm, color: colors.fg.dim, fontWeight: fonts.weight.medium, textTransform: "uppercase", letterSpacing: "0.3px" }}>
                     {title}
                 </span>

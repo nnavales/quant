@@ -54,7 +54,7 @@ function ApiUnavailable({ onRetry }: { onRetry: () => void }) {
                         justifyContent: "center",
                     }}
                 >
-                    <WifiOff size={20} color={colors.accent.red} />
+                    <WifiOff size={20} strokeWidth={2.5} color={colors.accent.red} />
                 </div>
 
                 <div

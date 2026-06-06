@@ -89,6 +89,7 @@ export function DateDropdown({
                 </span>
                 <ChevronDown
                     size={14}
+                    strokeWidth={2.5}
                     style={{
                         flexShrink: 0,
                         opacity: 0.6,

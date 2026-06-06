@@ -308,6 +308,7 @@ export function ChannelAccountManager() {
                                 <div style={{ ...flexRow, gap: spacing[2], flex: 1, minWidth: 0 }}>
                                     <ChevronRight
                                         size={16}
+                                        strokeWidth={2.5}
                                         style={{ color: colors.fg.dim, flexShrink: 0, transition: "transform 0.15s", transform: expandedChannels.has(group.channel.id) ? "rotate(90deg)" : "rotate(0deg)", cursor: "pointer" }}
                                         onClick={() => toggleExpandChannel(group.channel.id)}
                                     />
@@ -327,10 +328,10 @@ export function ChannelAccountManager() {
                                         {group.channel.id !== "__uncategorized__" && (
                                             <span style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
                                                 <Button variant="icon" onClick={saveEditChannel}>
-                                                    <Check size={14} />
+                                                    <Check size={14} strokeWidth={2.5} />
                                                 </Button>
                                                 <Button variant="icon" onClick={() => setEditingChannelId(null)}>
-                                                    <X size={14} />
+                                                    <X size={14} strokeWidth={2.5} />
                                                 </Button>
                                             </span>
                                         )}
@@ -356,6 +357,7 @@ export function ChannelAccountManager() {
                                 >
                                     <ChevronRight
                                         size={16}
+                                        strokeWidth={2.5}
                                         style={{
                                             color: colors.fg.dim,
                                             flexShrink: 0,
@@ -375,10 +377,10 @@ export function ChannelAccountManager() {
                                 {group.channel.id !== "__uncategorized__" && (
                                     <span style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
                                         <Button variant="icon" onClick={() => startEditChannel(group.channel)} title="Editar">
-                                            <Pencil size={14} />
+                                            <Pencil size={14} strokeWidth={2.5} />
                                         </Button>
                                         <Button variant="icon" onClick={() => handleDeleteChannel(group.channel.id)}>
-                                            <Trash2 size={14} />
+                                            <Trash2 size={14} strokeWidth={2.5} />
                                         </Button>
                                     </span>
                                 )}
@@ -405,10 +407,10 @@ export function ChannelAccountManager() {
                                                 />
                                                 <div style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
                                                     <Button variant="icon" onClick={saveEditAccount}>
-                                                        <Check size={14} />
+                                                        <Check size={14} strokeWidth={2.5} />
                                                     </Button>
                                                     <Button variant="icon" onClick={() => setEditingAccountId(null)}>
-                                                        <X size={14} />
+                                                        <X size={14} strokeWidth={2.5} />
                                                     </Button>
                                                 </div>
                                             </div>
@@ -421,10 +423,10 @@ export function ChannelAccountManager() {
                                                 </div>
                                                 <div style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
                                                     <Button variant="icon" title="Editar" onClick={() => startEditAccount(acc)}>
-                                                        <Pencil size={12} />
+                                                        <Pencil size={12} strokeWidth={2.5} />
                                                     </Button>
                                                     <Button variant="icon" title="Eliminar" onClick={() => handleDeleteAccount(acc.id)}>
-                                                        <Trash2 size={12} />
+                                                        <Trash2 size={12} strokeWidth={2.5} />
                                                     </Button>
                                                 </div>
                                             </div>
@@ -441,7 +443,7 @@ export function ChannelAccountManager() {
                                         </div>
                                         <span style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
                                             <Button variant="icon" onClick={() => handleRestoreAccount(acc.id)} title="Restaurar">
-                                                <RotateCcw size={12} />
+                                                <RotateCcw size={12} strokeWidth={2.5} />
                                             </Button>
                                             <Button variant="icon" onClick={() => setHardDeleteConfirm({ id: acc.id, type: "account" })} title="Eliminar permanentemente">
                                                 <Trash2 size={12} style={{ color: colors.accent.red }} />
@@ -463,10 +465,10 @@ export function ChannelAccountManager() {
                                         />
                                         <div style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
                                             <Button variant="icon" onClick={() => handleAddAccount(group.channel.id)}>
-                                                <Check size={14} />
+                                                <Check size={14} strokeWidth={2.5} />
                                             </Button>
                                             <Button variant="icon" onClick={() => setShowAccountForm(null)}>
-                                                <X size={14} />
+                                                <X size={14} strokeWidth={2.5} />
                                             </Button>
                                         </div>
                                     </div>
@@ -492,7 +494,7 @@ export function ChannelAccountManager() {
                                                 whiteSpace: "nowrap",
                                             }}
                                         >
-                                            <Plus size={14} />
+                                            <Plus size={14} strokeWidth={2.5} />
                                             Agregar cuenta
                                         </button>
                                     )
@@ -530,7 +532,7 @@ export function ChannelAccountManager() {
                                         onClick={() => handleRestoreChannel(group.channel.id)}
                                         title="Restaurar"
                                     >
-                                        <RotateCcw size={14} />
+                                        <RotateCcw size={14} strokeWidth={2.5} />
                                     </Button>
                                     <Button
                                         variant="icon"

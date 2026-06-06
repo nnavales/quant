@@ -1,18 +1,47 @@
 package users
 
-import "context"
+import (
+	"context"
+	"errors"
+	"strconv"
+)
 
-type Config map[string]any
+var ErrInvalidKey = errors.New("invalid config key")
+
+type UserConfig struct {
+	DollarSource string     `json:"dollar_source"`
+	Username     string     `json:"username"`
+	Timezone     string     `json:"timezone"`
+	DateFormat   DateFormat `json:"date_format"`
+	DefaultRate  string     `json:"default_rate"`
+	Theme        string     `json:"theme"`
+}
+
+type Key string
 
 const (
-	KeyDollarSource = "dollar_source"
-	KeyUsername     = "username"
-	KeyTimezone     = "timezone"
-	KeyDateFormat   = "date_format"
-	KeyDefaultRate  = "default_rate"
-	KeyAccentColor  = "accent_color"
-	KeyTheme        = "theme"
+	KeyDollarSource Key = "dollar_source"
+	KeyUsername     Key = "username"
+	KeyTimezone     Key = "timezone"
+	KeyDateFormat   Key = "date_format"
+	KeyDefaultRate  Key = "default_rate"
+	KeyTheme        Key = "theme"
 )
+
+var DefaultUserConfig = UserConfig{
+	DollarSource: "banco-nacion",
+	Username:     "",
+	Timezone:     "America/Argentina/Buenos_Aires",
+	DateFormat:   DateSASlash,
+	DefaultRate:  "1400",
+	Theme:        "dark",
+}
+
+type Repository interface {
+	Update(ctx context.Context, key, value string) error
+	Get(ctx context.Context, key string) (string, error)
+	List(ctx context.Context) (UserConfig, error)
+}
 
 type DateFormat string
 
@@ -25,22 +54,47 @@ const (
 	DateNADash   DateFormat = "MM-DD-YYYY"
 )
 
-var cfg = map[string]any{
-	KeyDollarSource: "banco-nacion",
-	KeyUsername:     "",
-	KeyTimezone:     "America/Argentina/Buenos_Aires",
-	KeyDateFormat:   DateSASlash,
-	KeyDefaultRate:  "1400",
-	KeyAccentColor:  "blue",
-	KeyTheme:        "dark",
+var validKeys = map[Key]struct{}{
+	KeyDollarSource: {},
+	KeyUsername:     {},
+	KeyTimezone:     {},
+	KeyDateFormat:   {},
+	KeyDefaultRate:  {},
+	KeyTheme:        {},
 }
 
-func NewConfig() Config {
-	return make(Config)
+func ValidateKey(k string) error {
+	key := Key(k)
+	if _, ok := validKeys[key]; !ok {
+		return ErrInvalidKey
+	}
+	return nil
 }
 
-type Repository interface {
-	UpdateTx(ctx context.Context, updates map[string]any) error
-	Get(ctx context.Context, key string) (any, error)
-	List(ctx context.Context) (Config, error)
+func (c *UserConfig) Apply(k string, v string) error {
+	key := Key(k)
+	switch key {
+	case KeyDollarSource:
+		c.DollarSource = v
+
+	case KeyUsername:
+		c.Username = v
+
+	case KeyTimezone:
+		c.Timezone = v
+
+	case KeyDateFormat:
+		c.DateFormat = DateFormat(v)
+
+	case KeyDefaultRate:
+		_, err := strconv.Atoi(v)
+		if err != nil {
+			return err
+		}
+		c.DefaultRate = v
+
+	case KeyTheme:
+		c.Theme = v
+	}
+	return nil
 }

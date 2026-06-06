@@ -24,11 +24,21 @@ func Start(ctx context.Context, cfg config.Config, svcTools *ServiceTools) {
 	for range config.Watch() {
 		newCfg, _ := config.ReadConfigFile()
 
-		if newCfg.APIKeyAI != cfg.APIKeyAI || newCfg.BaseURL != cfg.BaseURL || newCfg.ModelID != cfg.ModelID {
+		agentChanged := newCfg.APIKeyAI != cfg.APIKeyAI ||
+			newCfg.BaseURL != cfg.BaseURL ||
+			newCfg.ModelID != cfg.ModelID
+
+		telegramChanged := newCfg.TelegramToken != cfg.TelegramToken ||
+			newCfg.TelegramID != cfg.TelegramID
+
+		if agentChanged {
 			a = updateAgent(&cfg, newCfg, tools)
 		}
 
-		if newCfg.TelegramToken != cfg.TelegramToken || newCfg.TelegramID != cfg.TelegramID {
+		// the bot's OnText handler captures *Agent at registration, so a new
+		// agent only takes effect once the bot is rebuilt — rebind it whenever
+		// the agent or the telegram creds changed.
+		if agentChanged || telegramChanged {
 			bot = updateBot(&cfg, newCfg, bot, a)
 		}
 	}

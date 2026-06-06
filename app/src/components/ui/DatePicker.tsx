@@ -94,6 +94,7 @@ function ChipSelect({
                 <span>{selected?.label}</span>
                 <ChevronDown
                     size={12}
+                    strokeWidth={2.5}
                     style={{
                         color: colors.fg.dim,
                         transform: isOpen ? "rotate(180deg)" : "none",
@@ -113,7 +114,7 @@ function ChipSelect({
                         backgroundColor: colors.bg.surface,
                         border: "none",
                         borderRadius: "8px",
-                        boxShadow: shadows.lg,
+                        boxShadow: shadows.md,
                         zIndex: 10,
                         minWidth: "100%",
                         padding: spacing[1],
@@ -240,15 +241,15 @@ export function DatePicker({
                 }}
             >
                 <span style={{ ...flexRow, gap: spacing[2], flex: 1, overflow: "hidden" }}>
-                    {showIcon && <CalendarIcon size={16} style={{ flexShrink: 0, color: colors.fg.dim }} />}
+                    {showIcon && <CalendarIcon size={16} strokeWidth={2.5} style={{ flexShrink: 0, color: colors.fg.dim }} />}
                     <span style={{...truncate, flex: 1, fontSize: fonts.size.sm}}>
                         {selectedDate ? formatDateInTimezone(selectedDate, userDateFormat, tz) : placeholder}
                     </span>
                 </span>
                 {showIcon && (selectedDate ? (
-                    <X size={14} style={{ color: colors.fg.dim, cursor: "pointer", flexShrink: 0 }} onClick={handleClear} />
+                    <X size={14} strokeWidth={2.5} style={{ color: colors.fg.dim, cursor: "pointer", flexShrink: 0 }} onClick={handleClear} />
                 ) : (
-                    <ChevronDown size={14} style={{ flexShrink: 0, opacity: 0.6 }} />
+                    <ChevronDown size={14} strokeWidth={2.5} style={{ flexShrink: 0, opacity: 0.6 }} />
                 ))}
             </div>
             {isOpen && (
@@ -262,7 +263,7 @@ export function DatePicker({
                         border: "none",
                         borderRadius: "8px",
                         padding: spacing[2],
-                        boxShadow: shadows.lg,
+                        boxShadow: shadows.md,
                     }}
                 >
                     <div
@@ -287,7 +288,7 @@ export function DatePicker({
                             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
                             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
                         >
-                            <ChevronLeft size={18} />
+                            <ChevronLeft size={18} strokeWidth={2.5} />
                         </button>
                         <div style={{ display: "flex", gap: spacing[2] }}>
                             <ChipSelect value={month} options={monthOptions} onChange={(v) => setViewDate(tz ? createDateForDayInTimezone(year, v, 1, tz) : new Date(year, v, 1))} width="110px" />
@@ -309,7 +310,7 @@ export function DatePicker({
                             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
                             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
                         >
-                            <ChevronRight size={18} />
+                            <ChevronRight size={18} strokeWidth={2.5} />
                         </button>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 34px)", gap: "2px" }}>

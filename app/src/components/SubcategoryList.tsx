@@ -71,7 +71,7 @@ export function SubcategoryList() {
             <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: spacing[4] }}>
                 <Button
                     variant="secondary"
-                    iconLeft={<Plus size={16} />}
+                    iconLeft={<Plus size={16} strokeWidth={2.5} />}
                     onClick={() => setShowForm(!showForm)}
                 >
                     Nueva Subcategoría
@@ -118,7 +118,7 @@ export function SubcategoryList() {
                             title="Eliminar"
                             onClick={() => handleDelete(subcategory.id)}
                         >
-                            <Trash2 size={14} />
+                            <Trash2 size={14} strokeWidth={2.5} />
                         </Button>
                     </div>
                 ))}

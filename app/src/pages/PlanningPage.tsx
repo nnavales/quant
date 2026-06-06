@@ -15,6 +15,9 @@ import { PlanningForecastTable } from "@/components/PlanningForecastTable";
 import { PlanningPlanTable } from "@/components/PlanningPlanTable";
 import { formatForInput, parseLocaleNumber } from "@/utils/format";
 import { flexBetween, flexColumn, flexRow, ghostButton } from "@/styles/layout";
+import { HelpModal } from "@/components/ui/HelpModal";
+import { PageHeader, HelpButton } from "@/components/ui/PageHeader";
+import { helpContent } from "@/data/helpContent";
 
 type Tab = "forecast" | "plan";
 
@@ -139,6 +142,7 @@ export function PlanningPage() {
 
     const [activeTab, setActiveTab] = useState<Tab>("forecast");
     const [yearBtnHover, setYearBtnHover] = useState<string | null>(null);
+    const [showHelp, setShowHelp] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; desc: string } | null>(null);
 
     const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -307,16 +311,10 @@ const isPlan = activeTab === "plan";
                 .planning-scroll { scrollbar-width: none; -ms-overflow-style: none; }
             `}</style>
             {/* Header */}
-            <div style={{ ...flexColumn, gap: spacing[2], flexShrink: 0, minHeight: "64px" }}>
-            <h1 style={{
-                fontFamily: fonts.family,
-                fontSize: fonts.size.xl,
-                fontWeight: fonts.weight.semibold,
-                color: colors.fg.base,
-                margin: 0,
-            }}>
-                Planning
-            </h1>
+            <PageHeader
+                title="Planning"
+                actions={<HelpButton onClick={() => setShowHelp(true)} />}
+            >
             <div style={{ ...flexBetween }}>
                 <div style={{
                     display: "inline-flex",
@@ -346,7 +344,7 @@ const isPlan = activeTab === "plan";
                                     lineHeight: "18px",
                             }}
                         >
-                            <Icon size={14} strokeWidth={1.5} />
+                            <Icon size={14} strokeWidth={2.5} />
                             {label}
                         </div>
                     ))}
@@ -357,17 +355,17 @@ const isPlan = activeTab === "plan";
                             variant="chip"
                             size="sm"
                             color="default"
-                            iconLeft={<Plus size={14} />}
+                            iconLeft={<Plus size={14} strokeWidth={2.5} />}
                             style={{
                                 height: "26px",
                                 padding: "0 12px",
                                 fontSize: fonts.size.sm,
                                 border: "none",
                                 borderRadius: "8px",
-                                transition: "background-color 0.15s",
+                                transition: "filter 0.15s ease",
                             }}
-                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.border; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
+                            onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.15)"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.filter = ""; }}
                             onClick={() => handleOpenNew("expense")}
                         >
                             Nueva Línea
@@ -378,17 +376,17 @@ const isPlan = activeTab === "plan";
                             variant="chip"
                             size="sm"
                             color="default"
-                            iconLeft={<LayoutGrid size={14} />}
+                            iconLeft={<LayoutGrid size={14} strokeWidth={2.5} />}
                             style={{
                                 height: "26px",
                                 padding: "0 12px",
                                 fontSize: fonts.size.sm,
                                 border: "none",
                                 borderRadius: "8px",
-                                transition: "background-color 0.15s",
+                                transition: "filter 0.15s ease",
                             }}
-                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.border; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }}
+                            onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.15)"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.filter = ""; }}
                             onClick={() => setShowGenerateModal(true)}
                         >
                             Generar Plan
@@ -401,7 +399,7 @@ const isPlan = activeTab === "plan";
                         onMouseLeave={() => setYearBtnHover(null)}
                         style={{ ...ghostButton, color: yearBtnHover === "prev" ? colors.fg.base : colors.fg.dim, padding: "4px 6px", borderRadius: radius.sm, ...flexRow, transition: "color 0.15s" }}
                     >
-                        <ChevronLeft size={14} />
+                        <ChevronLeft size={14} strokeWidth={2.5} />
                     </button>
                     <span style={{ fontSize: fonts.size.sm, fontWeight: fonts.weight.semibold, color: colors.fg.base, padding: "0 8px", minWidth: "44px", textAlign: "center" }}>
                         {year}
@@ -412,7 +410,7 @@ const isPlan = activeTab === "plan";
                         onMouseLeave={() => setYearBtnHover(null)}
                         style={{ background: "none", border: "none", cursor: "pointer", color: yearBtnHover === "next" ? colors.fg.base : colors.fg.dim, padding: "4px 6px", borderRadius: radius.sm, ...flexRow, transition: "color 0.15s" }}
                     >
-                        <ChevronRight size={14} />
+                        <ChevronRight size={14} strokeWidth={2.5} />
                     </button>
                     <button
                         onClick={() => {
@@ -430,12 +428,12 @@ const isPlan = activeTab === "plan";
                         onMouseLeave={() => setYearBtnHover(null)}
                         style={{ background: "none", border: "none", cursor: "pointer", color: yearBtnHover === "settings" ? colors.fg.base : colors.fg.dim, padding: "4px 6px", borderRadius: radius.sm, ...flexRow, transition: "color 0.15s" }}
                     >
-                        <Settings2 size={14} />
+                        <Settings2 size={14} strokeWidth={2.5} />
                     </button>
                 </div>
                 </div>
             </div>
-            </div>
+            </PageHeader>
 
             {/* Totals cards */}
             {kpis}
@@ -482,7 +480,7 @@ const isPlan = activeTab === "plan";
             )}
              {/* Generate Goals Modal */}
             {showGenerateModal && (
-                <Modal isOpen={showGenerateModal} onClose={() => setShowGenerateModal(false)} opacity={0.8}>
+                <Modal isOpen={showGenerateModal} onClose={() => setShowGenerateModal(false)} opacity={0.5}>
                     <ModalContent onClick={(e) => e.stopPropagation()} style={{
                         backgroundColor: colors.bg.surface,
                         borderRadius: radius.xl,
@@ -522,7 +520,7 @@ const isPlan = activeTab === "plan";
 
             {/* New concept modal */}
             {showNewModal && (
-                <Modal isOpen={showNewModal} onClose={() => setShowNewModal(false)} opacity={0.8}>
+                <Modal isOpen={showNewModal} onClose={() => setShowNewModal(false)} opacity={0.5}>
                     <ModalContent onClick={(e) => e.stopPropagation()} style={{
                         backgroundColor: colors.bg.surface,
                         borderRadius: radius.xl,
@@ -546,8 +544,8 @@ const isPlan = activeTab === "plan";
                                 <div style={{ flex: 1 }}>
                                     <label style={{ fontSize: fonts.size.xs, color: colors.fg.dim, fontWeight: fonts.weight.medium, marginBottom: spacing[2], display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>Tipo</label>
                                     <div style={{ display: "flex", backgroundColor: colors.bg.elevated, borderRadius: radius.md, padding: "2px", overflow: "hidden", height: "34px" }}>
-                                        <Button type="button" variant="tab" color="red" active={newType === "expense"} onClick={() => setNewType("expense")} fullWidth iconLeft={<TrendingDown size={16} />} noHover style={{ borderRadius: radius.md }}>Egreso</Button>
-                                        <Button type="button" variant="tab" color="green" active={newType === "income"} onClick={() => setNewType("income")} fullWidth iconLeft={<TrendingUp size={16} />} noHover style={{ borderRadius: radius.md }}>Ingreso</Button>
+                                        <Button type="button" variant="tab" color="red" active={newType === "expense"} onClick={() => setNewType("expense")} fullWidth iconLeft={<TrendingDown size={16} strokeWidth={2.5} />} noHover style={{ borderRadius: radius.md }}>Egreso</Button>
+                                        <Button type="button" variant="tab" color="green" active={newType === "income"} onClick={() => setNewType("income")} fullWidth iconLeft={<TrendingUp size={16} strokeWidth={2.5} />} noHover style={{ borderRadius: radius.md }}>Ingreso</Button>
                                     </div>
                                 </div>
                                 <div style={{ width: "140px" }}>
@@ -581,7 +579,7 @@ const isPlan = activeTab === "plan";
 
             {/* Settings modal */}
             {showSettingsModal && (
-                <Modal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} opacity={0.8}>
+                <Modal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} opacity={0.5}>
                     <ModalContent onClick={(e) => e.stopPropagation()} style={{
                         backgroundColor: colors.bg.surface, borderRadius: radius.xl, width: "460px",
                         maxHeight: "80vh", overflow: "hidden", ...flexColumn,
@@ -633,6 +631,14 @@ const isPlan = activeTab === "plan";
                     </ModalContent>
                 </Modal>
             )}
+
+            <HelpModal
+                isOpen={showHelp}
+                onClose={() => setShowHelp(false)}
+                title={helpContent.planning.title}
+                intro={helpContent.planning.intro}
+                sections={helpContent.planning.sections}
+            />
         </div>
     );
 }

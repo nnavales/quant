@@ -925,19 +925,27 @@ func (CancelInstallmentsInput) Usage() string {
 // Config
 // ========================
 
-type ConfigSetInput map[string]any
+type ConfigSetInput struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
 
 func newConfigSetInput(m map[string]string) (ConfigSetInput, error) {
-	in := make(ConfigSetInput, len(m))
-	for k, v := range m {
-		in[k] = v
+	if len(m) == 0 {
+		return ConfigSetInput{}, fmt.Errorf("key=value is required: %w", ErrInvalidInput)
 	}
-	return in, nil
+	if len(m) > 1 {
+		return ConfigSetInput{}, fmt.Errorf("only one key=value allowed: %w", ErrInvalidInput)
+	}
+	for k, v := range m {
+		return ConfigSetInput{Key: k, Value: v}, nil
+	}
+	return ConfigSetInput{}, fmt.Errorf("unexpected: %w", ErrInvalidInput)
 }
 
 func (in ConfigSetInput) Validate() error {
-	if len(in) == 0 {
-		return fmt.Errorf("at least one key=value is required: %w", ErrInvalidInput)
+	if in.Key == "" {
+		return fmt.Errorf("key is required: %w", ErrInvalidInput)
 	}
 	return nil
 }

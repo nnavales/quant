@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { config, type UserConfigUpdate } from "@/api_client";
+import { config } from "@/api_client";
 
 export function useUserConfig() {
     return useQuery({
@@ -12,7 +12,7 @@ export function useUpdateUserConfig() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: UserConfigUpdate) => config.update(data),
+        mutationFn: ({ key, value }: { key: string; value: string }) => config.update(key, value),
         onSuccess: () => {
             queryClient.invalidateQueries({ refetchType: "active" });
         },

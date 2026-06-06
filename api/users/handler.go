@@ -27,8 +27,8 @@ func (h *Handler) GetConfig(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetConfigByKey(w http.ResponseWriter, r *http.Request) {
 	key := r.PathValue("key")
-	if key == "" {
-		httpx.WriteError(w, r, http.StatusBadRequest, "key required", nil)
+	if err := ValidateKey(key); err != nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid key", err)
 		return
 	}
 
@@ -41,13 +41,22 @@ func (h *Handler) GetConfigByKey(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) SetConfig(w http.ResponseWriter, r *http.Request) {
-	req, err := httpx.DecodeJSON[map[string]any](r.Body)
+	key := r.PathValue("key")
+	if err := ValidateKey(key); err != nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, "invalid key", err)
+		return
+	}
+
+	type cfgReq struct {
+		Value string `json:"value"`
+	}
+	req, err := httpx.DecodeJSON[cfgReq](r.Body)
 	if err != nil {
 		httpx.WriteError(w, r, http.StatusBadRequest, "invalid request", err)
 		return
 	}
 
-	if err := h.service.Set(r.Context(), req); err != nil {
+	if err := h.service.Set(r.Context(), key, req.Value); err != nil {
 		httpx.WriteServiceError(w, r, err)
 		return
 	}

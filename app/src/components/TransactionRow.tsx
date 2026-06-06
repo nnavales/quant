@@ -126,7 +126,7 @@ export const TransactionRowCells = memo(function TransactionRowCells({
                             transition: "background-color .12s,border-color .12s",
                         }}
                     >
-                        {isSelected && <Check size={10} color={colors.bg.base} strokeWidth={3} />}
+                        {isSelected && <Check size={10} strokeWidth={2.5} color={colors.bg.base} />}
                     </div>
                 </div>
             </div>
@@ -197,7 +197,7 @@ export const TransactionRowCells = memo(function TransactionRowCells({
                     {transaction.currency}
                 </span>
             </div>
-            <div className="td-tc" style={selBg(isSelected)}>
+            <div style={{ ...selBg(isSelected), justifyContent: "flex-end" }}>
                 <Tooltip content={formatNumber(transaction.exchange_rate, { trim: true })}>
                     <span className="selectable amount-alt text-trunc" style={{ fontSize: fonts.size.xs2 }}>
                         {formatNumber(transaction.exchange_rate, { trim: true })}
@@ -206,11 +206,11 @@ export const TransactionRowCells = memo(function TransactionRowCells({
             </div>
             <div className="td-frec" style={selBg(isSelected)}>
                 {transaction.frequency === "fixed" ? (
-                    <span className="selectable" style={{ fontSize: fonts.size.xs2, fontWeight: fonts.weight.medium, color: colors.fg.dim }}>
+                    <span className="selectable" style={{ fontSize: fonts.size.xs2, fontWeight: fonts.weight.medium, color: colors.accent.blue }}>
                         FIJO
                     </span>
                 ) : transaction.frequency === "variable" ? (
-                    <span className="selectable" style={{ fontSize: fonts.size.xs2, fontWeight: fonts.weight.medium, color: colors.fg.dim }}>
+                    <span className="selectable" style={{ fontSize: fonts.size.xs2, fontWeight: fonts.weight.medium, color: colors.accent.purple }}>
                         VAR
                     </span>
                 ) : (
@@ -272,8 +272,8 @@ export const TransactionRowCells = memo(function TransactionRowCells({
             <div className="td-estado" style={selBg(isSelected)}>
                 <span onClick={handleTogglePaid} style={{ cursor: "pointer", lineHeight: 0 }}>
                     {transaction.is_paid
-                        ? <SquareCheck size={15} color={colors.accent.teal} />
-                        : <SquareMinus size={15} color={colors.accent.orange} />}
+                        ? <SquareCheck size={15} strokeWidth={2.5} color={colors.accent.teal} />
+                        : <SquareMinus size={15} strokeWidth={2.5} color={colors.accent.orange} />}
                 </span>
             </div>
             <div className="td-opciones" style={selBg(isSelected)}>
@@ -287,13 +287,13 @@ export const TransactionRowCells = memo(function TransactionRowCells({
                             opacity: transaction.installment_group_id && !transaction.is_canceled ? 1 : 0.2,
                         }}
                     >
-                        <CreditCard size={13.5} />
+                        <CreditCard size={13.5} strokeWidth={2.5} />
                     </Button>
                     <Button variant="icon" title="Editar" onClick={handleEdit}>
-                        <Pencil size={13.5} />
+                        <Pencil size={13.5} strokeWidth={2.5} />
                     </Button>
                     <Button variant="icon" title="Eliminar" onClick={handleDelete}>
-                        <Trash2 size={13.5} />
+                        <Trash2 size={13.5} strokeWidth={2.5} />
                     </Button>
                 </span>
             </div>

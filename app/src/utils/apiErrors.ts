@@ -2,6 +2,32 @@ export function getApiErrorMessage(err: unknown): string {
     if (!(err instanceof Error)) return "Error desconocido";
     const msg = err.message.toLowerCase().trim();
 
+    // Chatbot agent config (checked first so "model not found" beats generic "not found")
+    if (msg.includes("invalid api key")) return "API key inválida";
+    if (msg.includes("api key no access")) return "La API key no tiene acceso a este modelo";
+    if (msg.includes("model not listed")) return "El modelo no figura en la lista del proveedor";
+    if (msg.includes("model not compatible")) return "El modelo no es compatible (¿soporta herramientas?)";
+    if (msg.includes("model not found")) return "El modelo no existe en el proveedor";
+    if (msg.includes("provider unreachable")) return "No se pudo conectar con el proveedor, revisá la Base URL";
+    if (msg.includes("provider rate limited")) return "Límite de uso del proveedor alcanzado, probá más tarde";
+    if (msg.includes("provider returned error")) return "El proveedor respondió con un error, revisá la API key y la Base URL";
+    if (msg.includes("provider rejected request")) return "El proveedor rechazó la solicitud";
+    if (msg.includes("provider error")) return "El proveedor tuvo un error, probá de nuevo";
+    if (msg.includes("agent validation failed")) return "No se pudo validar el agente, revisá los datos";
+    if (msg.includes("api key required")) return "Falta la API key";
+    if (msg.includes("model id required")) return "Falta el Model ID";
+    if (msg.includes("base url required")) return "Falta la Base URL";
+
+    // Chatbot Telegram config
+    if (msg.includes("telegram chat not started")) return "Enviá /start al bot desde tu cuenta y reintentá";
+    if (msg.includes("telegram chat invalid")) return "El chat de Telegram no existe o el ID es inválido";
+    if (msg.includes("telegram token invalid")) return "Token de Telegram inválido";
+    if (msg.includes("telegram token required")) return "Falta el token de Telegram";
+    if (msg.includes("telegram id required")) return "Falta el ID de Telegram";
+    if (msg.includes("telegram request failed")) return "No se pudo contactar a Telegram";
+    if (msg.includes("telegram api error")) return "Error de Telegram";
+    if (msg.includes("telegram send failed")) return "No se pudo enviar el mensaje de prueba";
+
     // Network / connection errors (exact and substring matches)
     if (msg === "network error" || msg.includes("network error")) return "Error de conexión";
     if (msg === "timeout" || msg.includes("timeout")) return "Tiempo de espera agotado";

@@ -84,7 +84,7 @@ export function KPICard({
                     marginBottom: spacing[1],
                 }}
             >
-                <Icon size={iconSize} color={iconColor} />
+                <Icon size={iconSize} strokeWidth={2.5} color={iconColor} />
                 <span
                     style={{
                         fontSize: labelSize,
@@ -99,7 +99,7 @@ export function KPICard({
                 {tooltip && (
                     <span style={{ ...flexRow, marginLeft: "auto" }}>
                         <Tooltip content={tooltip} alwaysShow>
-                            <Info size={13} color={colors.fg.dim} style={{ opacity: 0.6 }} />
+                            <Info size={13} strokeWidth={2.5} color={colors.fg.dim} style={{ opacity: 0.6 }} />
                         </Tooltip>
                     </span>
                 )}

@@ -55,7 +55,7 @@ export function CustomSelect({ value, options, onChange, style }: CustomSelectPr
                 }}
             >
                 <span>{selected?.label || "..."}</span>
-                <ChevronDown size={12} color={colors.fg.dim} />
+                <ChevronDown size={12} strokeWidth={2.5} color={colors.fg.dim} />
             </button>
             {open && (
                 <div
@@ -89,7 +89,7 @@ export function CustomSelect({ value, options, onChange, style }: CustomSelectPr
                             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = opt.value === value ? colors.fill : "transparent")}
                         >
                             <span>{opt.label}</span>
-                            {opt.value === value && <Check size={12} color={colors.accent.cyan} />}
+                            {opt.value === value && <Check size={12} strokeWidth={2.5} color={colors.accent.cyan} />}
                         </div>
                     ))}
                 </div>

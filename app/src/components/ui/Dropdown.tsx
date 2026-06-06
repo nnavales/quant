@@ -50,7 +50,7 @@ const PANEL_BASE: React.CSSProperties = {
     gap: "2px",
     minWidth: "160px",
     maxWidth: "280px",
-    boxShadow: shadows.lg,
+    boxShadow: shadows.md,
 };
 
 const ITEM_BASE: React.CSSProperties = {
@@ -202,6 +202,7 @@ export function Dropdown({
                 </span>
                 <ChevronDown
                     size={14}
+                    strokeWidth={2.5}
                     style={{
                         flexShrink: 0,
                         opacity: 0.6,
@@ -238,7 +239,7 @@ export function Dropdown({
                                 marginBottom: spacing[1],
                             }}
                         >
-                            <Search size={14} strokeWidth={1.5} color={colors.fg.dim} style={{ flexShrink: 0 }} />
+                            <Search size={14} strokeWidth={2.5} color={colors.fg.dim} style={{ flexShrink: 0 }} />
                             <input
                                 ref={searchRef}
                                 type="text"
@@ -275,7 +276,7 @@ export function Dropdown({
                                         flexShrink: 0,
                                     }}
                                 >
-                                    <X size={12} />
+                                    <X size={12} strokeWidth={2.5} />
                                 </button>
                             )}
                         </div>
@@ -393,7 +394,7 @@ export function Dropdown({
                                 e.currentTarget.style.color = colors.fg.dim;
                             }}
                         >
-                            <X size={11} />
+                            <X size={11} strokeWidth={2.5} />
                             Limpiar
                         </div>
                     )}

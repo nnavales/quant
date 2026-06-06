@@ -440,7 +440,7 @@ export function BackupManager() {
                         whiteSpace: "nowrap",
                     }}
                 >
-                    <Download size={16} />
+                    <Download size={16} strokeWidth={2.5} />
                     {exportMutation.isPending ? "Exportando..." : "Exportar backup"}
                 </button>
             </SettingsCard>
@@ -481,7 +481,7 @@ export function BackupManager() {
                         }}
                         title="Ver formato CSV"
                     >
-                        <HelpCircle size={14} />
+                        <HelpCircle size={14} strokeWidth={2.5} />
                         <span>Formato CSV</span>
                     </button>
                 </div>
@@ -582,7 +582,7 @@ export function BackupManager() {
                         whiteSpace: "nowrap",
                     }}
                 >
-                    <FileUp size={16} />
+                    <FileUp size={16} strokeWidth={2.5} />
                     {importMutation.isPending ? "Importando..." : "Seleccionar archivo CSV"}
                 </button>
             </SettingsCard>

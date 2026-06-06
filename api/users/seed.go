@@ -8,7 +8,7 @@ import (
 )
 
 func SeedDefaults(ctx context.Context, repo *Repo, clock timeutils.Clock) error {
-	err := repo.InsertIfNotExists(ctx, cfg, clock.Now())
+	err := repo.InsertIfNotExists(ctx, DefaultUserConfig, clock.Now())
 	if err != nil {
 		slog.Warn("user.config.seed.error", "err", err)
 	}

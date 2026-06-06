@@ -10,57 +10,15 @@ function buildQuery(obj: Record<string, string | number | boolean | undefined | 
 }
 
 import type {
-     NetWorth,
-     Asset,
-     AssetReq,
-     Channel,
-     ChannelReq,
-     Account,
-     AccountReq,
-     Category,
-     CategoryReq,
-     Subcategory,
-     SubcategoryReq,
-     CategoryWithSubcategories,
-     ChannelWithAccounts,
-      TransactionRowDTO,
-      TransactionIDAmount,
-      TransactionAggregateReq,
-     CancelInstallmentsReq,
-     EconomicSeriesResponse,
-     DollarMap,
-     LoanMap,
-     YieldMap,
-     FixedDepositsMap,
-     CountryRiskValue,
-     UserConfig,
-     UserConfigUpdate,
-     ConfigStatusResponse,
-     HistoricalEntry,
-     HistoricalEntryResponse,
-     HistoricalEntryCreate,
-     HistoricalFinanceReq,
-     BulkCreateHistoricalReq,
-     DashboardResponse,
-     KPIEvolutionResponse,
-     KPI,
-     Dimension,
-     DimensionSeriesResponse,
-     Preset,
-     PresetReq,
-     PlanningInput,
-     PlanningInputReq,
-     PlanningGoal,
-     PlanningGoalReq,
-     PlanningExchangeRate,
-     ExchangeRateReq,
-     PlanningConfig,
-     PlanningConfigReq,
-     PlanningYear,
-     PlanningGoalYear,
-     GenerateGoalsReq,
-     MetricComparisonDashboard,
- } from "./types";
+    HistoricalEntryCreate,
+    HistoricalEntryResponse,
+    HistoricalFinanceReq,
+    UserConfig,
+    AgentConfigReq,
+    ChatConfigReq,
+    ChatbotConfig,
+    ChatbotHealth,
+} from "./types";
 
 export const channels = {
     list: () => api.get<Channel[]>("/channels"),
@@ -216,7 +174,14 @@ export const economic = {
 export const config = {
     get: () => api.get<UserConfig>("/users/config"),
     getByKey: (key: string) => api.get<unknown>(`/users/config/${key}`),
-    update: (data: UserConfigUpdate) => api.patch<ConfigStatusResponse>("/users/config", data),
+    update: (key: string, value: string) => api.patch(`/users/config/${key}`, { value }),
+};
+
+export const chatbot = {
+    get: () => api.get<ChatbotConfig>("/users/config/chatbot"),
+    health: () => api.get<ChatbotHealth>("/users/config/chatbot/health"),
+    setAgent: (data: AgentConfigReq) => api.post<void>("/users/config/agent", data),
+    setChat: (data: ChatConfigReq) => api.post<void>("/users/config/chat", data),
 };
 
 export const transactions = {

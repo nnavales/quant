@@ -1,6 +1,7 @@
 package chatbot
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,17 +21,27 @@ func registerHandlers(b *tele.Bot, a *Agent) {
 		return c.Send("Bienvenido a Quant")
 	})
 
-	b.Handle(tele.OnText, func(c tele.Context) error {
+	handle := func(c tele.Context) error {
 		if a == nil {
 			return c.Send("Agente no configurado")
 		}
-		reply, err := a.ProcessMessage(c.Text())
+
+		msg, err := buildMessage(c.Bot(), *c.Message())
+		if err != nil {
+			return c.Send("No pude procesar el mensaje")
+		}
+
+		reply, err := a.ProcessMessage(msg.Text, msg.Images)
 		if err != nil {
 			return c.Send("Error: " + err.Error())
 		}
 
 		return safeSend(c, reply)
-	})
+	}
+
+	b.Handle(tele.OnText, handle)
+	b.Handle(tele.OnPhoto, handle)
+	b.Handle(tele.OnDocument, handle)
 }
 
 func NewBot(token string, telegramID int64, a *Agent) (*tele.Bot, error) {
@@ -71,11 +82,13 @@ func initBot(cfg config.Config, a *Agent) *tele.Bot {
 		slog.Warn("bot: token validation failed", "err", err)
 		return nil
 	}
+
 	bot, err := NewBot(cfg.TelegramToken, cfg.TelegramID, a)
 	if err != nil {
 		slog.Warn("bot: creation failed", "err", err)
 		return nil
 	}
+
 	slog.Info("bot: started", "id", cfg.TelegramID)
 	go bot.Start()
 	return bot
@@ -93,7 +106,8 @@ func updateBot(cfg *config.Config, newCfg config.Config, bot *tele.Bot, a *Agent
 // validation token with telegram API
 func validateToken(token string) error {
 	var url = fmt.Sprintf("https://api.telegram.org/bot%s/getMe", token)
-	res, err := http.Get(url)
+	client := http.Client{Timeout: 5 * time.Second}
+	res, err := client.Get(url)
 	if err != nil {
 		return fmt.Errorf("request to telegram API failed: %w", err)
 	}
@@ -127,6 +141,48 @@ func validateToken(token string) error {
 	}
 
 	return nil
+}
+
+func validateChat(token string, id int64) error {
+	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", token)
+
+	body, _ := json.Marshal(map[string]any{
+		"chat_id": id,
+		"text":    "Quant configurado correctamente",
+	})
+
+	res, err := http.Post(url, "application/json", bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("telegram request failed: %w", err)
+	}
+	defer res.Body.Close()
+
+	var teleRes struct {
+		Ok          bool   `json:"ok"`
+		ErrorCode   int    `json:"error_code"`
+		Description string `json:"description"`
+	}
+
+	b, _ := io.ReadAll(res.Body)
+	if err := json.Unmarshal(b, &teleRes); err != nil {
+		return fmt.Errorf("telegram response error: %w", err)
+	}
+
+	if teleRes.Ok {
+		return nil
+	}
+
+	switch teleRes.ErrorCode {
+	case 403:
+		return errors.New("telegram chat not started")
+	case 400:
+		return errors.New("telegram chat invalid")
+	default:
+		if teleRes.Description != "" {
+			return fmt.Errorf("telegram api error: %s", teleRes.Description)
+		}
+		return errors.New("telegram send failed")
+	}
 }
 
 func safeSend(c tele.Context, text string) error {

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { AlertTriangle } from "lucide-react";
 import { spacing, radius } from "@/styles/theme";
-import { colors } from "@/styles/colors";
+import { colors, hoverFill } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { Button } from "./Button";
 import { SubmitButton } from "./SubmitButton";
@@ -202,7 +202,7 @@ export function ConfirmDialog({
                                     flexShrink: 0,
                                 }}
                             >
-                                <AlertTriangle size={16} style={{ color: colors.accent.red }} />
+                                <AlertTriangle size={16} strokeWidth={2.5} style={{ color: colors.accent.red }} />
                             </div>
                         )}
                         <h3
@@ -243,9 +243,10 @@ export function ConfirmDialog({
                             variant="primary"
                             onClick={onClose}
                             disabled={isLoading}
+                            noHover
                             style={{ backgroundColor: colors.bg.selected, border: "none", color: colors.fg.dim }}
-                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.border; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.bg.selected; }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = hoverFill(colors.bg.selected); e.currentTarget.style.color = colors.fg.base; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.bg.selected; e.currentTarget.style.color = colors.fg.dim; }}
                         >
                             {cancelLabel}
                         </Button>

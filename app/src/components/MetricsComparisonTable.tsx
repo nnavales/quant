@@ -403,7 +403,7 @@ const DataCell = memo(function DataCell({
         <td
             className={classes || undefined}
             style={{
-                padding: isSummary ? "3px 6px" : "3px 2px",
+                padding: isSummary ? "3px 6px" : "3px 8px 3px 2px",
                 textAlign: "right",
                 fontSize: fonts.size.xs4,
                 fontFamily: fonts.family,
@@ -1031,7 +1031,7 @@ export function MetricsComparisonTable({ data }: MetricsComparisonTableProps) {
                                 <th
                                     key={m}
                                     style={{
-                                        padding: "6px 1px",
+                                        padding: "6px 8px 6px 1px",
                                         textAlign: "right",
                                         fontWeight: fonts.weight.semibold,
                                         color: i === currentMonth ? colors.fg.base : colors.fg.dim,

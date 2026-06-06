@@ -64,10 +64,10 @@ const UvaColumns: ColumnDef[] = [
 ];
 
 const tabs: { key: CompareTab; label: string; icon: React.ReactNode }[] = [
-    { key: "dollar", label: "Dólar Banco", icon: <Landmark size={14} strokeWidth={1.5} /> },
-    { key: "tna", label: "Plazo Fijo", icon: <Clock size={14} strokeWidth={1.5} /> },
-    { key: "tea", label: "Cuentas Remuneradas", icon: <TrendingUp size={14} strokeWidth={1.5} /> },
-    { key: "uva", label: "Crédito UVA", icon: <Home size={14} strokeWidth={1.5} /> },
+    { key: "dollar", label: "Dólar Banco", icon: <Landmark size={14} strokeWidth={2.5} /> },
+    { key: "tna", label: "Plazo Fijo", icon: <Clock size={14} strokeWidth={2.5} /> },
+    { key: "tea", label: "Cuentas Remuneradas", icon: <TrendingUp size={14} strokeWidth={2.5} /> },
+    { key: "uva", label: "Crédito UVA", icon: <Home size={14} strokeWidth={2.5} /> },
 ];
 
 const getColumns = (tab: CompareTab): ColumnDef[] => {
@@ -306,7 +306,7 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                         width: "140px",
                         boxSizing: "border-box",
                     }}>
-                        <Search size={14} strokeWidth={1.5} color={colors.fg.dim} />
+                        <Search size={14} strokeWidth={2.5} color={colors.fg.dim} />
                         <input
                             type="text"
                             value={search}
@@ -336,7 +336,7 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                                     lineHeight: 1,
                                 }}
                             >
-                                <X size={12} />
+                                <X size={12} strokeWidth={2.5} />
                             </button>
                         )}
                     </div>
@@ -400,9 +400,9 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                                                 {sortableKey && (
                                                     <span style={{ display: "inline-flex", opacity: isSorted ? 1 : 0.4 }}>
                                                         {isSorted ? (
-                                                            sortDir === "desc" ? <ArrowDown size={12} /> : <ArrowUp size={12} />
+                                                            sortDir === "desc" ? <ArrowDown size={12} strokeWidth={2.5} /> : <ArrowUp size={12} strokeWidth={2.5} />
                                                         ) : (
-                                                            <ArrowUpDown size={12} />
+<ArrowUpDown size={12} strokeWidth={2.5} />
                                                         )}
                                                     </span>
                                                 )}
@@ -423,9 +423,9 @@ export function EconomicComparatives({ onRefresh }: EconomicComparativesProps) {
                                             {sortableKey && (
                                                 <span style={{ display: "inline-flex", opacity: isSorted ? 1 : 0.4 }}>
                                                     {isSorted ? (
-                                                        sortDir === "desc" ? <ArrowDown size={12} /> : <ArrowUp size={12} />
+                                                        sortDir === "desc" ? <ArrowDown size={12} strokeWidth={2.5} /> : <ArrowUp size={12} strokeWidth={2.5} />
                                                     ) : (
-                                                        <ArrowUpDown size={12} />
+                                                        <ArrowUpDown size={12} strokeWidth={2.5} />
                                                     )}
                                                 </span>
                                             )}

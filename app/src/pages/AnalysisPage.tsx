@@ -35,6 +35,9 @@ import { KPIEvolutionModal } from "@/components/KPIEvolutionModal";
 import { NetWorthWidgetContainer, AddAssetForm } from "@/components/NetWorthWidget";
 import { Button } from "@/components/ui/Button";
 import { flexColumn, flexRow, ghostButton } from "@/styles/layout";
+import { HelpModal } from "@/components/ui/HelpModal";
+import { PageHeader, HelpButton } from "@/components/ui/PageHeader";
+import { helpContent } from "@/data/helpContent";
 
 function getGreeting() {
     const h = new Date().getHours();
@@ -58,6 +61,7 @@ export function AnalysisPage() {
     };
     const [viewMode, setViewMode] = useState<"heatmap" | "networth">("heatmap");
     const [showNetWorthForm, setShowNetWorthForm] = useState(false);
+    const [showHelp, setShowHelp] = useState(false);
     const currentYear = new Date().getFullYear();
 
     const hasData = data && data.monthlySeries && data.monthlySeries.length > 0;
@@ -102,20 +106,10 @@ export function AnalysisPage() {
                 />
             )}
             {showNetWorthForm && <AddAssetForm onClose={() => setShowNetWorthForm(false)} />}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0, minHeight: "64px" }}>
-                <div>
-                    <h1
-                        style={{
-                            fontFamily: fonts.family,
-                            fontSize: fonts.size.xl,
-                            fontWeight: fonts.weight.semibold,
-                            color: colors.fg.base,
-                            margin: 0,
-                            marginBottom: spacing[2],
-                        }}
-                    >
-                        {getGreeting()}{userConfig?.username ? `, ${userConfig.username}` : ""}
-                    </h1>
+            <PageHeader
+                title={`${getGreeting()}${userConfig?.username ? `, ${userConfig.username}` : ""}`}
+                actions={<HelpButton onClick={() => setShowHelp(true)} />}
+            >
                     <div
                         style={{
                             display: "inline-flex",
@@ -124,6 +118,7 @@ export function AnalysisPage() {
                             overflow: "hidden",
                             cursor: "pointer",
                             userSelect: "none",
+                            alignSelf: "flex-start",
                         }}
                     >
                         <div
@@ -144,7 +139,7 @@ export function AnalysisPage() {
                                 lineHeight: "18px",
                             }}
                         >
-                            <Grid3X3 size={14} strokeWidth={1.5} />
+                            <Grid3X3 size={14} strokeWidth={2.5} />
                             Heatmap
                         </div>
                         <div
@@ -165,12 +160,11 @@ export function AnalysisPage() {
                                 lineHeight: "18px",
                             }}
                         >
-                            <Wallet size={13} strokeWidth={1.5} />
+                            <Wallet size={13} strokeWidth={2.5} />
                             Net Worth
                         </div>
                     </div>
-                </div>
-            </div>
+            </PageHeader>
 
             {isLoading ? (
                 <div style={{ color: colors.fg.dim, padding: spacing[4] }}>Cargando análisis...</div>
@@ -252,7 +246,7 @@ export function AnalysisPage() {
                             <div style={{ backgroundColor: colors.bg.surface, borderRadius: radius.lg, border: `1px solid transparent`, overflow: "hidden", ...flexColumn, height: "622px" }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: `${spacing[3]} ${spacing[4]}`, borderBottom: `1px solid ${colors.border}`, flexShrink: 0 }}>
                                     <span style={{ fontSize: fonts.size.sm, lineHeight: "24px", color: colors.fg.base, textTransform: "uppercase", fontWeight: fonts.weight.medium, letterSpacing: "0.5px" }}>Net Worth</span>
-                                    <Button variant="primary" color="default" size="sm" iconLeft={<Plus size={14} />} style={{ border: "none" }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.border; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.fill; }} onClick={() => setShowNetWorthForm(true)}>
+                                    <Button variant="primary" color="default" size="sm"                                     iconLeft={<Plus size={14} strokeWidth={2.5} />} style={{ border: "none", transition: "filter 0.15s ease" }} onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.15)"; }} onMouseLeave={(e) => { e.currentTarget.style.filter = ""; }} onClick={() => setShowNetWorthForm(true)}>
                                         Agregar Activo
                                     </Button>
                                 </div>
@@ -284,6 +278,7 @@ export function AnalysisPage() {
                                 >
                             <div style={{ ...flexRow, gap: spacing[2] }}>
                                 <button
+                                    className="heatmap-toggle"
                                     onClick={(e) => { e.stopPropagation(); setType(type === "expense" ? "income" : "expense"); }}
                                     style={{ ...ghostButton, ...flexRow, gap: spacing[1], height: "24px", padding: 0 }}
                                 >
@@ -315,7 +310,7 @@ export function AnalysisPage() {
                     </div>
                 )}
 
-                <div style={{ ...flexColumn, gap: spacing[2] }}>
+                <div style={{ ...flexColumn, height: "622px", justifyContent: "space-between" }}>
                     <div>
                         <div
                             style={{
@@ -573,6 +568,13 @@ export function AnalysisPage() {
             </div>
             </>
             )}
+            <HelpModal
+                isOpen={showHelp}
+                onClose={() => setShowHelp(false)}
+                title={helpContent.analysis.title}
+                intro={helpContent.analysis.intro}
+                sections={helpContent.analysis.sections}
+            />
         </div>
     );
 }

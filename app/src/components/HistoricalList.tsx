@@ -1,4 +1,4 @@
-import { memo, useState, useRef, useCallback } from "react";
+import { memo, useState, useRef, useCallback, useLayoutEffect } from "react";
 import { Pencil, Trash2, ArrowUp } from "lucide-react";
 import { spacing, radius } from "@/styles/theme";
 import { colors } from "@/styles/colors";
@@ -225,12 +225,12 @@ const HistoricalRowCells = memo(
                     <span style={optionsSpanStyle}>
                         {isHistorical && onEdit && (
                             <Button variant="icon" onClick={() => onEdit(entry)} title="Editar">
-                                <Pencil size={13.5} />
+                                <Pencil size={13.5} strokeWidth={2.5} />
                             </Button>
                         )}
                         {isHistorical && onDelete && (
                             <Button variant="icon" onClick={() => onDelete(entry)} title="Eliminar">
-                                <Trash2 size={13.5} />
+                                <Trash2 size={13.5} strokeWidth={2.5} />
                             </Button>
                         )}
                     </span>
@@ -274,6 +274,32 @@ export function HistoricalList({
     const virtuosoRef = useRef<VirtuosoHandle>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const [showScrollTop, setShowScrollTop] = useState(false);
+
+    // Snap the table height so the scroller holds a whole number of 30px rows (no half-row at the
+    // bottom) while leaving ~7% breathing room. chrome (header + borders) is measured live so it
+    // stays correct regardless of styling; measuring pre-paint avoids a first-frame flash, and we
+    // skip while hidden (offsetParent null).
+    const rootRef = useRef<HTMLDivElement>(null);
+    const scrollerRef = useRef<HTMLDivElement>(null);
+    const [snapH, setSnapH] = useState<number>();
+    const recomputeHeight = useCallback(() => {
+        const el = rootRef.current, sc = scrollerRef.current;
+        if (!el || !el.offsetParent || !sc) return;
+        const ROW = 30;
+        const chrome = el.getBoundingClientRect().height - sc.getBoundingClientRect().height;
+        const avail = (window.innerHeight - el.getBoundingClientRect().top) * 0.93;
+        const rows = Math.max(ROW, Math.floor((avail - chrome) / ROW) * ROW);
+        setSnapH(chrome + rows);
+    }, []);
+    useLayoutEffect(() => { recomputeHeight(); });
+    useLayoutEffect(() => {
+        const el = rootRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver(recomputeHeight);
+        if (el.parentElement) ro.observe(el.parentElement);
+        window.addEventListener("resize", recomputeHeight);
+        return () => { ro.disconnect(); window.removeEventListener("resize", recomputeHeight); };
+    }, [recomputeHeight]);
 
     const onEditRef = useRef(onEdit);
     onEditRef.current = onEdit;
@@ -340,9 +366,13 @@ export function HistoricalList({
 
     return (
         <div
+            ref={rootRef}
             style={{
                 position: "absolute",
-                inset: "0 0 5% 0",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: snapH ?? "93%",
                 ...flexColumn,
                 overflow: "hidden",
                 borderRadius: radius.lg,
@@ -393,7 +423,7 @@ export function HistoricalList({
                     <div>Fuente</div>
                     <div>Opciones</div>
                 </div>
-                <div style={{ flex: 1, minHeight: 0 }}>
+                <div ref={scrollerRef} style={{ flex: 1, minHeight: 0 }}>
                     <Virtuoso<HistoricalEntry>
                         ref={virtuosoRef}
                         style={{ height: "100%", overflowY: "scroll" }}
@@ -443,7 +473,7 @@ export function HistoricalList({
                     }}
                     title="Volver arriba"
                 >
-                    <ArrowUp size={18} />
+                    <ArrowUp size={18} strokeWidth={2.5} />
                 </button>
             )}
         </div>

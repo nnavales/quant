@@ -29,7 +29,6 @@ export interface ColorScheme {
     };
     border: string;
     fill: string;
-    hoverFill: string;
     variant: {
         green: VariantState;
         red: VariantState;
@@ -38,10 +37,7 @@ export interface ColorScheme {
         orange: VariantState;
     };
     shadows: {
-        sm: string;
         md: string;
-        lg: string;
-        xl: string;
     };
     heatmap: {
         green: { low: string; mid: string; high: string };
@@ -86,10 +82,18 @@ export function applyCssVars() {
     set("--accent-orange", s.accent.orange);
     set("--accent-green", s.accent.green);
 
-    set("--shadow-sm", s.shadows.sm);
-    set("--shadow-md", s.shadows.md);
-
     set("--color-scheme", themeKey === "light" ? "light" : "dark");
 }
 
 export type Colors = ColorScheme;
+
+// Lift a fill/surface color toward its hover state so hover always "stands out":
+// lighten dark colors, darken light ones (direction from the color's own
+// luminance, so it works in both light and dark themes without a mode flag).
+export function hoverFill(hex: string, amount = 14): string {
+    const h = hex.replace("#", "");
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+    const dir = (Math.max(r, g, b) + Math.min(r, g, b)) / 2 > 140 ? -1 : 1;
+    const to2 = (c: number) => Math.max(0, Math.min(255, c + dir * amount)).toString(16).padStart(2, "0");
+    return `#${to2(r)}${to2(g)}${to2(b)}`;
+}

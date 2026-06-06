@@ -157,7 +157,7 @@ export function HistoricalFiltersComponent({ filters, onChange, noMargin }: Hist
                                     e.currentTarget.style.color = colors.fg.dim;
                                 }}
                             >
-                                <X size={11} />
+                                <X size={11} strokeWidth={2.5} />
                                 Limpiar
                             </div>
                         )}
@@ -191,7 +191,7 @@ export function HistoricalFiltersComponent({ filters, onChange, noMargin }: Hist
                         }}
                         title="Limpiar filtros"
                     >
-                        <RotateCcw size={14} />
+                        <RotateCcw size={14} strokeWidth={2.5} />
                     </button>
                 )}
             </div>

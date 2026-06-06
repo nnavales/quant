@@ -89,7 +89,7 @@ func (h *Handler) UpdateTransactionPaid(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	transaction, err := h.service.UpdateTansactionPaid(r.Context(), id, req.IsPaid)
+	transaction, err := h.service.UpdateTransactionPaid(r.Context(), id, req.IsPaid)
 	if err != nil {
 		httpx.WriteServiceError(w, r, err)
 		return

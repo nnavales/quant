@@ -82,7 +82,7 @@ function TypeToggle({
                 color="red"
                 active={value === "expense"}
                 onClick={() => onChange("expense")}
-                iconLeft={<TrendingDown size={14} />}
+                iconLeft={<TrendingDown size={14} strokeWidth={2.5} />}
                 style={{ fontSize: fonts.size.sm }}
             >
                 Egreso
@@ -93,7 +93,7 @@ function TypeToggle({
                 color="green"
                 active={value === "income"}
                 onClick={() => onChange("income")}
-                iconLeft={<TrendingUp size={14} />}
+                iconLeft={<TrendingUp size={14} strokeWidth={2.5} />}
                 style={{ fontSize: fonts.size.sm }}
             >
                 Ingreso
@@ -240,9 +240,9 @@ export function PresetManager() {
     const handleCreate = () => {
         const name = createFormData.name?.trim();
         if (!name) return;
-        const exists = presetsList?.some((p) => p.name.toLowerCase() === name.toLowerCase());
+        const exists = presetsList?.some((p) => p.name.toLowerCase() === name.toLowerCase() && p.type === createFormData.type);
         if (exists) {
-            toast(`El preset "${name}" ya existe`);
+            toast(`El preset "${name}" ya existe para ese tipo`);
             return;
         }
         createPresetMutation.mutate(buildPresetPayload(createFormData), {
@@ -258,9 +258,9 @@ export function PresetManager() {
     const handleUpdate = () => {
         const name = editFormData.name?.trim();
         if (!editingPresetId || !name) return;
-        const exists = presetsList?.some((p) => p.id !== editingPresetId && p.name.toLowerCase() === name.toLowerCase());
+        const exists = presetsList?.some((p) => p.id !== editingPresetId && p.name.toLowerCase() === name.toLowerCase() && p.type === editFormData.type);
         if (exists) {
-            toast(`El preset "${name}" ya existe`);
+            toast(`El preset "${name}" ya existe para ese tipo`);
             return;
         }
         const originalPreset = presetsList?.find((p) => p.id === editingPresetId);
@@ -364,7 +364,7 @@ export function PresetManager() {
                         whiteSpace: "nowrap",
                     }}
                 >
-                    <Plus size={14} />
+                    <Plus size={14} strokeWidth={2.5} />
                     Nuevo preset
                 </button>
             )}
@@ -392,10 +392,10 @@ export function PresetManager() {
                         />
                         <div style={{ display: "flex", gap: spacing[1], flexShrink: 0, marginBottom: "1px" }}>
                             <Button variant="icon" onClick={handleCreate} disabled={!createFormData.name?.trim() || isLoadingSubmit}>
-                                <Check size={14} />
+                                <Check size={14} strokeWidth={2.5} />
                             </Button>
                             <Button variant="icon" onClick={closeCreateForm}>
-                                <X size={14} />
+                                <X size={14} strokeWidth={2.5} />
                             </Button>
                         </div>
                     </div>
@@ -523,10 +523,10 @@ export function PresetManager() {
                                         />
                                         <div style={{ display: "flex", gap: spacing[1], flexShrink: 0, marginBottom: "1px" }}>
                                             <Button variant="icon" onClick={handleUpdate} disabled={!editFormData.name?.trim() || isLoadingSubmit}>
-                                                <Check size={14} />
+                                                <Check size={14} strokeWidth={2.5} />
                                             </Button>
                                             <Button variant="icon" onClick={closeEditForm}>
-                                                <X size={14} />
+                                                <X size={14} strokeWidth={2.5} />
                                             </Button>
                                         </div>
                                     </div>
@@ -561,7 +561,7 @@ export function PresetManager() {
                                         onClick={() => toggleExpand(preset.id)}
                                     >
                                         <span style={{ color: colors.fg.dim, display: "flex", flexShrink: 0 }}>
-                                            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                            {isExpanded ? <ChevronDown size={16} strokeWidth={2.5} /> : <ChevronRight size={16} strokeWidth={2.5} />}
                                         </span>
                                         <span style={{...truncate, fontWeight: fonts.weight.semibold,
                                             color: colors.fg.base,
@@ -589,14 +589,14 @@ export function PresetManager() {
                                             title="Editar"
                                             onClick={() => openEditForm(preset)}
                                         >
-                                            <Pencil size={14} />
+                                            <Pencil size={14} strokeWidth={2.5} />
                                         </Button>
                                         <Button
                                             variant="icon"
                                             title="Eliminar"
                                             onClick={() => handleDeletePreset(preset.id)}
                                         >
-                                            <Trash2 size={14} />
+                                            <Trash2 size={14} strokeWidth={2.5} />
                                         </Button>
                                     </div>
                                 </div>
@@ -731,7 +731,7 @@ export function PresetManager() {
                                     onClick={() => handleRestorePreset(preset.id)}
                                     title="Restaurar"
                                 >
-                                    <RotateCcw size={14} />
+                                    <RotateCcw size={14} strokeWidth={2.5} />
                                 </Button>
                             </div>
                         ))}

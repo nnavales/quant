@@ -106,7 +106,7 @@ export function MetricCard({ title, loading, error, onRefresh, children, delta, 
                 <div style={titleStyle}>{title}</div>
                 {onRefresh && (
                     <Button variant="icon" onClick={onRefresh} title="Actualizar">
-                        <RefreshCw size={14} />
+                        <RefreshCw size={14} strokeWidth={2.5} />
                     </Button>
                 )}
             </div>
@@ -114,7 +114,7 @@ export function MetricCard({ title, loading, error, onRefresh, children, delta, 
             <div className="selectable" style={deltaWrap}>
                 {delta != null && delta !== 0 && (
                     <div style={{ ...flexRow, gap: "4px", color: positive !== inverseTrend ? colors.accent.green : colors.accent.red }}>
-                        {positive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                        {positive ? <TrendingUp size={14} strokeWidth={2.5} /> : <TrendingDown size={14} strokeWidth={2.5} />}
                         <span className="selectable" style={{ fontWeight: fonts.weight.medium }}>{positive ? "+" : ""}{formatNumber(delta)}%</span>
                     </div>
                 )}

@@ -44,7 +44,7 @@ export function Card({ title, children, onRefresh, titleStyle }: CardProps) {
                 <div style={titleStyle || sectionTitleStyle}>{title}</div>
                 {onRefresh && (
                     <Button variant="icon" onClick={onRefresh} title="Actualizar">
-                        <RefreshCw size={14} />
+                        <RefreshCw size={14} strokeWidth={2.5} />
                     </Button>
                 )}
             </div>

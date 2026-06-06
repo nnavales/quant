@@ -47,9 +47,9 @@ function ToastItem({ toast, onRemove, exiting }: { toast: Toast; onRemove: (id: 
     return (
         <div style={toastStyle(toast.type, exiting)}>
             {toast.type === "error" || toast.type === "warning" ? (
-                <AlertCircle size={14} style={{ color, flexShrink: 0 }} />
+                <AlertCircle size={14} strokeWidth={2.5} style={{ color, flexShrink: 0 }} />
             ) : (
-                <CheckCircle size={14} style={{ color, flexShrink: 0 }} />
+                <CheckCircle size={14} strokeWidth={2.5} style={{ color, flexShrink: 0 }} />
             )}
             <span style={{ fontSize: fonts.size.sm, color: colors.fg.base, fontWeight: fonts.weight.regular }}>
                 {toast.message}
@@ -61,7 +61,7 @@ function ToastItem({ toast, onRemove, exiting }: { toast: Toast; onRemove: (id: 
                 style={{ background: "transparent", border: "none", color: colors.fg.dim, cursor: "pointer", padding: 0, display: "flex", flexShrink: 0, marginLeft: spacing[1], transition: "color 0.12s ease" }}
                 aria-label="Cerrar notificación"
             >
-                <X size={12} />
+                <X size={12} strokeWidth={2.5} />
             </button>
         </div>
     );

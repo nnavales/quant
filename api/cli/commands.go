@@ -360,7 +360,7 @@ var Commands = map[string]CommandSpec{
 	"config:update": {
 		Resource: "config", Action: "update",
 		Description: "Update configuration",
-		Endpoint:    "/users/config", Method: http.MethodPatch,
+		Endpoint:    "/users/config/{key}", Method: http.MethodPatch,
 		HasBody: true,
 		BuildInput: func(args []string) (Input, error) {
 			return parseInput(args, newConfigSetInput)

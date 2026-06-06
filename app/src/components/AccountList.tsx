@@ -97,7 +97,7 @@ export function AccountList() {
             <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: spacing[4] }}>
                 <Button
                     variant="secondary"
-                    iconLeft={<Plus size={16} />}
+                    iconLeft={<Plus size={16} strokeWidth={2.5} />}
                     onClick={() => setShowForm(!showForm)}
                 >
                     Nueva Cuenta
@@ -163,10 +163,10 @@ export function AccountList() {
                             </div>
                             <div style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
                                 <Button variant="primary" size="sm" onClick={() => handleUpdate(account.id)}>
-                                    <Check size={14} />
+                                    <Check size={14} strokeWidth={2.5} />
                                 </Button>
                                 <Button variant="secondary" size="sm" onClick={cancelEdit}>
-                                    <X size={14} />
+                                    <X size={14} strokeWidth={2.5} />
                                 </Button>
                             </div>
                         </div>
@@ -189,14 +189,14 @@ export function AccountList() {
                                     title="Editar"
                                     onClick={() => startEdit(account)}
                                 >
-                                    <Pencil size={14} />
+                                    <Pencil size={14} strokeWidth={2.5} />
                                 </Button>
                                 <Button
                                     variant="icon"
                                     title="Eliminar"
                                     onClick={() => handleDelete(account.id)}
                                 >
-                                    <Trash2 size={14} />
+                                    <Trash2 size={14} strokeWidth={2.5} />
                                 </Button>
                             </div>
                         </div>

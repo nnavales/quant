@@ -108,10 +108,8 @@ func (s *Service) GetNetWorth(ctx context.Context) (*NetWorth, error) {
 
 	var dollarVal float64
 
-	if chosenDollar, err := s.userRepo.Get(ctx, "dollar_source"); err == nil {
-		if source, ok := chosenDollar.(string); ok && source != "" {
-			dollarVal, err = s.provider.LastSellSource(ctx, source)
-		}
+	if source, err := s.userRepo.Get(ctx, "dollar_source"); err == nil && source != "" {
+		dollarVal, err = s.provider.LastSellSource(ctx, source)
 	}
 
 	if dollarVal == 0 {
@@ -124,12 +122,7 @@ func (s *Service) GetNetWorth(ctx context.Context) (*NetWorth, error) {
 			return nil, fmt.Errorf("unable to get exchange rate from provider or user settings: %w", err)
 		}
 
-		strRate, ok := defaultRate.(string)
-		if !ok {
-			return nil, fmt.Errorf("default_rate is not a string")
-		}
-
-		dollarVal, err = strconv.ParseFloat(strRate, 64)
+		dollarVal, err = strconv.ParseFloat(defaultRate, 64)
 		if err != nil {
 			return nil, fmt.Errorf("unable to parse exchange rate: %w", err)
 		}

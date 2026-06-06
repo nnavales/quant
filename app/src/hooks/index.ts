@@ -16,3 +16,4 @@ export { useDropdownPosition } from "./useDropdownPosition";
 export { useCategoryGroups, useAccountGroups } from "./useDropdownGroups";
 export { useDollarRate } from "./useDollarRate";
 export { useGroupedChannels, useGroupedCategories } from "./useGroupedItems";
+export { useChatbotConfig, useChatbotHealth, useSetAgentConfig, useSetChatConfig } from "./useChatbot";

@@ -328,6 +328,7 @@ export function CategoryManager() {
                                 <div style={{ ...flexRow, gap: spacing[2], flex: 1, minWidth: 0 }}>
                                     <ChevronRight
                                         size={16}
+                                        strokeWidth={2.5}
                                         style={{
                                             color: colors.fg.dim,
                                             flexShrink: 0,
@@ -378,13 +379,13 @@ export function CategoryManager() {
                                                 }}
                                             >
                                                 <Button variant="icon" onClick={saveEditCategory}>
-                                                    <Check size={14} />
+                                                    <Check size={14} strokeWidth={2.5} />
                                                 </Button>
                                                 <Button
                                                     variant="icon"
                                                     onClick={() => setEditingCategoryId(null)}
                                                 >
-                                                    <X size={14} />
+                                                    <X size={14} strokeWidth={2.5} />
                                                 </Button>
                                             </span>
                                         )}
@@ -410,6 +411,7 @@ export function CategoryManager() {
                                 >
                                     <ChevronRight
                                         size={16}
+                                        strokeWidth={2.5}
                                         style={{
                                             color: colors.fg.dim,
                                             flexShrink: 0,
@@ -442,13 +444,13 @@ export function CategoryManager() {
                                             onClick={() => startEditCategory(group.category)}
                                             title="Editar"
                                         >
-                                            <Pencil size={14} />
+                                            <Pencil size={14} strokeWidth={2.5} />
                                         </Button>
                                         <Button
                                             variant="icon"
                                             onClick={() => handleDeleteCategory(group.category.id)}
                                         >
-                                            <Trash2 size={14} />
+                                            <Trash2 size={14} strokeWidth={2.5} />
                                         </Button>
                                     </span>
                                 )}
@@ -517,7 +519,7 @@ export function CategoryManager() {
                                                             variant="icon"
                                                             onClick={saveEditSubcategory}
                                                         >
-                                                            <Check size={14} />
+                                                            <Check size={14} strokeWidth={2.5} />
                                                         </Button>
                                                         <Button
                                                             variant="icon"
@@ -525,7 +527,7 @@ export function CategoryManager() {
                                                                 setEditingSubcategoryId(null)
                                                             }
                                                         >
-                                                            <X size={14} />
+                                                            <X size={14} strokeWidth={2.5} />
                                                         </Button>
                                                     </div>
                                                 </div>
@@ -570,7 +572,7 @@ export function CategoryManager() {
                                                                 startEditSubcategory(sub)
                                                             }
                                                         >
-                                                            <Pencil size={12} />
+                                                            <Pencil size={12} strokeWidth={2.5} />
                                                         </Button>
                                                         <Button
                                                             variant="icon"
@@ -579,7 +581,7 @@ export function CategoryManager() {
                                                                 handleDeleteSubcategory(sub.id)
                                                             }
                                                         >
-                                                            <Trash2 size={12} />
+                                                            <Trash2 size={12} strokeWidth={2.5} />
                                                         </Button>
                                                     </div>
                                                 </div>
@@ -631,7 +633,7 @@ export function CategoryManager() {
                                                     onClick={() => handleRestoreSubcategory(sub.id)}
                                                     title="Restaurar"
                                                 >
-                                                    <RotateCcw size={12} />
+                                                    <RotateCcw size={12} strokeWidth={2.5} />
                                                 </Button>
                                                 <Button
                                                     variant="icon"
@@ -695,13 +697,13 @@ export function CategoryManager() {
                                                     handleAddSubcategory(group.category.id)
                                                 }
                                             >
-                                                <Check size={14} />
+                                                <Check size={14} strokeWidth={2.5} />
                                             </Button>
                                             <Button
                                                 variant="icon"
                                                 onClick={() => setShowSubcategoryForm(null)}
                                             >
-                                                <X size={14} />
+                                                <X size={14} strokeWidth={2.5} />
                                             </Button>
                                         </div>
                                     </div>
@@ -733,7 +735,7 @@ export function CategoryManager() {
                                                 whiteSpace: "nowrap",
                                             }}
                                         >
-                                            <Plus size={14} />
+                                            <Plus size={14} strokeWidth={2.5} />
                                             Agregar subcategoría
                                         </button>
                                     )
@@ -780,7 +782,7 @@ export function CategoryManager() {
                                         onClick={() => handleRestoreCategory(group.category.id)}
                                         title="Restaurar"
                                     >
-                                        <RotateCcw size={14} />
+                                        <RotateCcw size={14} strokeWidth={2.5} />
                                     </Button>
                                     <Button
                                         variant="icon"

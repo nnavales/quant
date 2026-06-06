@@ -375,10 +375,35 @@ export interface UserConfig {
     theme?: string;
 }
 
-export type UserConfigUpdate = Partial<UserConfig>;
 
-export interface ConfigStatusResponse {
-    status: string;
+
+// ============================================
+// Chatbot Config Types
+// ============================================
+
+export interface ChatbotConfig {
+    telegram_id: number;
+    telegram_token: string;
+    api_key: string;
+    model_id: string;
+    base_url: string;
+}
+
+export interface AgentConfigReq {
+    api_key: string;
+    model_id: string;
+    base_url: string;
+}
+
+export interface ChatConfigReq {
+    telegram_id: number;
+    telegram_token: string;
+}
+
+export interface ChatbotHealth {
+    agent: boolean;
+    telegram: boolean;
+    ok: boolean;
 }
 
 // ============================================

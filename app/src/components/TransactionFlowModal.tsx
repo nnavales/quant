@@ -41,7 +41,7 @@ import { toast } from "@/utils/toast";
 import { getApiErrorMessage } from "@/utils/apiErrors";
 import { formatISODateInTimezone, getNowInTimezone } from "@/utils/date";
 import { parseLocaleNumber } from "@/utils/format";
-import { colors } from "@/styles/colors";
+import { colors, hoverFill } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Dropdown } from "@/components/ui/Dropdown";
@@ -119,7 +119,6 @@ function PresetCard({
                 ...flexColumn,
                 transition: "all 0.15s cubic-bezier(0.16, 1, 0.3, 1)",
                 transform: hovered ? "translateY(-3px)" : "translateY(0)",
-                boxShadow: hovered ? colors.shadows.sm : "none",
                 width: 210,
                 height: 130,
                 outline: "none",
@@ -172,7 +171,7 @@ function PresetCard({
                                 transition: "all 0.1s",
                             }}
                             onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = colors.border;
+                                e.currentTarget.style.backgroundColor = hoverFill(colors.fill);
                                 e.currentTarget.style.color = colors.fg.base;
                             }}
                             onMouseLeave={(e) => {
@@ -595,8 +594,8 @@ export function TransactionFlowModal({
         userConfig?.dollar_source,
         dollarBanks,
         (rate) => {
-            setTxFormData((prev) => ({ ...prev, exchange_rate: rate }));
-            setExchangeRateInput(String(rate));
+            setTxFormData((prev) => ({ ...prev, exchange_rate: parseFloat(rate.toFixed(2)) }));
+            setExchangeRateInput(rate.toFixed(2).replace(".", ","));
         },
         userConfig?.default_rate
     );
@@ -605,6 +604,7 @@ export function TransactionFlowModal({
         const defaultRate = userConfig?.default_rate
             ? parseLocaleNumber(userConfig.default_rate)
             : 0;
+        const safeRate = defaultRate || 0;
         setTxFormData({
             description: "",
             date: formatISODateInTimezone(
@@ -616,14 +616,14 @@ export function TransactionFlowModal({
             installment_number: undefined,
             amount: "",
             currency: "ARS",
-            exchange_rate: defaultRate,
+            exchange_rate: parseFloat(safeRate.toFixed(2)),
             category_id: "",
             subcategory_id: "",
             channel_id: "",
             account_id: "",
             is_paid: true,
         });
-        setExchangeRateInput(String(defaultRate));
+        setExchangeRateInput(safeRate.toFixed(2).replace(".", ","));
     };
 
     const applyPreset = (preset: Preset) => {
@@ -732,7 +732,13 @@ export function TransactionFlowModal({
     };
 
     const handleCreatePreset = () => {
-        if (!presetFormData.name?.trim()) return;
+        const name = presetFormData.name?.trim();
+        if (!name) return;
+        const exists = allPresets.some((p) => p.name.toLowerCase() === name.toLowerCase() && p.type === presetFormData.type);
+        if (exists) {
+            toast(`El preset "${name}" ya existe para ese tipo`);
+            return;
+        }
         createPresetMutation.mutate(buildPresetPayload(presetFormData), {
             onSuccess: () => {
                 refetchPresets();
@@ -745,6 +751,12 @@ export function TransactionFlowModal({
 
     const handleUpdatePreset = () => {
         if (!editingPreset || !presetFormData.name?.trim()) return;
+        const name = presetFormData.name.trim();
+        const exists = allPresets.some((p) => p.id !== editingPreset.id && p.name.toLowerCase() === name.toLowerCase() && p.type === presetFormData.type);
+        if (exists) {
+            toast(`El preset "${name}" ya existe para ese tipo`);
+            return;
+        }
         updatePresetMutation.mutate(
             { id: editingPreset.id, data: buildPresetPayload(presetFormData) },
             {
@@ -770,13 +782,22 @@ export function TransactionFlowModal({
         });
     };
 
+    // Required fields that must be filled before the transaction can be created.
+    const txRequiredFilled =
+        !!txFormData.date &&
+        !!txFormData.description.trim() &&
+        !!txFormData.amount &&
+        !!txFormData.subcategory_id &&
+        !!txFormData.account_id;
+
     // Transaction submit
     const handleTxSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!txRequiredFilled || createTxMutation.isPending) return;
         const dataToSend = {
             ...txFormData,
             amount: String(parseLocaleNumber(txFormData.amount)),
-            exchange_rate: parseLocaleNumber(exchangeRateInput) || 1,
+            exchange_rate: parseFloat((parseLocaleNumber(exchangeRateInput) || 1).toFixed(2)),
             installment_number: txFormData.installment_number
                 ? parseInt(String(txFormData.installment_number))
                 : undefined,
@@ -867,7 +888,7 @@ export function TransactionFlowModal({
 
     return (
         <>
-            <Modal isOpen={isOpen} onClose={onClose} opacity={0.75}>
+            <Modal isOpen={isOpen} onClose={onClose} opacity={0.5}>
                 <ModalContent
                     onClick={(e) => e.stopPropagation()}
                     style={{
@@ -879,7 +900,6 @@ export function TransactionFlowModal({
                         maxHeight: modalMaxHeight,
                         ...flexColumn,
                         overflow: "hidden",
-                        boxShadow: colors.shadows.xl,
                         transition: "max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
                     }}
                 >
@@ -1330,6 +1350,12 @@ export function TransactionFlowModal({
                                                 onChange={(e) =>
                                                     setExchangeRateInput(e.target.value)
                                                 }
+                                                onBlur={() => {
+                                                    const num = parseLocaleNumber(exchangeRateInput);
+                                                    if (!isNaN(num)) {
+                                                        setExchangeRateInput(num.toFixed(2).replace(".", ","));
+                                                    }
+                                                }}
                                                 style={{ ...formInputStyle, paddingRight: "36px" }}
                                             />
                                             <Button
@@ -1473,11 +1499,7 @@ export function TransactionFlowModal({
                             <SubmitButton
                                 type="submit"
                                 onClick={handleTxSubmit}
-                                disabled={
-                                    createTxMutation.isPending ||
-                                    !txFormData.description ||
-                                    !txFormData.amount
-                                }
+                                disabled={createTxMutation.isPending || !txRequiredFilled}
                                 loading={createTxMutation.isPending}
                                 fullWidth
                                 iconLeft={

@@ -99,7 +99,7 @@ export function TransactionFilters({
                     paddingRight: searchText ? "22px" : "12px",
                     position: "relative",
                 }}>
-                    <Search size={14} strokeWidth={1.5} color={colors.fg.dim} style={{ flexShrink: 0 }} />
+                    <Search size={14} strokeWidth={2.5} color={colors.fg.dim} style={{ flexShrink: 0 }} />
                     <input
                         type="text"
                         placeholder="Buscar..."
@@ -135,7 +135,7 @@ export function TransactionFilters({
                                 lineHeight: 1,
                             }}
                         >
-                            <X size={12} />
+                            <X size={12} strokeWidth={2.5} />
                         </button>
                     )}
                 </div>
@@ -224,7 +224,7 @@ export function TransactionFilters({
                                 onMouseEnter={(e) => { e.currentTarget.style.color = colors.fg.base; }}
                                 onMouseLeave={(e) => { e.currentTarget.style.color = colors.fg.dim; }}
                             >
-                                <X size={11} />
+                                <X size={11} strokeWidth={2.5} />
                                 Limpiar
                             </div>
                         )}
@@ -384,7 +384,7 @@ export function TransactionFilters({
                         style={clearButtonStyle}
                         title="Limpiar filtros"
                     >
-                        <RotateCcw size={14} />
+                        <RotateCcw size={14} strokeWidth={2.5} />
                     </button>
                 )}
 

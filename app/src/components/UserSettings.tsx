@@ -71,8 +71,8 @@ export function UserSettings() {
           ]
         : [{ id: "", label: `Default (${defaultRate || "sin tasa"})` }];
 
-    function autoSave(data: Record<string, string>) {
-        updateMutation.mutate(data, {
+    function autoSave(key: string, value: string) {
+        updateMutation.mutate({ key, value }, {
             onSuccess: () => toast("Configuración guardada", "success"),
             onError: (err: unknown) => {
                 toast(getApiErrorMessage(err));
@@ -80,15 +80,11 @@ export function UserSettings() {
         });
     }
 
-    function getSaveData(overrides?: Record<string, string>) {
-        return { username, dollar_source: dollarSource, timezone, date_format: dateFormat, default_rate: defaultRate, theme, ...overrides };
-    }
-
     const isUsernameDirty = username !== (config?.username ?? "");
     const isDefaultRateDirty = defaultRate !== (config?.default_rate ? formatForInput(config.default_rate) : "");
 
     const saveUsername = () => {
-        autoSave(getSaveData());
+        autoSave("username", username);
     };
 
     const cancelUsername = () => {
@@ -97,7 +93,7 @@ export function UserSettings() {
 
     const saveDefaultRate = () => {
         const rate = parseLocaleNumber(defaultRate);
-        autoSave(getSaveData({ default_rate: !defaultRate || isNaN(rate) ? "" : String(rate) }));
+        autoSave("default_rate", !defaultRate || isNaN(rate) ? "" : String(rate));
     };
 
     const cancelDefaultRate = () => {
@@ -122,10 +118,10 @@ export function UserSettings() {
                     {isUsernameDirty && (
                         <div style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
                             <Button variant="icon" onClick={saveUsername}>
-                                <Check size={14} />
+                                <Check size={14} strokeWidth={2.5} />
                             </Button>
                             <Button variant="icon" onClick={cancelUsername}>
-                                <X size={14} />
+                                <X size={14} strokeWidth={2.5} />
                             </Button>
                         </div>
                     )}
@@ -137,7 +133,7 @@ export function UserSettings() {
                     value={dollarSource}
                     onChange={(id) => {
                         setDollarSource(id);
-                        autoSave(getSaveData({ dollar_source: id }));
+                        autoSave("dollar_source", id);
                     }}
                     options={dollarSourceOptions}
                     placeholder="Seleccionar..."
@@ -158,10 +154,10 @@ export function UserSettings() {
                     {isDefaultRateDirty && (
                         <div style={{ display: "flex", gap: spacing[1], flexShrink: 0 }}>
                             <Button variant="icon" onClick={saveDefaultRate}>
-                                <Check size={14} />
+                                <Check size={14} strokeWidth={2.5} />
                             </Button>
                             <Button variant="icon" onClick={cancelDefaultRate}>
-                                <X size={14} />
+                                <X size={14} strokeWidth={2.5} />
                             </Button>
                         </div>
                     )}
@@ -173,7 +169,7 @@ export function UserSettings() {
                     value={timezone}
                     onChange={(id) => {
                         setTimezone(id);
-                        autoSave(getSaveData({ timezone: id }));
+                        autoSave("timezone", id);
                     }}
                     options={timezoneOptions}
                     placeholder="Seleccionar..."
@@ -185,7 +181,7 @@ export function UserSettings() {
                     value={dateFormat}
                     onChange={(id) => {
                         setDateFormat(id);
-                        autoSave(getSaveData({ date_format: id }));
+                        autoSave("date_format", id);
                     }}
                     options={dateFormatOptions}
                     placeholder="Seleccionar..."
@@ -198,7 +194,7 @@ export function UserSettings() {
                     onChange={(id) => {
                         localStorage.setItem("theme", id);
                         setTheme(id);
-                        autoSave(getSaveData({ theme: id }));
+                        autoSave("theme", id);
                         setTimeout(() => window.location.reload(), 150);
                     }}
                     options={themeOptions}

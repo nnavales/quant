@@ -32,9 +32,11 @@ func addRoutes(mux *http.ServeMux,
 
 	mux.HandleFunc("POST /users/config/agent", cbh.SetAgentCFG)
 	mux.HandleFunc("POST /users/config/chat", cbh.SetChatCFG)
+	mux.HandleFunc("GET /users/config/chatbot", cbh.GetCfg)
+	mux.HandleFunc("GET /users/config/chatbot/health", cbh.Health)
 	mux.HandleFunc("GET /users/config", uh.GetConfig)
 	mux.HandleFunc("GET /users/config/{key}", uh.GetConfigByKey)
-	mux.HandleFunc("PATCH /users/config", uh.SetConfig)
+	mux.HandleFunc("PATCH /users/config/{key}", uh.SetConfig)
 
 	mux.HandleFunc("GET /economic/ipc", hm.GetIPC)
 	mux.HandleFunc("GET /economic/inflation", hm.GetInflation)

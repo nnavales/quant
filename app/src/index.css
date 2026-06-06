@@ -38,8 +38,8 @@
     --font-size-5xl: 48px;
 }
 
-/* Colors and shadows are injected by applyCssVars() in main.tsx */
-/* --bg-base, --fg-base, --accent-*, --shadow-* are set at runtime */
+/* Colors are injected by applyCssVars() in main.tsx */
+/* --bg-base, --fg-base, --accent-* are set at runtime */
 
 * {
     box-sizing: border-box;
@@ -65,6 +65,11 @@ select,
 html {
     scrollbar-gutter: stable;
     scroll-behavior: smooth;
+    /* Stop WebView2 (Windows) from auto-inflating font sizes when an
+       element's text width changes — otherwise toggles like the Heatmap
+       header ratchet their font size up on every press. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
 }
 
 body {
@@ -85,6 +90,12 @@ body {
 
 button:active:not(:disabled) {
     transform: scale(0.97);
+}
+
+/* The Heatmap header is a text toggle, not a pressable button — skip the
+   scale press feedback so its label can't visually distort on press. */
+.heatmap-toggle:active:not(:disabled) {
+    transform: none;
 }
 
 /* Smooth transitions on all interactive elements */

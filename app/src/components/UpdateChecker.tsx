@@ -7,7 +7,7 @@ import { fonts } from "@/styles/fonts";
 import { SettingsCard } from "@/components/SettingsCard";
 import { flexColumn, flexRow } from "@/styles/layout";
 
-const CURRENT_VERSION = "0.8.1";
+const CURRENT_VERSION = "1.0.0";
 const UPDATE_CHECK_URL = "https://api.github.com/repos/nnavales/quant/releases?per_page=1";
 
 export function UpdateChecker() {
@@ -117,7 +117,7 @@ export function UpdateChecker() {
                                 whiteSpace: "nowrap",
                             }}
                         >
-                            <Download size={14} />
+                            <Download size={14} strokeWidth={2.5} />
                             Descargar
                         </button>
                     </div>
@@ -191,6 +191,7 @@ export function UpdateChecker() {
                 >
                     <RefreshCw
                         size={14}
+                        strokeWidth={2.5}
                         style={checking ? { animation: "spin 1s linear infinite" } : undefined}
                     />
                     {checking ? "Buscando..." : "Buscar actualizaciones"}

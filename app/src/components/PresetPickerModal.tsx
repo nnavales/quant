@@ -17,7 +17,7 @@ import { Modal, ModalContent, ModalCloseButton } from "@/components/ui/Modal";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SubmitButton } from "@/components/ui/SubmitButton";
-import { colors } from "@/styles/colors";
+import { colors, hoverFill } from "@/styles/colors";
 import { fonts } from "@/styles/fonts";
 import { spacing, radius } from "@/styles/theme";
 import { inputStyle, flexColumn, flexRow, truncate } from "@/styles/layout";
@@ -75,10 +75,10 @@ function TypeToggle({ value, onChange }: { value: "expense" | "income" | undefin
     return (
         <div style={{ display: "flex", backgroundColor: colors.bg.base, borderRadius: radius.lg, padding: 2, flexShrink: 0, height: 34, boxSizing: "border-box", alignItems: "stretch" }}>
             <button style={tabStyle(value === "expense", colors.accent.red)} onClick={() => onChange("expense")}>
-                <TrendingDown size={12} /> Egreso
+                <TrendingDown size={12} strokeWidth={2.5} /> Egreso
             </button>
             <button style={tabStyle(value === "income", colors.accent.green)} onClick={() => onChange("income")}>
-                <TrendingUp size={12} /> Ingreso
+                <TrendingUp size={12} strokeWidth={2.5} /> Ingreso
             </button>
         </div>
     );
@@ -122,7 +122,6 @@ function PresetCard({
                 gap: spacing[2],
                 transition: "all 0.15s cubic-bezier(0.16, 1, 0.3, 1)",
                 transform: hovered ? "translateY(-2px)" : "translateY(0)",
-                boxShadow: hovered ? colors.shadows.lg : "none",
                 height: 160,
                 outline: "none",
                 position: "relative",
@@ -158,10 +157,10 @@ function PresetCard({
                                 cursor: "pointer",
                                 transition: "all 0.1s",
                             }}
-                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.border; e.currentTarget.style.color = colors.fg.base; }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = hoverFill(colors.fill); e.currentTarget.style.color = colors.fg.base; }}
                             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.fill; e.currentTarget.style.color = colors.fg.dim; }}
                         >
-                            <Pencil size={11} />
+                            <Pencil size={11} strokeWidth={2.5} />
                         </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); onDelete(); }}
@@ -179,7 +178,7 @@ function PresetCard({
                             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = `${colors.accent.red}30`; }}
                             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = `${colors.accent.red}18`; }}
                         >
-                            <Trash2 size={11} />
+                            <Trash2 size={11} strokeWidth={2.5} />
                         </button>
                     </div>
                 ) : (
@@ -439,7 +438,13 @@ export function PresetPickerModal({ isOpen, onClose, onSelectPreset, onManual }:
     };
 
     const handleCreate = () => {
-        if (!formData.name?.trim()) return;
+        const name = formData.name?.trim();
+        if (!name) return;
+        const exists = allPresets.some((p) => p.name.toLowerCase() === name.toLowerCase() && p.type === formData.type);
+        if (exists) {
+            toast(`El preset "${name}" ya existe para ese tipo`);
+            return;
+        }
         createMutation.mutate(buildPayload(formData), {
             onSuccess: () => { refetch(); backToGrid(); toast("Preset creado", "success"); },
             onError: (err: unknown) => toast(getApiErrorMessage(err)),
@@ -448,6 +453,12 @@ export function PresetPickerModal({ isOpen, onClose, onSelectPreset, onManual }:
 
     const handleUpdate = () => {
         if (!editingPreset || !formData.name?.trim()) return;
+        const name = formData.name.trim();
+        const exists = allPresets.some((p) => p.id !== editingPreset.id && p.name.toLowerCase() === name.toLowerCase() && p.type === formData.type);
+        if (exists) {
+            toast(`El preset "${name}" ya existe para ese tipo`);
+            return;
+        }
         updateMutation.mutate({ id: editingPreset.id, data: buildPayload(formData) }, {
             onSuccess: () => { refetch(); backToGrid(); toast("Preset actualizado", "success"); },
             onError: (err: unknown) => toast(getApiErrorMessage(err)),
@@ -495,7 +506,7 @@ export function PresetPickerModal({ isOpen, onClose, onSelectPreset, onManual }:
 
     return (
         <>
-            <Modal isOpen={isOpen} onClose={onClose} opacity={0.75}>
+            <Modal isOpen={isOpen} onClose={onClose} opacity={0.5}>
                 <ModalContent
                     onClick={(e) => e.stopPropagation()}
                     style={{
@@ -507,7 +518,6 @@ export function PresetPickerModal({ isOpen, onClose, onSelectPreset, onManual }:
                         maxHeight: "90vh",
                         ...flexColumn,
                         overflow: "hidden",
-                        boxShadow: colors.shadows.xl,
                         transition: "max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
                     }}
                 >
@@ -529,7 +539,7 @@ export function PresetPickerModal({ isOpen, onClose, onSelectPreset, onManual }:
                                     onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.fill; e.currentTarget.style.color = colors.fg.base; }}
                                     onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = colors.fg.dim; }}
                                 >
-                                    <ChevronLeft size={16} />
+                                    <ChevronLeft size={16} strokeWidth={2.5} />
                                 </button>
                             )}
                             <div>
@@ -567,7 +577,7 @@ export function PresetPickerModal({ isOpen, onClose, onSelectPreset, onManual }:
                                 {/* Search + filter tabs + new button */}
                                 <div style={{ ...flexRow, gap: spacing[2], marginBottom: spacing[3] }}>
                                     <div style={{ position: "relative", flex: 1 }}>
-                                        <Search size={13} style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", color: colors.fg.dim, pointerEvents: "none" }} />
+                                        <Search size={13} strokeWidth={2.5} style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", color: colors.fg.dim, pointerEvents: "none" }} />
                                         <input
                                             type="text"
                                             value={search}
@@ -614,7 +624,7 @@ export function PresetPickerModal({ isOpen, onClose, onSelectPreset, onManual }:
                                         onMouseEnter={(e) => { e.currentTarget.style.color = colors.fg.base; }}
                                         onMouseLeave={(e) => { e.currentTarget.style.color = colors.fg.dim; }}
                                     >
-                                        <Plus size={13} />
+                                        <Plus size={13} strokeWidth={2.5} />
                                         Nuevo
                                     </button>
                                 </div>
@@ -691,7 +701,7 @@ export function PresetPickerModal({ isOpen, onClose, onSelectPreset, onManual }:
                                     e.currentTarget.style.backgroundColor = colors.bg.base;
                                 }}
                             >
-                                <PenLine size={13} />
+                                <PenLine size={13} strokeWidth={2.5} />
                                 Abrir formulario completo
                             </button>
                         </div>
