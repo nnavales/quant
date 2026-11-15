@@ -49,7 +49,7 @@ func toTransaction(data []finance.TransactionRowDTO) []Transaction {
 			transaction.AmountARS = tx.Amount
 			transaction.AmountUSD = tx.Amount.Div(int64(tx.ExchangeRate))
 		case "USD":
-
+			transaction.AmountUSD = tx.Amount
 			transaction.AmountARS = tx.Amount.Mul(int64(tx.ExchangeRate))
 		}
 

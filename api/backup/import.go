@@ -409,6 +409,13 @@ func toTransactionAgg(data []Transaction, catMap, subMap, chMap, accMap map[stri
 		if currency == entries.CurrencyARS {
 			amount = tx.AmountARS
 		}
+		if amount == 0 {
+			if currency == entries.CurrencyARS {
+				amount = tx.AmountUSD
+			} else {
+				amount = tx.AmountARS
+			}
+		}
 		var accountID *string
 		if tx.Account != "" {
 			if id, ok := accMap[chMap[tx.Channel]+"|"+tx.Account]; ok {
@@ -512,10 +519,17 @@ func toTransactionAgg(data []Transaction, catMap, subMap, chMap, accMap map[stri
 			if c != entries.CurrencyARS {
 				c = entries.CurrencyUSD
 			}
-			amount := tx.AmountUSD
+		amount := tx.AmountUSD
+		if c == entries.CurrencyARS {
+			amount = tx.AmountARS
+		}
+		if amount == 0 {
 			if c == entries.CurrencyARS {
+				amount = tx.AmountUSD
+			} else {
 				amount = tx.AmountARS
 			}
+		}
 			if i == 0 {
 				currency = c
 			}

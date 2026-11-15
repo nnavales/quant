@@ -15,14 +15,14 @@ import { SettingsCard } from "@/components/SettingsCard";
 import { flexBetween, flexColumn, flexRow } from "@/styles/layout";
 
 const resourceOptions = [
-    { id: "transactions" as const, label: "Transacciones" },
-    { id: "historical" as const, label: "Datos históricos" },
-    { id: "networth" as const, label: "Patrimonio" },
-    { id: "presets" as const, label: "Plantillas" },
-    { id: "planning-inputs" as const, label: "Forecast" },
-    { id: "planning-goals" as const, label: "Plan" },
-    { id: "planning-exchange-rates" as const, label: "Planning - Cotizaciones" },
-    { id: "planning-config" as const, label: "Planning - Capital Inicial" },
+    { id: "transactions" as const, label: "Transacciones", file: "transactions.csv" },
+    { id: "historical" as const, label: "Datos históricos", file: "historical.csv" },
+    { id: "networth" as const, label: "Patrimonio", file: "networth.csv" },
+    { id: "presets" as const, label: "Plantillas", file: "presets.csv" },
+    { id: "planning-inputs" as const, label: "Forecast", file: "planning_inputs.csv" },
+    { id: "planning-goals" as const, label: "Plan", file: "planning_goals.csv" },
+    { id: "planning-exchange-rates" as const, label: "Planning - Cotizaciones", file: "planning_exchange_rates.csv" },
+    { id: "planning-config" as const, label: "Planning - Capital Inicial", file: "planning_config.csv" },
 ];
 
 type ResourceId = (typeof resourceOptions)[number]["id"];
@@ -539,8 +539,9 @@ export function BackupManager() {
                                     transition: "all 0.15s",
                                     lineHeight: "26px",
                                 }}
+                                title={opt.file}
                             >
-                                {opt.label}
+                                {opt.label} ({opt.file})
                             </button>
                         );
                     })}
